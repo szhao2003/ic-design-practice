@@ -231,5 +231,94 @@
       "区分旧存储值和旧输出值。",
       "双端口碰撞需另查器件规范，不能直接推广。"
     ]
+  },
+  {
+    "id": "ADAPTED-YHC-FIFO-0001",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "gray-code",
+    "type": "numeric",
+    "title": "Gray 指针解码、推进与重新编码",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "gray-code"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q19 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "5 bit 二进制反射 Gray 计数器定义为 g=b XOR (b>>1)，底层 b 按模 32 每个脉冲加 1。当前 Gray 位模式 g=5'b10110。再收到 45 个有效脉冲后，将新的 5 bit Gray 位模式当作无符号整数填写十进制值。",
+    "explanationMd": "从最高位向低位累积异或得到 b=11011=27。推进后 b=(27+45) mod 32=8，即 01000；重新编码为 01000 XOR 00100=01100，十进制为 12。不能直接对 Gray 位模式做普通二进制加法。",
+    "expectedValue": 12,
+    "absoluteTolerance": 0,
+    "commonMistakes": [
+      "直接把 Gray 的十进制数值加 45。",
+      "漏掉模 32 回绕或重新编码。"
+    ]
+  },
+  {
+    "id": "ADAPTED-YHC-FIFO-0002",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "gray-code",
+    "type": "multiple_choice",
+    "title": "非相邻计数不能套用 Gray 单位变化性质",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "gray-code"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q23 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "4 bit 二进制反射 Gray 映射 g=b XOR (b>>1)。源计数器某次更新从 b=7 跳到 b=9，跨域接收端需要得到相干的完整计数。以下哪些正确？",
+    "explanationMd": "b=7 时 g=0100，b=9 时 g=1101，异或为 1001，有两位不同。Gray 的相邻单 bit 性质不能推广到任意跳步；逐位同步不能保证同时改变多位的数据相干。即使源端逐步递增，接收端也可能跳过中间状态，但源端物理转换仍须按单步注册和约束设计。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "这次 Gray 更新有两位改变"
+      },
+      {
+        "id": "B",
+        "textMd": "单步相邻性质不能保证这次加 2 更新只变一位"
+      },
+      {
+        "id": "C",
+        "textMd": "每位都加 2-FF 就一定得到相干的完整计数"
+      },
+      {
+        "id": "D",
+        "textMd": "可考虑稳定数据加握手，或根据吞吐量选择合适的跨域协议"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "B",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "0100 XOR 1101=1001，恰有两位为 1。",
+      "B": "7 与 9 不是相邻的单位递增状态。",
+      "C": "逐位亚稳态防护不等于多位字相干。",
+      "D": "协议须适配事件速率、数据稳定窗口和实现条件。"
+    },
+    "commonMistakes": [
+      "把目的域跳过状态与源域一次跳步混为一谈。",
+      "把 Gray 编码当作无需协议和物理约束的跨域通行证。"
+    ]
   }
 ]

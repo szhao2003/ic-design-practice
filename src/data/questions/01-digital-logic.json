@@ -299,5 +299,67 @@
       "得到 ~A~C+AB 或等价最小积之和。",
       "说明端点最小项迫使两个二文字项。"
     ]
+  },
+  {
+    "id": "ADAPTED-YHC-LOGIC-0001",
+    "contentVersion": 1,
+    "topicId": "01",
+    "subtopicId": "signed-width",
+    "type": "numeric",
+    "title": "精确二进制定点数的最小位数",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "signed-width"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q36 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "采用无符号二进制定点格式 UQ(I,F)：I 个整数位、F 个小数位，无符号位，总位数 I+F。要求所有整数 0…7 都可表示，且 0.34375 必须无损精确表示。I、F 均为非负整数，最少总共需要多少 bit？",
+    "explanationMd": "0.34375=11/32，约分后分母为 2^5，因此至少 F=5。整数 7 需要 I=3。UQ(3,5) 共 8 bit；其中 0.34375 的编码为 11，7 的编码为 224，均可容纳。并非所有十进制有限小数都能用有限二进制精确表示，必须先检查约分后的分母。",
+    "expectedValue": 8,
+    "absoluteTolerance": 0,
+    "commonMistakes": [
+      "把近似量化误差小当作无损表示。",
+      "给无符号格式额外加一个符号位。"
+    ]
+  },
+  {
+    "id": "ADAPTED-YHC-LOGIC-0002",
+    "contentVersion": 1,
+    "topicId": "01",
+    "subtopicId": "signed-width",
+    "type": "numeric",
+    "title": "符号扩展后的无符号位模式",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "signed-width"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q42 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "x 是 6 bit 有符号补码，位模式为 6'b101101。将同一个有符号值符号扩展到 10 bit，随后只把这 10 bit 位模式解释为无符号整数。最终十进制值是多少？",
+    "explanationMd": "6 bit 补码的值为 45-64=-19。符号扩展补最高有效位 1，得到 10'b1111101101，仍表示 -19；改按无符号解释后为 2^10-19=1005。扩展时必须先保留有符号解释，不能先零扩展再转换。",
+    "expectedValue": 1005,
+    "absoluteTolerance": 0,
+    "commonMistakes": [
+      "用次高位代替最高有效符号位。",
+      "零扩展得到 45，改变了有符号值。"
+    ]
   }
 ]

@@ -17,7 +17,7 @@ describe('题库多维过滤', () => {
   it('至少六道考点改编，不混入原题分类', () => {
     const adapted = filterQuestions(questions, { fidelity: 'topic_only_reconstruction' }, emptyBackup());
     expect(adapted.length).toBeGreaterThanOrEqual(6);
-    expect(adapted.every((q) => q.source.url && q.source.note && q.source.sourceClaimVerification === 'not_rechecked')).toBe(true);
+    expect(adapted.every((q) => q.source.url && q.source.note && ['checked', 'not_rechecked'].includes(q.source.sourceClaimVerification))).toBe(true);
     expect(filterQuestions(questions, { fidelity: 'verbatim_verified' }, emptyBackup())).toEqual([]);
     expect(filterQuestions(questions, { fidelity: 'paraphrased_from_source' }, emptyBackup())).toEqual([]);
   });

@@ -4,7 +4,7 @@ import { rebuildProgress } from './review';
 
 export type QuestionFilters = Partial<Record<'topic' | 'subtopic' | 'q' | 'type' | 'difficulty' | 'company' | 'year' | 'fidelity' | 'evidence' | 'progress' | 'tag' | 'sort', string>>;
 export const fidelityLabels = {
-  self_authored: '原创专项题', topic_only_reconstruction: '公开笔经考点改编｜非原题',
+  self_authored: '原创专项题', topic_only_reconstruction: '公开资料考点改编｜非原题',
   paraphrased_from_source: '公开笔经题目转述', verbatim_verified: '可核实原题摘录',
 };
 export function questionYears(question: Question): string[] {

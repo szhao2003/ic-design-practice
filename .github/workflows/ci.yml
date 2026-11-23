@@ -23,7 +23,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - run: npm run validate:questions
+      - run: npm run validate:questions -- --release
       - run: npm run test
       - run: npm run build
       - name: Upload validated site

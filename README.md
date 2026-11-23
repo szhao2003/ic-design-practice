@@ -2,9 +2,9 @@
 
 面向数字 IC、ASIC RTL、DV 与 FPGA 的专题练习工具，中文界面。
 
-当前为 **0.5.0：专题学习进度**。已有 15 个专题及子专题、50 道完整题（原创 44、公开笔经考点改编 6）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
+当前为 **1.0.0：完整练习流程与资料考点扩充**。已有 15 个专题及子专题、62 道完整题（原创 44、公开资料考点改编 18，其中笔经考点 6、练习汇编考点 12）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
 
-学习进度及统计口径见 [学习进度阶段说明](docs/SECTION_07_PROGRESS.md)，模拟考试见 [第五阶段说明](docs/SECTION_05_VERIFICATION.md)。50 题覆盖范围见 [第二批题库扩充说明](docs/CONTENT_BATCH_02.md)。最终综合验收仍待完成。
+学习进度及统计口径见 [学习进度阶段说明](docs/SECTION_07_PROGRESS.md)，模拟考试见 [第五阶段说明](docs/SECTION_05_VERIFICATION.md)。新增题与来源审核见 [YHCHub 考点扩充](docs/CONTENT_BATCH_03_YHCHUB.md)，首版功能及回归范围见 [V1 验收](docs/V1_ACCEPTANCE.md)。
 
 ## 本地运行
 
@@ -25,7 +25,7 @@ npm run build
 npm run preview
 ```
 
-`validate:questions` 检查数据结构、分类引用、逐项解析、来源字段及 ID 唯一性，允许开发阶段空题库。`npm run validate:questions -- --release` 额外检查正式 V1 的题量与题型最低数量，当前 50 题已满足该内容门槛，但不代表模拟考试及完整 V1 已完成。结构校验不能替代技术内容审核。
+`validate:questions` 检查数据结构、分类引用、逐项解析、来源字段及 ID 唯一性，允许开发阶段空题库。`npm run validate:questions -- --release` 额外检查正式 V1 的题量与题型最低数量，当前 62 题满足该内容门槛；CI 同样执行 --release，内容门槛不能替代技术审核或浏览器验收。结构校验不能替代技术内容审核。
 
 ## 项目结构
 
@@ -43,7 +43,7 @@ npm run preview
 
 ## GitHub 与发布
 
-项目仓库：[szhao2003/ic-design-practice](https://github.com/szhao2003/ic-design-practice)。站点发布结果以仓库 Actions 为准；基础工程可运行不代表正式 V1 已完成。
+项目仓库：[szhao2003/ic-design-practice](https://github.com/szhao2003/ic-design-practice)。站点发布结果以仓库 Actions 为准，功能及验证范围见 V1 验收报告。
 
 首次取得项目可以 clone 后安装。当前项目仓库公开，仅包含源码、题库结构与中性使用说明。
 
@@ -65,7 +65,7 @@ git commit -m "Update practice project"
 git push -u origin main
 ```
 
-在仓库 Settings → Pages 中选择 GitHub Actions 为发布来源。PR 调用 `ci.yml`；主分支提交通过 `deploy.yml` 调用同一套 CI，检查通过后上传本次构建产物，再发布到 Pages。失败的检查不会进入部署。基础阶段上线的是分类目录，不代表正式 V1 已完成。
+在仓库 Settings → Pages 中选择 GitHub Actions 为发布来源。PR 调用 `ci.yml`；主分支提交通过 `deploy.yml` 调用同一套 CI，检查通过后上传本次构建产物，再发布到 Pages。失败的检查不会进入部署。当前版本包含完整练习、模拟考试和学习进度流程。
 
 部署流程依据 [GitHub Pages 自定义工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。更换仓库名时相应调整 `vite.config.ts` 的 `base`，或在构建时设置 `VITE_BASE_PATH`。正式站点地址以 Actions 返回结果为准。
 

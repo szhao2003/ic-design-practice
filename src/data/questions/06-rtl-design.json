@@ -199,5 +199,202 @@
       "最终字节 B2，识别首位最终在 MSB。",
       "说明旧 shift 会得到 59，正确值应使用新拼接。"
     ]
+  },
+  {
+    "id": "ADAPTED-YHC-RTL-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "fsm",
+    "type": "single_choice",
+    "title": "状态编码位数与性能判断",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "fsm"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q11 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "某 FSM 有 7 个可达状态，不计输出或其他数据通路寄存器。比较紧凑二进制编码与严格 one-hot 编码所需的状态寄存器位数。以下哪项正确？",
+    "explanationMd": "紧凑二进制编码需要 ceil(log2 7)=3 bit，严格 one-hot 需要每个状态一位，即 7 bit。寄存器位数不等于总面积或最终时序；转移逻辑、输出译码、器件结构及工具优化都影响结果，不能仅凭状态数保证某种编码的 Fmax 最优。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "二进制 3 bit、one-hot 7 bit；最终面积和时序仍需结合实现分析"
+      },
+      {
+        "id": "B",
+        "textMd": "二进制 7 bit、one-hot 3 bit"
+      },
+      {
+        "id": "C",
+        "textMd": "两者都需要 7 bit，因为状态有 7 个"
+      },
+      {
+        "id": "D",
+        "textMd": "one-hot 一定比二进制总面积更小且最高频率更高"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "3 bit 可提供 8 个编码，one-hot 用 7 个位置；性能结论需实现依据。",
+      "B": "把两种编码的定义颠倒。",
+      "C": "二进制可以组合位来区分多个状态。",
+      "D": "译码与触发器成本存在权衡，没有这个普遍保证。"
+    },
+    "commonMistakes": [
+      "把触发器位数等同于总面积。",
+      "把器件相关的经验选型当作绝对规则。"
+    ]
+  },
+  {
+    "id": "ADAPTED-YHC-RTL-0002",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "fsm",
+    "type": "rtl_coding",
+    "title": "无限串行前缀的模五检测器",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "fsm"
+    ],
+    "estimatedMinutes": 18,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q15 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "编写 prefix_mod5。每个 clk 上升沿在 in_valid=1 时接收 bit_in，按 MSB first 追加到已接收的二进制前缀；输入为二值并满足采样条件；序列可以无限长，不能保存完整整数。输出 is_divisible 在至少接收一位且当前前缀数可被 5 整除时为 1。in_valid=0 时保持判断结果；同步低有效 rst_n 清空前缀，空前缀输出 0。给出完整 RTL 和状态转移依据。",
+    "explanationMd": "前缀附加一位等价于原数乘二再加新位；余数已经包含后续整除判断需要的全部信息。另用 seen 区分空前缀和数值为零的有效前缀。",
+    "referenceAnswerMd": "```systemverilog\nmodule prefix_mod5 (\n  input logic clk, rst_n, in_valid, bit_in,\n  output logic is_divisible\n);\n  logic [2:0] rem;\n  logic seen;\n  logic [3:0] candidate, reduced;\n  assign candidate = ({1'b0, rem} << 1) | {3'b000, bit_in};\n  assign reduced = candidate >= 4'd5 ? candidate - 4'd5 : candidate;\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin rem <= 3'd0; seen <= 1'b0; end\n    else if (in_valid) begin rem <= reduced[2:0]; seen <= 1'b1; end\n  end\n  assign is_divisible = seen && (rem == 3'd0);\nendmodule\n```\n\n每接收一位，前缀数 N 更新为 2N+bit，因此只需保存余数 r，转移为 (2r+bit) mod 5。r∈0…4，候选值只在 0…9，最多减一次 5；reduced≤4，截取低三位不会丢失有效信息。输入 11001 的余数依次 1、3、1、2、0，最后前缀 25 可整除；非空前缀 0 也可整除。",
+    "rubric": [
+      "余数状态为 0…4，不能保存不断增长的完整整数。",
+      "转移为 (2r+bit) mod 5，正确处理候选值 5…9。",
+      "in_valid=0 保持状态，同步复位优先。",
+      "空前缀输出 0，已接收前缀 0 输出 1。",
+      "中间位宽足以容纳 2r+bit。"
+    ],
+    "commonMistakes": [
+      "用有限移位寄存器替代无限前缀的余数状态。",
+      "未区分空前缀与有效数字零。"
+    ]
+  },
+  {
+    "id": "ADAPTED-YHC-RTL-0003",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "divider",
+    "type": "numeric",
+    "title": "分数平均分频的间隔调度",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "divider"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q26 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "设计一个时钟使能脉冲调度器，每个脉冲间隔只能为 6 或 7 个输入时钟周期。一个重复调度块包含 8 个完整间隔，总计恰好 50 个输入周期。每块中应有几个长度为 7 的间隔？这里要求平均脉冲间隔为 6.25，不要求输出方波或 50% 占空比。",
+    "explanationMd": "设长度 7 的间隔有 k 个，其余 8-k 个为 6，则 7k+6(8-k)=50，解得 k=2。六个 6 加两个 7 共 50，平均为 50/8=6.25。相邻脉冲仍有周期抖动；这不等于生成固定周期、50% 占空比的 6.25 分频时钟。",
+    "expectedValue": 2,
+    "absoluteTolerance": 0,
+    "commonMistakes": [
+      "把平均间隔与每个间隔严格相等混淆。",
+      "把输入周期数量当成输出脉冲个数。"
+    ]
+  },
+  {
+    "id": "ADAPTED-YHC-RTL-0004",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "adder-pipeline",
+    "type": "rtl_coding",
+    "title": "平衡加法树实现八位人口计数",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "adder-pipeline"
+    ],
+    "estimatedMinutes": 18,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q34 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "设计 popcount8：clk、同步低有效 rst_n、in_valid、data[7:0]，输出 out_valid 与 count[3:0]。输入不含 X/Z；每个 in_valid=1 的上升沿接收一个字，沿后登记其中 1 的数量。可连续每拍接收；无效沿 out_valid=0、count 保持。复位时二者清零。要求用分组求和的平衡组合加法树后接一层输出寄存器，明确各层位宽，不引入额外流水级。",
+    "explanationMd": "人口计数最大可达 8，输出至少需要 4 bit。平衡分组能把参考结构组织为三层求和，但实际映射与 Fmax 仍由综合、布局和时序决定；参考实现不宣称已完成器件实现。",
+    "referenceAnswerMd": "```systemverilog\nmodule popcount8 (\n  input logic clk, rst_n, in_valid,\n  input logic [7:0] data,\n  output logic out_valid,\n  output logic [3:0] count\n);\n  logic [1:0] p0, p1, p2, p3;\n  logic [2:0] s0, s1;\n  logic [3:0] total;\n  assign p0 = {1'b0,data[0]} + {1'b0,data[1]};\n  assign p1 = {1'b0,data[2]} + {1'b0,data[3]};\n  assign p2 = {1'b0,data[4]} + {1'b0,data[5]};\n  assign p3 = {1'b0,data[6]} + {1'b0,data[7]};\n  assign s0 = {1'b0,p0} + {1'b0,p1};\n  assign s1 = {1'b0,p2} + {1'b0,p3};\n  assign total = {1'b0,s0} + {1'b0,s1};\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin count <= 4'd0; out_valid <= 1'b0; end\n    else begin\n      out_valid <= in_valid;\n      if (in_valid) count <= total;\n    end\n  end\nendmodule\n```\n\n组合网络为三层：两位之和范围 0…2（2 bit），四位之和 0…4（3 bit），八位之和 0…8（4 bit）。8'hFF 对应 8，8'hA6 对应 4。每个有效采样沿后输出该沿采到的计数，不额外引入中间流水级。",
+    "rubric": [
+      "所有 8 个输入位各参与一次求和。",
+      "2/4/8 位分组的求和宽度分别足以容纳 2/4/8。",
+      "一层输出寄存器，out_valid 与相应输入对齐。",
+      "复位清零，无效沿 count 保持且 out_valid 清零。",
+      "全零、全一及交错位可核对。"
+    ],
+    "commonMistakes": [
+      "用 3 bit 输出导致全一输入的计数溢出。",
+      "分组时漏位、重复计数或中间加法丢进位。"
+    ]
+  },
+  {
+    "id": "ADAPTED-YHC-RTL-0005",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "serial-parallel",
+    "type": "waveform_analysis",
+    "title": "寄存器上升沿检测的逐沿结果",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "serial-parallel"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q16 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "in_sig 已同步到 clk，且在每个采样沿前后满足建立/保持。同步复位后 prev=0、pulse=0，之后 rst_n 保持 1。E0…E4 上升沿的 in_sig 依次为 0、1、1、0、1。\n```systemverilog\nalways_ff @(posedge clk) begin\n  if (!rst_n) begin prev <= 1'b0; pulse <= 1'b0; end\n  else begin\n    prev  <= in_sig;\n    pulse <= in_sig & ~prev;\n  end\nend\n```\n列出每沿 NBA 完成后的 pulse，并解释为何持续高电平不会每拍都产生上升沿脉冲。",
+    "explanationMd": "上升沿检测比较当前样本与上一样本，而不是比较两个都已经更新为当前输入的寄存器值。输出也是寄存器，在相邻上升沿之间保持。",
+    "referenceAnswerMd": "```text\n沿   采样 in_sig   沿前 prev   沿后 pulse\nE0       0            0             0\nE1       1            0             1\nE2       1            1             0\nE3       0            1             0\nE4       1            0             1\n```\n\n两个 NBA 右值都读取该沿前的值。prev 保存上一次采样，pulse 在当前样本为 1、前次样本为 0 时置位，所以连续高电平只在首次被观察到时产生一个脉冲。本题输入已经满足本时钟域采样条件；异步信号或两个沿之间的短脉冲需要另行设计 CDC/事件捕获协议。",
+    "rubric": [
+      "pulse 依次为 0、1、0、0、1。",
+      "明确 prev 右值为沿前的上一样本。",
+      "持续高电平第二拍不再满足 0→1。",
+      "不能把该电路直接当成任意异步短脉冲的保证捕获器。"
+    ],
+    "commonMistakes": [
+      "先更新 prev 再代入 pulse 公式，误算为全零。",
+      "把本域样本边沿检测当作无需前提的跨域脉冲捕获。"
+    ]
   }
 ]

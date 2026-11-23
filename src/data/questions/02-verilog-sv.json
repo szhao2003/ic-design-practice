@@ -379,5 +379,154 @@
       "C": "忽略下一上升沿 en=1 的数据赋值。",
       "D": "题目给定理想事件及稳定初值，没有引入 X 的条件。"
     }
+  },
+  {
+    "id": "ADAPTED-YHC-SV-0001",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "blocking-nba",
+    "type": "short_answer",
+    "title": "两个时序进程之间的阻塞赋值竞争",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "blocking-nba"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q3 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "x、y 都为 1 bit，某个时钟沿前已稳定为 x=0、y=1。无其他驱动、复位、延时或并发操作。只有以下两个独立进程：\n```systemverilog\nalways @(posedge clk) x = y;\nalways @(posedge clk) y = x;\n```\n列出该沿两个进程都执行完后的可能结果。再说明两处都改为非阻塞赋值 <= 时，NBA 完成后的结果。",
+    "explanationMd": "单条阻塞赋值立即更新左值，不同进程之间没有指定执行顺序，因此存在读写竞争。非阻塞赋值能使本题两个寄存器各自读取沿前值；这不意味着所有任意多驱动竞争都可由 <= 自动解决。",
+    "referenceAnswerMd": "两个进程的执行顺序没有规定：\n\n- 若先执行 x=y，则 x 变成 1，随后 y=x 也为 1，得到 (1,1)。\n- 若先执行 y=x，则 y 变成 0，随后 x=y 也为 0，得到 (0,0)。\n\n因此原写法不能唯一确定这一沿的结果。把两处赋值均改为 <= 后，右值各取沿前值，NBA 更新完成后唯一得到 (x,y)=(1,0)。不能用源文件上下顺序约定两个独立进程的先后。",
+    "rubric": [
+      "列出 (0,0) 与 (1,1) 两种结果。",
+      "分别用两个进程执行顺序解释。",
+      "两处均改 NBA 后为 (1,0)。",
+      "指出两个进程不按源文件先后保证执行顺序。"
+    ],
+    "commonMistakes": [
+      "误认为两个 always 按书写顺序执行。",
+      "误把阻塞赋值的竞争结果当成唯一的交换。"
+    ]
+  },
+  {
+    "id": "ADAPTED-YHC-SV-0002",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "latch-inference",
+    "type": "single_choice",
+    "title": "不完整敏感列表与锁存器的区别",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "latch-inference"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q7 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "仅讨论下面过程。a=1、b=0 已稳定；t=1 ns 时 sel 从 1 降到 0，此次过程执行完成后 y=0；t=3 ns 时仅 b 从 0 变为 1，sel 保持 0。观察 t=4 ns 的 RTL 仿真值。\n```systemverilog\nalways @(sel) begin\n  if (sel) y = a;\n  else     y = b;\nend\n```\n哪项判断正确？",
+    "explanationMd": "显式敏感列表只包含 sel，b 的单独变化不会触发该过程，所以 t=4 ns 的 RTL y 仍为 0。每次过程实际执行时两个分支都给 y 赋值；这与缺少分支赋值引入的存储需求不同。常见综合工具按完整数据依赖实现组合 MUX，可能导致仿真/综合不一致；应改用 always_comb 或完整的 @*，并检查工具诊断。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "RTL 的 y=0；漏列 b 不等于已经证明综合出锁存器"
+      },
+      {
+        "id": "B",
+        "textMd": "RTL 的 y=1，因为赋值分支写完整就会自动触发"
+      },
+      {
+        "id": "C",
+        "textMd": "只要敏感列表不完整，所有综合器一定产生锁存器"
+      },
+      {
+        "id": "D",
+        "textMd": "将 = 改为 <= 就会自动补全敏感列表"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "b 变化没有触发过程，不能仅由敏感列表缺项断言综合硬件一定是锁存器。",
+      "B": "分支完整性和过程触发条件是不同问题。",
+      "C": "综合行为需看数据依赖和工具；不能给出此绝对结论。",
+      "D": "NBA 不会修复显式敏感列表缺项。"
+    },
+    "commonMistakes": [
+      "混淆仿真中的旧值与综合的锁存器推断。",
+      "用非阻塞赋值掩盖组合过程触发问题。"
+    ]
+  },
+  {
+    "id": "ADAPTED-YHC-SV-0003",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "sv-basics",
+    "type": "multiple_choice",
+    "title": "上电初始化是否能替代运行时复位",
+    "difficulty": "medium",
+    "tags": [
+      "YHCHub 考点改编",
+      "sv-basics"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考 YHCHub 练习汇编 Q29 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
+    },
+    "promptMd": "比较两种实现目标：A 是支持 HDL 常量初始化映射到配置 INIT 的 FPGA 流程；B 是没有规定上电态、也没有特殊初始化映射的普通 ASIC 寄存器。RTL 包含声明初始化 logic [3:0] q = 4'h9，之后在时钟沿按使能装载数据。以下哪些说法正确？",
+    "explanationMd": "初始化的硬件支持取决于目标器件、资源和综合流程。题目给定 A 支持 INIT，可以在配置后取得约定初态；B 没有这样的保证。即使支持上电初始化，也不等于支持用户运行途中按需重新复位。带任意仿真延时的 initial 语句更不能一概视为可综合。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "A 可以在支持的目标资源上把常量初值映射到配置初始化"
+      },
+      {
+        "id": "B",
+        "textMd": "B 一定也会在上电时得到 4'h9"
+      },
+      {
+        "id": "C",
+        "textMd": "A 的配置初始化不能单独提供运行中的按需复位功能"
+      },
+      {
+        "id": "D",
+        "textMd": "只要工具支持常量初始化，initial 中任意 # 延时都可综合"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "这是本题明确给定的 FPGA 流程能力，仍须检查具体资源映射。",
+      "B": "没有库或流程保证就不能依赖该初值。",
+      "C": "上电/配置行为与运行时复位接口不是同一功能。",
+      "D": "常量初始化支持不意味着支持任意仿真时间控制。"
+    },
+    "commonMistakes": [
+      "把某一 ASIC 流程的限制推广到全部 FPGA。",
+      "把上电初始化当作运行中复位。"
+    ]
   }
 ]
