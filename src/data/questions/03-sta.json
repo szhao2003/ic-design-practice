@@ -1,12 +1,224 @@
 [
   {
-    "id": "ORIGINAL-STA-0001", "contentVersion": 1, "type": "numeric", "topicId": "03", "subtopicId": "setup-hold",
-    "tags": ["STA", "setup", "slack"], "difficulty": "easy", "estimatedMinutes": 3,
+    "id": "ORIGINAL-STA-0001",
+    "contentVersion": 1,
+    "type": "numeric",
+    "topicId": "03",
+    "subtopicId": "setup-hold",
+    "tags": [
+      "STA",
+      "setup",
+      "slack"
+    ],
+    "difficulty": "easy",
+    "estimatedMinutes": 3,
     "title": "单周期路径的 setup slack",
     "promptMd": "一条单周期、同频同相、上升沿触发的寄存器到寄存器路径，launch 与 capture 时钟 skew 均按 0 处理：\n\n- 时钟周期：10 ns\n- 发射寄存器 `tCQ,max`：0.8 ns\n- 最大组合逻辑延迟：6.5 ns\n- 接收寄存器 `tsetup`：0.7 ns\n- Setup clock uncertainty：0.5 ns，作为可用时序预算的扣减\n\n忽略其他延迟，使用下一个上升沿捕获数据。求 setup slack，正数表示满足时序。请输入数值，可选择 ns 或 ps。",
-    "expectedValue": 1.5, "unit": "ns", "defaultUnit": "ns", "acceptedUnits": { "ns": 1, "ps": 0.001 }, "absoluteTolerance": 0.001,
+    "expectedValue": 1.5,
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    },
+    "absoluteTolerance": 0.001,
     "explanationMd": "**答案：+1.5 ns，也就是 +1500 ps。**\n\n1. 以发射沿为 0，数据最晚到达接收寄存器 D 端的时刻为 `arrival = 0.8 + 6.5 = 7.3 ns`。\n2. 接收端在 10 ns 的时钟沿捕获，需预留 setup 和 uncertainty：`required = 10 - 0.7 - 0.5 = 8.8 ns`。\n3. `setup slack = required - arrival = 8.8 - 7.3 = +1.5 ns`。\n\n本题已规定 skew 为 0，uncertainty 扣减可用预算。结果为正表示在这些假设下满足 setup 要求，不能据此判断 hold 是否满足。允许误差为 0.001 ns（1 ps）。",
-    "commonMistakes": ["漏扣 uncertainty，误算成 2.0 ns。", "把 slack 定义成 arrival - required，导致正负号反了。", "把 setup 通过误认为 hold 也必然通过。"],
-    "reviewStatus": "verified", "source": { "kind": "self_authored", "evidenceGrade": "none", "questionFidelity": "self_authored", "sourceClaimVerification": "not_applicable" }
+    "commonMistakes": [
+      "漏扣 uncertainty，误算成 2.0 ns。",
+      "把 slack 定义成 arrival - required，导致正负号反了。",
+      "把 setup 通过误认为 hold 也必然通过。"
+    ],
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    }
+  },
+  {
+    "id": "ORIGINAL-STA-0002",
+    "contentVersion": 1,
+    "type": "numeric",
+    "topicId": "03",
+    "subtopicId": "skew-jitter",
+    "title": "正偏斜下的 setup slack",
+    "difficulty": "medium",
+    "tags": [
+      "skew-jitter"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "单周期同频寄存器路径，周期 T=8 ns。发射沿实际到达时刻为 0，下一捕获沿为 8.4 ns。tCQ,max=0.7 ns，组合最大延迟 5.8 ns，setup=0.6 ns，setup uncertainty=0.3 ns（从 required time 扣除）。不含其他延迟。求 setup slack，单位 ns。",
+    "explanationMd": "数据到达=0+0.7+5.8=6.5 ns；required=8.4-0.6-0.3=7.5 ns；slack=required-arrival=+1.0 ns。捕获时钟晚到 0.4 ns 在本题中有利于 setup。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    },
+    "absoluteTolerance": 0.001,
+    "expectedValue": 1
+  },
+  {
+    "id": "ORIGINAL-STA-0003",
+    "contentVersion": 1,
+    "type": "numeric",
+    "topicId": "03",
+    "subtopicId": "setup-hold",
+    "title": "正偏斜下的 hold slack",
+    "difficulty": "medium",
+    "tags": [
+      "setup-hold"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "同一周期的发射沿到达 0 ns，捕获沿到达 +0.30 ns。tCQ,min=0.12 ns，组合最小延迟 0.18 ns，hold=0.10 ns，hold uncertainty=0.05 ns（额外增加 required hold time）。求 hold slack，单位 ns。不考虑其他延迟。",
+    "explanationMd": "最早新数据到达=0.12+0.18=0.30 ns；旧数据要求保持到 0.30+0.10+0.05=0.45 ns；hold slack=arrival-required=-0.15 ns，违反保持时间。这里检查同周期相邻数据，增加周期不能改变这些时刻。",
+    "commonMistakes": [
+      "把 hold slack 也写成 required-arrival。",
+      "使用最大延迟或在同沿 hold 计算里额外加一个周期。"
+    ],
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    },
+    "absoluteTolerance": 0.001,
+    "expectedValue": -0.15
+  },
+  {
+    "id": "ORIGINAL-STA-0004",
+    "contentVersion": 1,
+    "type": "numeric",
+    "topicId": "03",
+    "subtopicId": "slack-fmax",
+    "title": "由单周期路径计算最高频率",
+    "difficulty": "medium",
+    "tags": [
+      "slack-fmax"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "零时钟偏斜、单周期同沿路径。tCQ,max=0.6 ns，组合最大延迟=4.8 ns，setup=0.4 ns，setup uncertainty=0.2 ns。假定没有其他瓶颈、例外或附加延迟，求满足 setup 的最高时钟频率，单位 MHz。",
+    "explanationMd": "最小周期=0.6+4.8+0.4+0.2=6.0 ns。fmax=1000/6=166.666… MHz。这是给定延迟模型下的上界，并非实际芯片频率保证。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "expectedValue": 166.66666666666666,
+    "unit": "MHz",
+    "defaultUnit": "MHz",
+    "acceptedUnits": {
+      "MHz": 1,
+      "GHz": 1000
+    },
+    "absoluteTolerance": 0.05
+  },
+  {
+    "id": "ORIGINAL-STA-0005",
+    "contentVersion": 1,
+    "type": "multiple_choice",
+    "topicId": "03",
+    "subtopicId": "timing-fixes",
+    "title": "区分 setup 与 hold 修复",
+    "difficulty": "medium",
+    "tags": [
+      "timing-fixes"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "同一时钟、单周期路径；时钟偏斜和各单元延迟固定，不考虑工具因约束变化重新优化。以下说法哪些正确？",
+    "explanationMd": "Setup 检查下一捕获沿，放宽周期可以增加可用时间；同沿 hold 不依赖周期。数据路径增加延迟会推迟最早与最晚到达，可改善 hold 但损失 setup 裕量。例外约束必须有功能证据。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "增加周期可以改善 setup slack"
+      },
+      {
+        "id": "B",
+        "textMd": "仅增加周期就一定能修好 hold 违例"
+      },
+      {
+        "id": "C",
+        "textMd": "增加正的数据路径延迟可能改善 hold，同时恶化 setup"
+      },
+      {
+        "id": "D",
+        "textMd": "无需功能证明就可将违例路径设为 false path"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "其他条件固定时下一捕获沿推后。",
+      "B": "同沿 hold 的相关到达时刻没有变化。",
+      "C": "最早到达变晚有利于 hold，最晚到达变晚不利于 setup。",
+      "D": "错误屏蔽会漏掉真实功能路径。"
+    }
+  },
+  {
+    "id": "ORIGINAL-STA-0006",
+    "contentVersion": 1,
+    "type": "short_answer",
+    "topicId": "03",
+    "subtopicId": "sdc",
+    "title": "多周期路径仍然需要 hold 检查",
+    "difficulty": "medium",
+    "tags": [
+      "sdc"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "同源时钟，源和目的寄存器使用相同、稳定的时钟使能，只在 E0、E2、E4……更新。稳态下 E0 发射 D0，E1 目的端禁止采样，E2 目的端捕获 D0、源端同时发射 D1，E4 捕获 D1。分析这是两周期 setup 的候选还是 false path，并解释 E2 附近为什么仍要检查 hold。无需写工具命令。",
+    "explanationMd": "这是两周期 setup 的候选路径，不能仅因 E1 不采样就设 false path：D0 必须在 E2 被正确捕获。\n\n| 边沿 | 源寄存器 | 目的寄存器 |\n|---|---|---|\n| E0 | 发射 D0 | 捕获上一笔数据 |\n| E1 | 保持 | 禁止采样 |\n| E2 | 发射 D1 | 捕获 D0 |\n| E4 | 发射 D2 | 捕获 D1 |\n\n在证明两端使能相位、每次发射与捕获关系、模式切换及复位边界均满足条件后，D0 的 setup 可按 E0→E2 分析。E2 同时发射 D1，D1 的最早到达仍不得破坏目的端对 D0 的 hold。不能盲目放宽 hold；应检查具体 STA 工具对多周期 setup/hold 的边沿选择与报告。本题不要求具体 SDC 命令。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "referenceAnswerMd": "这是两周期 setup 的候选路径，不能仅因 E1 不采样就设 false path：D0 必须在 E2 被正确捕获。\n\n| 边沿 | 源寄存器 | 目的寄存器 |\n|---|---|---|\n| E0 | 发射 D0 | 捕获上一笔数据 |\n| E1 | 保持 | 禁止采样 |\n| E2 | 发射 D1 | 捕获 D0 |\n| E4 | 发射 D2 | 捕获 D1 |\n\n在证明两端使能相位、每次发射与捕获关系、模式切换及复位边界均满足条件后，D0 的 setup 可按 E0→E2 分析。E2 同时发射 D1，D1 的最早到达仍不得破坏目的端对 D0 的 hold。不能盲目放宽 hold；应检查具体 STA 工具对多周期 setup/hold 的边沿选择与报告。本题不要求具体 SDC 命令。",
+    "rubric": [
+      "确认真实数据必须被捕获，不能设为 false path。",
+      "以 E0→E2 说明两周期 setup。",
+      "说明使能相位及复位/模式边界需要证明。",
+      "解释 E2 发射的新数据可能破坏旧数据 hold，须核对工具边沿选择。"
+    ]
   }
 ]

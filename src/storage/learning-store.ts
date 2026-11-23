@@ -170,7 +170,7 @@ export class LearningStore {
   }
   async exportJSON(): Promise<string> {
     const state = await this.read();
-    return JSON.stringify({ ...state.data, exportedAt: new Date().toISOString(), bankVersion: '0.3.0' }, null, 2);
+    return JSON.stringify({ ...state.data, exportedAt: new Date().toISOString(), bankVersion: '0.3.1' }, null, 2);
   }
   async previewImport(input: unknown, mode: 'merge' | 'replace', currentIds: string[]): Promise<ImportPreview> {
     const incoming = validateBackup(input);

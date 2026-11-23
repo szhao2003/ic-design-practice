@@ -82,5 +82,222 @@
       "只取反未加 1，误得 218。",
       "仍按有符号数回答 -37，忽略了题目要求的无符号解释。"
     ]
+  },
+  {
+    "id": "ORIGINAL-LOGIC-0003",
+    "contentVersion": 1,
+    "type": "single_choice",
+    "topicId": "01",
+    "subtopicId": "mux-decoder",
+    "title": "用二选一多路器实现 XOR",
+    "difficulty": "medium",
+    "tags": [
+      "mux-decoder"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "二值逻辑。多路器定义为 Y = S ? D1 : D0。令 S=A，要实现 Y=A XOR B，D0、D1 应如何连接？",
+    "explanationMd": "A=0 时 Y=B；A=1 时 Y=~B，因此 D0=B，D1=~B。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "D0=B，D1=~B"
+      },
+      {
+        "id": "B",
+        "textMd": "D0=~B，D1=B"
+      },
+      {
+        "id": "C",
+        "textMd": "D0=0，D1=B"
+      },
+      {
+        "id": "D",
+        "textMd": "D0=B，D1=1"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "两种选择状态都满足 XOR。",
+      "B": "这实现 XNOR。",
+      "C": "这实现 A AND B。",
+      "D": "这实现 A OR B。"
+    }
+  },
+  {
+    "id": "ORIGINAL-LOGIC-0004",
+    "contentVersion": 1,
+    "type": "numeric",
+    "topicId": "01",
+    "subtopicId": "signed-width",
+    "title": "有符号区间所需最小位宽",
+    "difficulty": "medium",
+    "tags": [
+      "signed-width"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "使用二进制补码，需要覆盖全部整数 -300 到 +300（含端点），最少需要多少 bit？只填写整数位宽。",
+    "explanationMd": "n 位补码范围为 -2^(n-1) 到 2^(n-1)-1。9 位为 [-256,255]，不够；10 位为 [-512,511]，足够。答案为 10。",
+    "commonMistakes": [
+      "只计算无符号数表示 300 的位数。",
+      "遗漏正端点比负端点少 1 的不对称性。"
+    ],
+    "expectedValue": 10,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ORIGINAL-LOGIC-0005",
+    "contentVersion": 1,
+    "type": "single_choice",
+    "topicId": "01",
+    "subtopicId": "flip-flop-latch",
+    "title": "透明锁存器的输出时序",
+    "difficulty": "medium",
+    "tags": [
+      "flip-flop-latch"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "理想零延迟高电平透明锁存器，初始 Q=0。EN 仅在 [5 ns,20 ns) 为 1。D 初始为 0，在 8 ns 变为 1，在 12 ns 变为 0，此后不变。Q 在 10、14、21 ns 分别为多少？",
+    "explanationMd": "透明期间 Q 跟随 D：10 ns 为 1，14 ns 为 0。20 ns 关闭时锁存 0，21 ns 仍为 0。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "1、0、0"
+      },
+      {
+        "id": "B",
+        "textMd": "0、0、0"
+      },
+      {
+        "id": "C",
+        "textMd": "1、1、1"
+      },
+      {
+        "id": "D",
+        "textMd": "0、1、0"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "逐段跟随并在关闭后保持。",
+      "B": "把锁存器误当作仅在 EN 上升沿采样的触发器。",
+      "C": "遗漏透明期间 D 在 12 ns 的下降。",
+      "D": "与给定 D 的变化顺序相反。"
+    }
+  },
+  {
+    "id": "ORIGINAL-LOGIC-0006",
+    "contentVersion": 1,
+    "type": "multiple_choice",
+    "topicId": "01",
+    "subtopicId": "glitch",
+    "title": "静态 1 冒险与共识项",
+    "difficulty": "medium",
+    "tags": [
+      "glitch"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "二值组合函数 F=A B + ~A C，以两级 AND/OR 电路实现，门延迟为任意正值。B=C=1 已稳定，仅 A 单独翻转。以下哪些说法正确？",
+    "explanationMd": "稳态 F 始终为 1，但两条路径延迟不同可能短暂同时为 0。共识项 BC 恒为 1，可覆盖该静态 1 冒险；它不改变 Boolean 函数。结论限定于给定的单输入变化，不推广到任意多输入切换。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "翻转前后理想函数值均为 1"
+      },
+      {
+        "id": "B",
+        "textMd": "加入冗余项 BC 可覆盖此条件下的静态 1 冒险"
+      },
+      {
+        "id": "C",
+        "textMd": "加入 BC 能消除任意多输入同时变化造成的所有毛刺"
+      },
+      {
+        "id": "D",
+        "textMd": "在输出端加寄存器会使上游组合节点不再产生毛刺"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "B=C=1 时 F=A+~A=1。",
+      "B": "BC 是共识项，在 A 翻转时保持输出高。",
+      "C": "多输入变化可能存在其他冒险，不能这样保证。",
+      "D": "寄存器可能隔离采样影响，但不改变上游毛刺的产生。"
+    }
+  },
+  {
+    "id": "ORIGINAL-LOGIC-0007",
+    "contentVersion": 1,
+    "type": "short_answer",
+    "topicId": "01",
+    "subtopicId": "boolean-kmap",
+    "title": "三变量卡诺图最小化",
+    "difficulty": "medium",
+    "tags": [
+      "boolean-kmap"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "F(A,B,C)=Σm(0,2,6,7)，A 为最高位，其余最小项均为 0，没有无关项。给出最小积之和，并说明分组及最小性。",
+    "explanationMd": "最小积之和为 F=~A~C+AB。合并 (m0,m2) 得 ~A~C，合并 (m6,m7) 得 AB。m0 只能与 m2 配对，m7 只能与 m6 配对，故至少需要这两个蕴含项，共四个文字。\n\n| ABC | F |\n|---|---|\n|000|1|\n|001|0|\n|010|1|\n|011|0|\n|100|0|\n|101|0|\n|110|1|\n|111|1|",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "referenceAnswerMd": "最小积之和为 F=~A~C+AB。合并 (m0,m2) 得 ~A~C，合并 (m6,m7) 得 AB。m0 只能与 m2 配对，m7 只能与 m6 配对，故至少需要这两个蕴含项，共四个文字。\n\n| ABC | F |\n|---|---|\n|000|1|\n|001|0|\n|010|1|\n|011|0|\n|100|0|\n|101|0|\n|110|1|\n|111|1|",
+    "rubric": [
+      "正确识别四个为 1 的最小项。",
+      "分组 (0,2) 与 (6,7)，允许卡诺图相邻边连接。",
+      "得到 ~A~C+AB 或等价最小积之和。",
+      "说明端点最小项迫使两个二文字项。"
+    ]
   }
 ]

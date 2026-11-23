@@ -27,5 +27,357 @@
       "把过程关键字当作赋值完备性的自动保证。",
       "不先明确 en=0 时的设计行为，就随意补一个默认值。"
     ]
+  },
+  {
+    "id": "ORIGINAL-SV-0002",
+    "contentVersion": 1,
+    "type": "single_choice",
+    "topicId": "02",
+    "subtopicId": "blocking-nba",
+    "title": "非阻塞赋值交换寄存器",
+    "difficulty": "medium",
+    "tags": [
+      "blocking-nba"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "SystemVerilog 中 a、b 均为 1 bit，某时钟沿前 a=1、b=0。唯一写进程为：\n```systemverilog\nalways_ff @(posedge clk) begin\n  a <= b;\n  b <= a;\nend\n```\n无复位或其他写入。该沿的 NBA 更新完成后，(a,b) 是多少？",
+    "explanationMd": "两条非阻塞赋值均在执行时读取旧值，再在 NBA 区更新，因此 a=0、b=1。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "(0,1)"
+      },
+      {
+        "id": "B",
+        "textMd": "(0,0)"
+      },
+      {
+        "id": "C",
+        "textMd": "(1,1)"
+      },
+      {
+        "id": "D",
+        "textMd": "(1,0)"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "两个旧值交换。",
+      "B": "把第二条当成读取更新后的 a。",
+      "C": "忽略第一条读取的旧 b=0。",
+      "D": "两条赋值均已执行，不能保持旧状态。"
+    }
+  },
+  {
+    "id": "ORIGINAL-SV-0003",
+    "contentVersion": 1,
+    "type": "waveform_analysis",
+    "topicId": "02",
+    "subtopicId": "event-scheduling",
+    "title": "同一进程内重复 NBA 的结果",
+    "difficulty": "medium",
+    "tags": [
+      "event-scheduling"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "q 初始为 0，只有以下进程写 q。en 在 E0、E1、E2 三个上升沿前均已稳定，依次为 0、1、0。列出每个沿全部 NBA 更新完成后的 q，并解释。\n```systemverilog\nalways_ff @(posedge clk) begin\n  q <= 1'b1;\n  if (en) q <= 1'b0;\nend\n```",
+    "explanationMd": "| 时钟沿 | en | 更新后的 q |\n|---|---|---|\n| E0 | 0 | 1 |\n| E1 | 1 | 0 |\n| E2 | 0 | 1 |\n\n同一顺序进程内，对同一变量且同一更新时刻，最后执行的非阻塞赋值决定最终值。en=1 时第二条覆盖第一条；en=0 时只执行第一条。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "referenceAnswerMd": "| 时钟沿 | en | 更新后的 q |\n|---|---|---|\n| E0 | 0 | 1 |\n| E1 | 1 | 0 |\n| E2 | 0 | 1 |\n\n同一顺序进程内，对同一变量且同一更新时刻，最后执行的非阻塞赋值决定最终值。en=1 时第二条覆盖第一条；en=0 时只执行第一条。",
+    "rubric": [
+      "结果依次为 1、0、1。",
+      "说明条件为假时第二条不执行。",
+      "说明同一进程中的执行顺序；不推广到不同进程的竞争。"
+    ]
+  },
+  {
+    "id": "ORIGINAL-SV-0004",
+    "contentVersion": 1,
+    "type": "single_choice",
+    "topicId": "02",
+    "subtopicId": "four-state",
+    "title": "逻辑相等与全等的四态结果",
+    "difficulty": "medium",
+    "tags": [
+      "four-state"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "SystemVerilog 四态变量 a=4'b10x1，b=4'b1001。表达式 (a == b) 与 (a === b) 依次是什么？",
+    "explanationMd": "== 对这里无法确定的相等关系返回 X；=== 将 X/Z 当作可精确比较的状态，第三位 X 与 0 不同，返回 0。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "0、0"
+      },
+      {
+        "id": "B",
+        "textMd": "X、0"
+      },
+      {
+        "id": "C",
+        "textMd": "X、X"
+      },
+      {
+        "id": "D",
+        "textMd": "1、1"
+      }
+    ],
+    "correctOptionIds": [
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "== 在此没有已知不等位，结果不是确定的 0。",
+      "B": "逻辑相等未知，全等明确不等。",
+      "C": "=== 的结果总为确定的 0 或 1。",
+      "D": "X 不是任意匹配的通配符。"
+    }
+  },
+  {
+    "id": "ORIGINAL-SV-0005",
+    "contentVersion": 1,
+    "type": "multiple_choice",
+    "topicId": "02",
+    "subtopicId": "signed-width",
+    "title": "显式有符号转换",
+    "difficulty": "medium",
+    "tags": [
+      "signed-width"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "所有变量已初始化且不含 X/Z：\n```systemverilog\nlogic signed [7:0] s = -8'sd1;\nlogic        [7:0] u = 8'hff;\n```\n下列表达式哪些为 1？",
+    "explanationMd": "s 的位模式为 11111111，有符号值为 -1；u 同位模式的无符号值为 255。显式转换在这里保留 8 bit，只改变有无符号解释。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "s < 8'sd0"
+      },
+      {
+        "id": "B",
+        "textMd": "u < 8'd0"
+      },
+      {
+        "id": "C",
+        "textMd": "$signed(u) < 8'sd0"
+      },
+      {
+        "id": "D",
+        "textMd": "$unsigned(s) == 8'd255"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "双方有符号，-1<0。",
+      "B": "双方无符号，255<0 为假。",
+      "C": "转换后按 8 位有符号数解释为 -1。",
+      "D": "转换后按 8 位无符号数解释为 255。"
+    }
+  },
+  {
+    "id": "ORIGINAL-SV-0006",
+    "contentVersion": 1,
+    "type": "numeric",
+    "topicId": "02",
+    "subtopicId": "sv-basics",
+    "title": "复制拼接的值",
+    "difficulty": "medium",
+    "tags": [
+      "sv-basics"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "p 为 logic [1:0]，值为 2'b10；y 为 logic [5:0]，由 assign y = {3{p}} 驱动。稳定后把 y 按无符号数解释，十进制值为多少？",
+    "explanationMd": "复制拼接得到 6'b101010，值为 32+8+2=42。复制次数不是算术乘数。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "expectedValue": 42,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ORIGINAL-SV-0007",
+    "contentVersion": 1,
+    "type": "short_answer",
+    "topicId": "02",
+    "subtopicId": "four-state",
+    "title": "casez 与 casex 的未知值掩盖",
+    "difficulty": "medium",
+    "tags": [
+      "four-state"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "四态仿真，sel=2'bx1。求下面 y 的值，再求仅将 casez 改为 casex 后的值，并解释调试风险。\n```systemverilog\nalways_comb begin\n  y = 1'b0;\n  casez (sel)\n    2'b1?: y = 1'b1;\n    default: y = 1'b0;\n  endcase\nend\n```",
+    "explanationMd": "casez 下 y=0：casez 把 Z 与 ? 作为通配状态，但不把 sel 中的 X 当通配。x1 无法匹配要求最高位为 1 的 1?，走 default。改为 casex 后 y=1，因为 X 也成为通配。\n\ncasex 可能把未初始化或冲突产生的 X 掩盖为有效命中。应先查明 X 的来源，并根据设计意图使用精确 case、明确的掩码比较及未知值检查；casez 也会掩盖 Z，不能一概视为安全。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "referenceAnswerMd": "casez 下 y=0：casez 把 Z 与 ? 作为通配状态，但不把 sel 中的 X 当通配。x1 无法匹配要求最高位为 1 的 1?，走 default。改为 casex 后 y=1，因为 X 也成为通配。\n\ncasex 可能把未初始化或冲突产生的 X 掩盖为有效命中。应先查明 X 的来源，并根据设计意图使用精确 case、明确的掩码比较及未知值检查；casez 也会掩盖 Z，不能一概视为安全。",
+    "rubric": [
+      "casez 输出 0，casex 输出 1。",
+      "区分 X 与 Z/? 的通配规则。",
+      "说明 casex 隐藏未知输入的风险。",
+      "指出 casez 仍会把 Z 作为通配，需要结合设计条件使用。"
+    ]
+  },
+  {
+    "id": "ORIGINAL-SV-0008",
+    "contentVersion": 1,
+    "type": "single_choice",
+    "topicId": "02",
+    "subtopicId": "sv-basics",
+    "title": "按位取反与归约操作",
+    "difficulty": "medium",
+    "tags": [
+      "sv-basics"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "a 为 4 bit 四态向量，已知 a=4'b1010，不含 X/Z。(~a, &a, |a, ^a) 依次是什么？",
+    "explanationMd": "~ 保持 4 bit 并逐位取反为 0101；归约 AND 因有 0 得 0；归约 OR 因有 1 得 1；归约 XOR 有偶数个 1 得 0。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "(0101,0,1,0)"
+      },
+      {
+        "id": "B",
+        "textMd": "(0101,1,1,1)"
+      },
+      {
+        "id": "C",
+        "textMd": "(0,0,1,0)"
+      },
+      {
+        "id": "D",
+        "textMd": "(1010,0,1,0)"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "逐位取反与三个归约值均正确。",
+      "B": "归约 AND 与 XOR 均算错。",
+      "C": "把按位取反 ~ 误当成逻辑非 !。",
+      "D": "~ 必须反转每一位。"
+    }
+  },
+  {
+    "id": "ORIGINAL-SV-0009",
+    "contentVersion": 1,
+    "type": "single_choice",
+    "topicId": "02",
+    "subtopicId": "event-scheduling",
+    "title": "异步复位释放是否立即赋值",
+    "difficulty": "medium",
+    "tags": [
+      "event-scheduling"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "理想 RTL 仿真：rst_n 初始为 0 且复位已使 q=0；en=1、d=1 始终稳定。rst_n 在相邻两个时钟上升沿之间从 0 变为 1，没有其他事件。\n```systemverilog\nalways_ff @(posedge clk or negedge rst_n)\n  if (!rst_n) q <= 1'b0;\n  else if (en) q <= d;\n```\n复位释放后、下一时钟沿前的 q，以及下一上升沿 NBA 完成后的 q 是多少？",
+    "explanationMd": "rst_n 上升沿不在敏感事件列表内，所以释放本身不执行进程。下一 posedge clk 执行数据分支。此结论仅描述 RTL 事件语义，不保证物理复位释放满足 recovery/removal。",
+    "commonMistakes": [
+      "忽略题目给出的位宽、时间点或前提。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "0、1"
+      },
+      {
+        "id": "B",
+        "textMd": "1、1"
+      },
+      {
+        "id": "C",
+        "textMd": "0、0"
+      },
+      {
+        "id": "D",
+        "textMd": "X、1"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "释放不触发，下一时钟沿才更新为 1。",
+      "B": "误把复位释放当作敏感事件。",
+      "C": "忽略下一上升沿 en=1 的数据赋值。",
+      "D": "题目给定理想事件及稳定初值，没有引入 X 的条件。"
+    }
   }
 ]
