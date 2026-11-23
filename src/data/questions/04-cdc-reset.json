@@ -1,1 +1,35 @@
-[]
+[
+  {
+    "id": "ORIGINAL-CDC-0001", "contentVersion": 1, "type": "single_choice", "topicId": "04", "subtopicId": "two-flop-synchronizer",
+    "tags": ["CDC", "metastability", "2FF"], "difficulty": "easy", "estimatedMinutes": 2,
+    "title": "两级同步器能保证什么？",
+    "promptMd": "一个在源域寄存的单 bit 状态信号跨入异步目的时钟域。它是保持足够长时间的电平状态，允许目的域存在同步延迟。目的域使用串联的两个触发器，两个触发器由同一个目的时钟驱动，只有第二级输出进入后续逻辑。关于这个 2-FF 同步器，以下哪项描述正确？",
+    "options": [
+      { "id": "A", "textMd": "可以完全消除第一级触发器发生亚稳态的可能性。" },
+      { "id": "B", "textMd": "给第一级提供恢复时间，从而降低亚稳态传播到后续逻辑的概率。" },
+      { "id": "C", "textMd": "同样能保证任意宽度、多 bit 总线的原子一致采样。" },
+      { "id": "D", "textMd": "把输入改成任意宽度的短脉冲后，也保证每次事件被捕获。" }
+    ],
+    "correctOptionIds": ["B"],
+    "optionExplanations": {
+      "A": "错误。异步信号仍可能违反第一级 setup/hold 要求，亚稳态不能被绝对消除。",
+      "B": "正确。第一级发生亚稳态后，到下一级采样前有一段恢复时间；合适的实现可降低亚稳态传播风险。",
+      "C": "错误。各 bit 独立同步可能产生不同延迟，不能保证目的域一次看到同一个源数据字。需要按场景设计握手、异步 FIFO 等方案。",
+      "D": "错误。短脉冲可能完全落在两个目的时钟采样沿之间，第一级没有捕获到事件，两级结构也无法恢复它。"
+    },
+    "explanationMd": "**答案 B。**\n\n1. 异步电平可以在目的时钟采样沿附近变化，第一级可能进入亚稳态。\n2. 后续逻辑只使用第二级输出，给第一级恢复留出时间，从概率上降低异常向后传播的风险。具体可靠性还与器件参数、时钟频率、数据翻转率及布线有关。\n3. 亚稳态风险、事件是否被采到、多 bit 数据是否一致是不同的问题。2-FF 主要降低第一类风险，不能同时解决后两类问题。\n\n题目限定输入是持续足够久的电平，并允许延迟，不要求目的域立即或固定周期看到变化。",
+    "commonMistakes": ["把降低亚稳态传播风险说成彻底消除亚稳态。", "把电平同步、短脉冲传递和多 bit 数据一致性混为一谈。"],
+    "reviewStatus": "verified", "source": { "kind": "self_authored", "evidenceGrade": "none", "questionFidelity": "self_authored", "sourceClaimVerification": "not_applicable" }
+  },
+  {
+    "id": "ORIGINAL-CDC-0002", "contentVersion": 1, "type": "short_answer", "topicId": "04", "subtopicId": "pulse-toggle",
+    "tags": ["CDC", "pulse", "sampling"], "difficulty": "medium", "estimatedMinutes": 5,
+    "title": "快到慢的短脉冲为什么会丢失？",
+    "promptMd": "源时钟为 100 MHz，目的时钟为 25 MHz，两者异步。一个事件在源域只产生一个源周期宽的高脉冲，即持续 10 ns。目的域直接使用 2-FF 同步这个脉冲，没有脉冲展宽或握手。假设复位已完成，初始输入与同步器均为 0。\n\n请回答：\n1. 能否保证每次事件都被目的域捕获？\n2. 给出一组具体的输入高电平区间与目的采样沿，说明可能丢失的原因。\n3. 提出一个可以采用的改进方案，并说明它需要的条件。",
+    "referenceAnswerMd": "**不能保证。**\n\n目的周期为 `1 / 25 MHz = 40 ns`，而高脉冲只有 10 ns。例如输入在 `[0 ns, 10 ns)` 为高，目的时钟上升沿为 `15 ns、55 ns、95 ns……`，则这些采样沿输入均为 0，第一级根本没有捕获高电平，第二级也不会产生事件。这个例子即使忽略亚稳态也会丢失。\n\n一种改进是请求/应答握手：源域把请求保持为有效，直到同步回来的应答确认目的域已经接收；目的域识别新请求后产生单周期事件并返回应答。握手完成前，源域不能无约束地覆盖请求；新事件必须受流控约束，或进入队列。复位及握手状态也需要协调。\n\n也可采用 toggle 同步，但必须限制事件间隔，确保目的域能够观察到每次 toggle；不能宣称它在任意事件速率下都无损。",
+    "rubric": ["明确结论为不能保证，比较 10 ns 脉宽与 40 ns 目的周期。", "给出采样沿全部错过高电平的具体时间例子。", "说明握手保持请求并等待确认，且新事件需要流控；或正确说明其他方案的使用条件。"],
+    "explanationMd": "本题区分**采样遗漏**和**亚稳态传播**。两级同步器降低后者的概率，但目的域从未采到高电平时，增加一级寄存器无法找回事件。方案设计需要同时考虑事件速率、反馈延迟、复位和排队能力。",
+    "commonMistakes": ["只谈亚稳态，不检查脉冲是否跨过目的域采样沿。", "直接使用 toggle 却不限制连续事件间隔。"],
+    "reviewStatus": "verified", "source": { "kind": "self_authored", "evidenceGrade": "none", "questionFidelity": "self_authored", "sourceClaimVerification": "not_applicable" }
+  }
+]

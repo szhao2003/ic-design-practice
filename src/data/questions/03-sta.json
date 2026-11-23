@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "ORIGINAL-STA-0001", "contentVersion": 1, "type": "numeric", "topicId": "03", "subtopicId": "setup-hold",
+    "tags": ["STA", "setup", "slack"], "difficulty": "easy", "estimatedMinutes": 3,
+    "title": "单周期路径的 setup slack",
+    "promptMd": "一条单周期、同频同相、上升沿触发的寄存器到寄存器路径，launch 与 capture 时钟 skew 均按 0 处理：\n\n- 时钟周期：10 ns\n- 发射寄存器 `tCQ,max`：0.8 ns\n- 最大组合逻辑延迟：6.5 ns\n- 接收寄存器 `tsetup`：0.7 ns\n- Setup clock uncertainty：0.5 ns，作为可用时序预算的扣减\n\n忽略其他延迟，使用下一个上升沿捕获数据。求 setup slack，正数表示满足时序。请输入数值，可选择 ns 或 ps。",
+    "expectedValue": 1.5, "unit": "ns", "defaultUnit": "ns", "acceptedUnits": { "ns": 1, "ps": 0.001 }, "absoluteTolerance": 0.001,
+    "explanationMd": "**答案：+1.5 ns，也就是 +1500 ps。**\n\n1. 以发射沿为 0，数据最晚到达接收寄存器 D 端的时刻为 `arrival = 0.8 + 6.5 = 7.3 ns`。\n2. 接收端在 10 ns 的时钟沿捕获，需预留 setup 和 uncertainty：`required = 10 - 0.7 - 0.5 = 8.8 ns`。\n3. `setup slack = required - arrival = 8.8 - 7.3 = +1.5 ns`。\n\n本题已规定 skew 为 0，uncertainty 扣减可用预算。结果为正表示在这些假设下满足 setup 要求，不能据此判断 hold 是否满足。允许误差为 0.001 ns（1 ps）。",
+    "commonMistakes": ["漏扣 uncertainty，误算成 2.0 ns。", "把 slack 定义成 arrival - required，导致正负号反了。", "把 setup 通过误认为 hold 也必然通过。"],
+    "reviewStatus": "verified", "source": { "kind": "self_authored", "evidenceGrade": "none", "questionFidelity": "self_authored", "sourceClaimVerification": "not_applicable" }
+  }
+]

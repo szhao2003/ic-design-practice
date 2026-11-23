@@ -1,0 +1,146 @@
+import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction } from 'idb';
+import { planBackupMerge, type BackupData, type JsonValue, type MutableRecord } from '../domain/backup-merge';
+import type { Question } from '../domain/question-schema';
+import { createRound, type LearningEvent, type PracticeRound } from '../domain/practice';
+import { rebuildProgress, type ReviewProgress } from '../domain/review';
+import { finishMock, type MockSession } from '../domain/mock-session';
+import { canonical, type QuestionSnapshot } from '../domain/snapshots';
+import { storedRoundSchema, validateBackup, type StoredRound } from './backup-schema';
+
+interface LearningDB extends DBSchema {
+  events: { key: string; value: LearningEvent };
+  snapshots: { key: string; value: QuestionSnapshot };
+  records: { key: string; value: MutableRecord };
+  sessions: { key: string; value: MockSession };
+  progress: { key: string; value: ReviewProgress };
+  metadata: { key: string; value: number };
+}
+const tables = ['events', 'snapshots', 'records', 'sessions', 'progress', 'metadata'] as const;
+export const emptyBackup = (): BackupData => ({ schemaVersion: 1, events: [], snapshots: [], records: [], sessions: [] });
+export type LearningState = { data: BackupData; revision: number; progress: ReviewProgress[] };
+export type ImportPreview = { data: BackupData; mode: 'merge' | 'replace'; expectedRevision: number; unknownIds: string[] };
+
+function recoverExpired(data: BackupData): BackupData {
+  const events = [...data.events];
+  const now = new Date().toISOString();
+  const sessions = data.sessions.map((session) => {
+    if (session.status !== 'active' || !session.deadlineAt || Date.parse(session.deadlineAt) > Date.parse(now)) return session;
+    const result = finishMock(session, data.snapshots, now); events.push(...result.events); return result.session;
+  });
+  return validateBackup({ ...data, events, sessions });
+}
+
+export class LearningStore {
+  private connection?: Promise<IDBPDatabase<LearningDB>>;
+  constructor(private readonly name = 'ic-design-practice', private readonly beforeCommit?: () => void) {}
+  private db() {
+    this.connection ??= new Promise<IDBPDatabase<LearningDB>>((resolve, reject) => {
+      let blocked = false;
+      void openDB<LearningDB>(this.name, 1, {
+        upgrade(db) { for (const table of tables) db.createObjectStore(table); },
+        blocking: () => { void this.close(); },
+        blocked() { blocked = true; reject(new Error('数据库升级被其他页面阻止，请关闭旧页面后重试。')); },
+      }).then((db) => { if (blocked) db.close(); else resolve(db); }, reject);
+    }).catch((error: unknown) => { this.connection = undefined; throw error; });
+    return this.connection;
+  }
+  async close() { const connection = this.connection; this.connection = undefined; (await connection)?.close(); }
+  async read(): Promise<LearningState> {
+    const db = await this.db();
+    const tx = db.transaction(tables, 'readonly');
+    const [events, snapshots, records, sessions, revision] = await Promise.all([
+      tx.objectStore('events').getAll(), tx.objectStore('snapshots').getAll(), tx.objectStore('records').getAll(), tx.objectStore('sessions').getAll(), tx.objectStore('metadata').get('revision'),
+    ]);
+    await tx.done;
+    return { data: { schemaVersion: 1, events, snapshots, records, sessions }, revision: revision ?? 0, progress: rebuildProgress(events) };
+  }
+  private async write<T>(work: (tx: IDBPTransaction<LearningDB, typeof tables, 'readwrite'>) => Promise<T>): Promise<T> {
+    const db = await this.db();
+    const tx = db.transaction(tables, 'readwrite');
+    // 同时捕获事务错误，避免故障注入/容量不足造成未处理的 rejection。
+    const done = tx.done.catch((error: unknown) => { throw error; });
+    void done.catch(() => {});
+    try {
+      const result = await work(tx);
+      const revision = (await tx.objectStore('metadata').get('revision')) ?? 0;
+      await tx.objectStore('metadata').put(revision + 1, 'revision');
+      this.beforeCommit?.();
+      await done;
+      return result;
+    } catch (error) {
+      try { tx.abort(); } catch { /* 事务可能已经因底层错误中止。 */ }
+      await done.catch(() => {});
+      throw error;
+    }
+  }
+  async begin(question: Question, restart = false): Promise<StoredRound> {
+    return this.write(async (tx) => {
+      const previous = await tx.objectStore('records').get(`drafts/${question.id}`);
+      if (!restart && previous && !previous.deleted) return storedRoundSchema.parse(previous.value);
+      const round = createRound(crypto.randomUUID(), question, new Date().toISOString());
+      const old = await tx.objectStore('snapshots').get(round.snapshot.key);
+      if (old && canonical(old) !== canonical(round.snapshot)) throw new Error('同版本题目内容发生变化，请先修正题库版本。');
+      await tx.objectStore('snapshots').put(round.snapshot, round.snapshot.key);
+      const saved: StoredRound = { round, revision: previous && !previous.deleted ? storedRoundSchema.parse(previous.value).revision + 1 : 0 };
+      await tx.objectStore('records').put({ id: question.id, namespace: 'drafts', value: JSON.parse(JSON.stringify(saved)) as JsonValue, deleted: false, updatedAt: round.startedAt }, `drafts/${question.id}`);
+      return saved;
+    });
+  }
+  async change(questionId: string, expected: StoredRound, transform: (round: PracticeRound) => PracticeRound): Promise<StoredRound> {
+    return this.write(async (tx) => {
+      const record = await tx.objectStore('records').get(`drafts/${questionId}`);
+      if (!record || record.deleted) throw new Error('练习已被清空或替换，请重新载入。');
+      const previous = storedRoundSchema.parse(record.value);
+      if (previous.revision !== expected.revision || previous.round.id !== expected.round.id || canonical(previous.round) !== canonical(expected.round)) throw new Error('其他页面已更新本题，请重新载入后继续。');
+      const round = transform(structuredClone(previous.round));
+      if (round.id !== previous.round.id || canonical(round.snapshot) !== canonical(previous.round.snapshot)) throw new Error('当前轮次或快照不能被修改。');
+      for (const event of round.events) {
+        const existing = await tx.objectStore('events').get(event.id);
+        if (existing && canonical(existing) !== canonical(event)) throw new Error('作答历史冲突，未保存此次更改。');
+        if (!existing) await tx.objectStore('events').add(event, event.id);
+      }
+      const events = await tx.objectStore('events').getAll();
+      const progress = rebuildProgress(events.filter((item) => item.questionId === questionId))[0];
+      if (progress) await tx.objectStore('progress').put(progress, questionId);
+      const saved = { round, revision: previous.revision + 1 };
+      const now = new Date().toISOString();
+      const updatedAt = new Date(Math.max(Date.parse(now), Date.parse(record.updatedAt) + 1)).toISOString();
+      await tx.objectStore('records').put({ ...record, value: JSON.parse(JSON.stringify(saved)) as JsonValue, updatedAt }, `drafts/${questionId}`);
+      return saved;
+    });
+  }
+  async saveRecord(namespace: Exclude<MutableRecord['namespace'], 'drafts'>, id: string, value: JsonValue, deleted = false) {
+    return this.write(async (tx) => {
+      const key = `${namespace}/${id}`;
+      const previous = await tx.objectStore('records').get(key);
+      const updatedAt = new Date(Math.max(Date.now(), previous ? Date.parse(previous.updatedAt) + 1 : 0)).toISOString();
+      await tx.objectStore('records').put({ namespace, id, value, deleted, updatedAt }, key);
+    });
+  }
+  async exportJSON(): Promise<string> {
+    const state = await this.read();
+    return JSON.stringify({ ...state.data, exportedAt: new Date().toISOString(), bankVersion: '0.2.0' }, null, 2);
+  }
+  async previewImport(input: unknown, mode: 'merge' | 'replace', currentIds: string[]): Promise<ImportPreview> {
+    const incoming = validateBackup(input);
+    const local = await this.read();
+    const plan = planBackupMerge(mode === 'replace' ? emptyBackup() : local.data, incoming);
+    if (!plan.ok) throw new Error(`导入冲突：${plan.conflicts.map((item) => `${item.kind} ${item.id}`).join('；')}`);
+    const data = recoverExpired(validateBackup(plan.data));
+    return { data, mode, expectedRevision: local.revision, unknownIds: [...new Set(data.snapshots.map((item) => item.question.id).filter((id) => !currentIds.includes(id)))] };
+  }
+  async applyImport(preview: ImportPreview) {
+    const data = recoverExpired(validateBackup(preview.data));
+    const progress = rebuildProgress(data.events);
+    await this.write(async (tx) => {
+      if (((await tx.objectStore('metadata').get('revision')) ?? 0) !== preview.expectedRevision) throw new Error('预览之后本地数据发生变化，请重新预检。');
+      for (const table of ['events', 'snapshots', 'records', 'sessions', 'progress'] as const) await tx.objectStore(table).clear();
+      for (const event of data.events) await tx.objectStore('events').put(event, event.id);
+      for (const snapshot of data.snapshots) await tx.objectStore('snapshots').put(snapshot, snapshot.key);
+      for (const record of data.records) await tx.objectStore('records').put(record, `${record.namespace}/${record.id}`);
+      for (const session of data.sessions) await tx.objectStore('sessions').put(session, session.id);
+      for (const item of progress) await tx.objectStore('progress').put(item, item.questionId);
+    });
+  }
+  async clear() { const state = await this.read(); await this.applyImport({ data: emptyBackup(), expectedRevision: state.revision, mode: 'replace', unknownIds: [] }); }
+}

@@ -4,4 +4,9 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   base: process.env.VITE_BASE_PATH || '/ic-design-practice/',
+  build: {
+    rollupOptions: {
+      output: { manualChunks: { markdown: ['react-markdown'], validation: ['zod'] } },
+    },
+  },
 });
