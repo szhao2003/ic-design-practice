@@ -24,7 +24,7 @@
 | prefix_mod5 / ADAPTED-YHC-RTL-0002 | 穷举 1024 个十位输入串，以完整整数 `%5` 检查每个前缀，插入停顿、空前缀及有效零、逐串复位 |
 | popcount8 / ADAPTED-YHC-RTL-0004 | 穷举 256 个输入，用逐位计数模型比较，连续输入、无效保持、复位、全零/全一 |
 
-本机未安装 iverilog/vvp，运行 `node scripts/test-rtl.mjs --if-available` 的真实结果是 **SKIP 仿真、7 份网页代码一致性通过**。CI 使用严格模式，无跳过分支；执行结果以对应 Actions 日志为准。本地不能被写作 HDL 仿真通过。
+本机未安装 iverilog/vvp，运行 `node scripts/test-rtl.mjs --if-available` 的真实结果是 **SKIP 仿真、7 份网页代码一致性通过**。CI 使用严格模式，无跳过分支；[8bba4ef 的 Actions 运行](https://github.com/szhao2003/ic-design-practice/actions/runs/45251325569) 已实际完成：七个参考模块 7/7 仿真通过，构建与 Pages 部署均为 success。本地不能被写作 HDL 仿真通过。
 
 这些 TB 检查题设的二态/数字功能，不模拟模拟亚稳态、不提供 MTBF 实测，也未执行综合、门级仿真、CDC 静态签核或物理 STA。Arbiter 是纯组合块，没有复位接口；Counter 不要求非法态恢复；toggle 不测试违反题设的单域复位或任意快速事件。网页不运行用户提交的 RTL。
 
@@ -43,10 +43,10 @@
 
 ## 自动检查与发布
 
-- TypeScript、正式题库校验、单元/存储/快照/备份/模拟考试回归与 Vite 构建在本机执行。
+- TypeScript、正式题库校验、197 项单元/存储/快照/备份/模拟考试回归与 Vite 构建在本机通过；CI 重新执行同样的检查并通过。
 - 教学辅助校验：74 题，0 错误、0 Review Warning；这不替代上面的逐题技术复查。
 - 构建存在原有第三方注释与主 bundle 超过 500 kB 的提示，构建成功；未为本次内容升级扩充依赖。
-- 发布目标：[GitHub Pages](https://szhao2003.github.io/ic-design-practice/)。[Actions](https://github.com/szhao2003/ic-design-practice/actions) 是严格 HDL 检查和部署的执行记录；发布后的结果在后续记录中追加。
+- 发布目标：[GitHub Pages](https://szhao2003.github.io/ic-design-practice/)。[Actions](https://github.com/szhao2003/ic-design-practice/actions) 是严格 HDL 检查和部署的执行记录；代码提交 8bba4ef 的严格检查与发布均已成功；上方保留本次固定运行链接。
 
 ## 长期维护与未覆盖项
 
