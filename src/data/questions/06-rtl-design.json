@@ -38,5 +38,166 @@
       "低位和未扩位，丢失跨阶段进位。",
       "sum 有效时刻与 out_valid 错位。"
     ]
+  },
+  {
+    "id": "ORIGINAL-RTL-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "counter",
+    "type": "rtl_coding",
+    "title": "带单周期溢出脉冲的模十计数器",
+    "promptMd": "设计 mod10_counter：clk、同步低有效 rst_n、en；输出 count[3:0] 和 tick。先复位为 0。en=1 才从 0 递增到 9 后回 0；en=0 保持 count。仅在一次成功的 9→0 更新后 tick=1，且下一时钟沿必须清零，即使下一沿 en=0。不要求非法状态恢复。给出可综合 SystemVerilog。",
+    "explanationMd": "count 的使能保持与 tick 的每拍清零必须分开。先默认清 tick，再在 en 且旧 count=9 时置位，才能避免后续停顿拉长脉冲。",
+    "difficulty": "medium",
+    "tags": [
+      "counter"
+    ],
+    "estimatedMinutes": 15,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "把 tick 清零也放在 en 内，停顿时脉冲被拉长。",
+      "比较新 count 而不是当前寄存器值，导致脉冲偏一拍。"
+    ],
+    "referenceAnswerMd": "```systemverilog\nmodule mod10_counter (\n  input logic clk, rst_n, en,\n  output logic [3:0] count,\n  output logic tick\n);\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin count <= 4'd0; tick <= 1'b0; end\n    else begin\n      tick <= 1'b0;\n      if (en) begin\n        if (count == 4'd9) begin\n          count <= 4'd0; tick <= 1'b1;\n        end else count <= count + 4'd1;\n      end\n    end\n  end\nendmodule\n```\n\n每次有效使能沿从 0…9 计数，9→0 的沿更新后 tick=1；下一沿默认清零，即使 en=0 也不延长脉冲。复位优先于 en。正常使用假定先经历同步复位，不要求非法状态恢复。",
+    "rubric": [
+      "同步复位清 count 和 tick，且优先。",
+      "en=0 保持 count，en=1 正确模十循环。",
+      "tick 仅由 en && count==9 产生。",
+      "tick 每个非复位沿默认清零，停顿不延长脉冲。"
+    ]
+  },
+  {
+    "id": "ORIGINAL-RTL-0002",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "arbiter",
+    "type": "rtl_coding",
+    "title": "四路固定优先级仲裁器",
+    "promptMd": "设计纯组合 priority_arbiter：输入 req[3:0]（只含 0/1）；输出 grant[3:0] 和 valid。索引 0 优先级最高；有请求时只授权最高优先级一路，无请求时输出全零。给出 RTL、req=1010 的结果，并说明是否保证公平性。",
+    "explanationMd": "默认赋值与 if/else 优先链同时保证无锁存器和至多一路授权。固定优先级实现简单，但不提供轮转仲裁的公平性。",
+    "difficulty": "medium",
+    "tags": [
+      "arbiter"
+    ],
+    "estimatedMinutes": 15,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "使用独立 if 导致后写覆盖优先级。",
+      "漏写无请求默认输出而推断锁存器。",
+      "把固定优先级误认为公平调度。"
+    ],
+    "referenceAnswerMd": "```systemverilog\nmodule priority_arbiter (\n  input logic [3:0] req,\n  output logic [3:0] grant,\n  output logic valid\n);\n  always_comb begin\n    grant = 4'b0000;\n    if      (req[0]) grant = 4'b0001;\n    else if (req[1]) grant = 4'b0010;\n    else if (req[2]) grant = 4'b0100;\n    else if (req[3]) grant = 4'b1000;\n    valid = |req;\n  end\nendmodule\n```\n\nreq=1010 时 grant=0010，valid=1；req=0000 时全零。if/else 优先链保证至多一个授权，默认赋值避免锁存器。固定优先级不保证低优先级公平性，持续的高优先级请求可使低优先级饥饿。输入限定二值，不在本题定义 X/Z 策略。",
+    "rubric": [
+      "默认输出全零，组合赋值完整。",
+      "使用优先链或等价逻辑，只授权最低索引请求。",
+      "1010→0010 且 valid=1。",
+      "指出固定优先级可能使低优先级饥饿。"
+    ]
+  },
+  {
+    "id": "ORIGINAL-RTL-0003",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "fsm",
+    "type": "short_answer",
+    "title": "允许重叠的 101 序列检测",
+    "promptMd": "每个时钟沿接收一个串行二值输入位，检测 101，允许重叠。复位后无已匹配前缀。给出基于已匹配前缀的状态转移表（含命中标志），并列出输入 10101 时每一位处理后的命中结果。命中按采样后登记的一拍脉冲理解。",
+    "explanationMd": "重叠检测在命中后不能一律返回空前缀：101 的末尾 1 已经是下一次匹配的有效前缀。因此输入 10101 可以命中两次。",
+    "difficulty": "medium",
+    "tags": [
+      "fsm"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "命中后返回 S0，遗漏第 5 位的重叠命中。",
+      "未定义连续输入 1 时保留前缀 1。"
+    ],
+    "referenceAnswerMd": "定义状态 S0=无匹配前缀，S1=末尾匹配 1，S2=末尾匹配 10。\n\n```text\n| 当前状态 | 输入 0：次态/命中 | 输入 1：次态/命中 |\n|---|---|---|\n| S0 | S0/0 | S1/0 |\n| S1 | S2/0 | S1/0 |\n| S2 | S0/0 | S1/1 |\n```\n\n在 S2 收到 1 时完成 101，并保留末尾的 1 作为下一次前缀，所以次态 S1。输入 1、0、1、0、1 的命中序列为 0、0、1、0、1（第 3、5 位命中）。命中在每次采样处理后登记为一拍脉冲；复位状态 S0、命中 0。",
+    "rubric": [
+      "定义无前缀、1、10 三个状态。",
+      "给出每个状态两个输入的完整转移和命中。",
+      "10 后收到 1 命中且转到前缀 1，保留重叠。",
+      "10101 在第 3、5 位命中。"
+    ]
+  },
+  {
+    "id": "ORIGINAL-RTL-0004",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "divider",
+    "type": "numeric",
+    "title": "偶数分频的半周期计数值",
+    "promptMd": "输入时钟 100 MHz，要产生 10 MHz、50% 占空比方波。输出每经过 H 个输入上升沿翻转一次，半周期计数器从 0 计到 H-1 后清零并翻转。忽略复位启动相位，问计数器比较的终值 H-1 为多少？只填写整数。",
+    "explanationMd": "完整周期包含两次翻转，fout=fin/(2H)。H=100/(2×10)=5，因此比较终值为 4。该输出作为内部时钟使用还涉及生成时钟约束；本题只计算翻转计数。",
+    "difficulty": "medium",
+    "tags": [
+      "divider"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "完整周期只计算一次翻转。",
+      "把 H=5 直接作为从零计数的终值。"
+    ],
+    "expectedValue": 4,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ORIGINAL-RTL-0005",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "serial-parallel",
+    "type": "waveform_analysis",
+    "title": "串行移位与第八位的 NBA",
+    "promptMd": "shift 为 8 bit，初始 0。连续 E0…E7 每沿接收一位，输入依次 1、0、1、1、0、0、1、0。每沿执行 shift <= {shift[6:0], serial_in}。byte_valid 仅在每组第八位采样后为 1 一拍，byte_data 应在同沿登记完整字节。列出更新后的 shift、byte_valid，并解释在 E7 写 byte_data <= shift 的问题。",
+    "explanationMd": "非阻塞赋值读取沿前状态。登记完整字节时必须把本沿 serial_in 拼入，而不是读取尚未更新的 shift；首位最终移动到最高位。",
+    "difficulty": "medium",
+    "tags": [
+      "serial-parallel"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "第八沿用旧 shift 登记，遗漏最后一位。",
+      "混淆首位在 MSB 还是 LSB 的移位方向。"
+    ],
+    "referenceAnswerMd": "```text\n| 沿 | 输入 | 更新后的 shift | byte_valid |\n|---|---|---|---|\n| E0 | 1 | 00000001 | 0 |\n| E1 | 0 | 00000010 | 0 |\n| E2 | 1 | 00000101 | 0 |\n| E3 | 1 | 00001011 | 0 |\n| E4 | 0 | 00010110 | 0 |\n| E5 | 0 | 00101100 | 0 |\n| E6 | 1 | 01011001 | 0 |\n| E7 | 0 | 10110010 | 1 |\n```\n\n第一个输入最终到达最高位，所以字节为 0xB2。byte_data 必须用包含第八位的新拼接值，或等价的新状态；若写成 byte_data <= shift，则 NBA 读取旧 shift，得到 0x59。",
+    "rubric": [
+      "八个移位值依次 01、02、05、0B、16、2C、59、B2。",
+      "byte_valid 仅 E7 为 1。",
+      "最终字节 B2，识别首位最终在 MSB。",
+      "说明旧 shift 会得到 59，正确值应使用新拼接。"
+    ]
   }
 ]

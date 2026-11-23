@@ -31,5 +31,205 @@
       "忽略首个读沿与最后写沿的位置，只用平均速率估算。",
       "把实际异步 FIFO 的幂次容量或指针同步余量混入已明确排除的条件。"
     ]
+  },
+  {
+    "id": "ORIGINAL-FIFO-0001",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "gray-code",
+    "type": "numeric",
+    "title": "二进制指针转换为 Gray",
+    "promptMd": "异步 FIFO 指针宽度为 4 bit（包括环绕位）。当前二进制指针 b=4'b1011，采用 g=b XOR (b>>1)，右移补零。把 4 bit Gray 结果按无符号十进制填写。",
+    "explanationMd": "b>>1=0101，1011 XOR 0101=1110，按无符号十进制为 14。Gray 相邻计数单 bit 变化仍需要正确同步及跨位时延约束，不能直接拿 Gray 数值当 FIFO 占用量。",
+    "difficulty": "medium",
+    "tags": [
+      "gray-code"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "把 Gray 编码的数值直接作为占用量。",
+      "右移时错误符号扩展，或漏算最高位。"
+    ],
+    "expectedValue": 14,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ORIGINAL-FIFO-0002",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "full-empty",
+    "type": "single_choice",
+    "title": "带环绕位的同步 FIFO 满空判定",
+    "promptMd": "深度 8 的同步 FIFO，读写指针都是 4 bit 二进制，低 3 bit 为地址、最高位为环绕位，计数按模 16 递增；初始两指针均为 0，控制保证占用在 0…8。当前 rptr=4'b0011，wptr=4'b1011。这两个当前指针表示什么？",
+    "explanationMd": "低 3 bit 地址相同，环绕位相反，写指针比读指针前进 8 项，所以是满。空要求完整 4 bit 相同。此题是二进制当前指针，不是异步 FIFO 的 next-Gray 比较公式。",
+    "difficulty": "medium",
+    "tags": [
+      "full-empty"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "仅比较地址位，忽略环绕位。",
+      "将二进制指针规则套成异步 next-Gray 比较。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "空"
+      },
+      {
+        "id": "B",
+        "textMd": "满"
+      },
+      {
+        "id": "C",
+        "textMd": "恰有 1 项"
+      },
+      {
+        "id": "D",
+        "textMd": "仅凭指针完全无法判断"
+      }
+    ],
+    "correctOptionIds": [
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "只比较地址忽略环绕位会误判为空。",
+      "B": "模 16 差值为 8，达到容量。",
+      "C": "1011 与 0011 的数值差为 8，不是 1。",
+      "D": "题目已经给定合法占用范围和完整二进制指针。"
+    }
+  },
+  {
+    "id": "ORIGINAL-FIFO-0003",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "fifo-depth",
+    "type": "waveform_analysis",
+    "title": "同步 FIFO 同沿读写与边界",
+    "promptMd": "深度 3 的同步 FIFO，E0 前占用 1。每个沿按沿前状态分别决定：write_accept=wr_en && !full，read_accept=rd_en && !empty；不使用旁路或前瞻。E0…E3 的 (wr_en,rd_en) 依次为 (1,1)、(1,0)、(1,0)、(1,1)。列出成功读写及更新后占用；说明 E0 读到旧队头还是本沿新数据。",
+    "explanationMd": "沿前占用依次为 1、1、2、3。每沿按成功写数减成功读数更新，占用结果为 1、2、3、2。E3 满态只接受读，不允许同沿读为写腾出即时许可；E0 读出原有队头。",
+    "difficulty": "medium",
+    "tags": [
+      "fifo-depth"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "在本题禁止前瞻的条件下，允许满态同时读写。",
+      "把 E0 的读值误当成本沿新写入数据。"
+    ],
+    "referenceAnswerMd": "```text\n| 沿 | 成功写/读 | 更新后占用 |\n|---|---|---|\n| E0 | 写、读 | 1 |\n| E1 | 仅写 | 2 |\n| E2 | 仅写 | 3 |\n| E3 | 仅读 | 2 |\n```\n\n按沿前状态决定是否接受；E3 沿前已满，写被拒绝，读被接受。E0 的读返回原有最老数据，新写数据排到队尾。本题不允许满时同沿读为写腾出即时许可，也不允许空时直通。",
+    "rubric": [
+      "E0 成功读写，占用仍为 1，读旧队头。",
+      "E1、E2 均仅写，占用依次 2、3。",
+      "E3 满态拒绝写、接受读，占用 2。",
+      "明确采用沿前状态，无前瞻/旁路。"
+    ]
+  },
+  {
+    "id": "ORIGINAL-FIFO-0004",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "fifo-read-mode",
+    "type": "single_choice",
+    "title": "标准读模式与 FWFT 的有效时刻",
+    "promptMd": "比较两个 FIFO 的接口契约：标准同步读模式在 E0 接受 rd_en 后，于 E0 后输出寄存器更新出本次读值；FWFT 模式在 !empty 时，沿前 dout 已有效表示当前队头，接受读表示弹出。忽略额外输出流水级。若 E0 前队列非空，以下哪个正确？",
+    "explanationMd": "标准读模式在本题中由读请求触发输出更新；FWFT 在非空时已呈现队头，读操作表示消费它。必须遵循具体 IP 的 valid/empty 和延迟说明，不能把一种接口时序套到另一种。",
+    "difficulty": "medium",
+    "tags": [
+      "fifo-read-mode"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "将标准同步读延迟套用到 FWFT。",
+      "在 empty=1 时仍把 dout 当成有效新数据。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "两种模式都必须先发读请求，队头才可能有效"
+      },
+      {
+        "id": "B",
+        "textMd": "FWFT 在 E0 前非空时就可展示队头，E0 成功读消费该队头"
+      },
+      {
+        "id": "C",
+        "textMd": "FWFT 在 empty=1 时仍保证 dout 是有效新数据"
+      },
+      {
+        "id": "D",
+        "textMd": "标准模式在 E0 前必然已输出本次待读数据"
+      }
+    ],
+    "correctOptionIds": [
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "与题目给定 FWFT 契约相反。",
+      "B": "符合非空时预先呈现、读使队列前移的定义。",
+      "C": "空状态下不能据 dout 判断存在有效队头。",
+      "D": "标准模式的本次值是在 E0 接受读后才更新。"
+    }
+  },
+  {
+    "id": "ORIGINAL-FIFO-0005",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "sram-bram",
+    "type": "short_answer",
+    "title": "单端口 RAM 写模式的区别",
+    "promptMd": "某同步单端口 RAM 的三种模式按如下定义：WRITE_FIRST 返回本次新写值；READ_FIRST 返回被覆盖的旧存储值；NO_CHANGE 保持输出。原地址内容 0x12，本次写 0xA5，沿前输出 0x3C。分别给出写沿后的输出和地址内容，并说明能否据此推断双端口冲突结果。",
+    "explanationMd": "RAM 内容更新和输出端口更新是两件事。READ_FIRST 的旧存储内容 0x12 与 NO_CHANGE 保持的旧输出 0x3C 不同；双端口冲突行为需要独立核查。",
+    "difficulty": "medium",
+    "tags": [
+      "sram-bram"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "把旧存储值和旧输出值混为一谈。",
+      "以为 NO_CHANGE 表示不执行写入。"
+    ],
+    "referenceAnswerMd": "假定单端口、同一有效写沿，原地址内容为 0x12，本次写入 0xA5，沿前输出为 0x3C：WRITE_FIRST 输出 0xA5，READ_FIRST 输出旧存储值 0x12，NO_CHANGE 输出保持 0x3C。写入后该地址内容在三种情况下都为 0xA5。\n\n这些是题目给定的单端口契约，不能据此推断双端口同时同地址碰撞的结果。实际器件的端口模式、时钟关系、字节使能、输出寄存器及碰撞限制需查对应 IP 文档。",
+    "rubric": [
+      "输出依次为 A5、12、3C。",
+      "三种模式的地址内容都更新为 A5。",
+      "区分旧存储值和旧输出值。",
+      "双端口碰撞需另查器件规范，不能直接推广。"
+    ]
   }
 ]

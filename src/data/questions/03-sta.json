@@ -220,5 +220,93 @@
       "说明使能相位及复位/模式边界需要证明。",
       "解释 E2 发射的新数据可能破坏旧数据 hold，须核对工具边沿选择。"
     ]
+  },
+  {
+    "id": "ORIGINAL-STA-0007",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "sdc",
+    "type": "numeric",
+    "title": "外部输入路径的 setup 裕量",
+    "promptMd": "外部器件在参考时钟 0 ns 发射数据。用 input delay,max=2.0 ns 表示数据最晚到达本芯片输入端口的时间，已含外部 tCQ 与板级延迟。端口到内部寄存器 D 的最大延迟 3.1 ns；捕获沿到达内部寄存器 CK 为 6.5 ns；setup=0.4 ns，setup uncertainty=0.2 ns（从 required 扣除）。无其他延迟，求 setup slack，单位 ns。",
+    "explanationMd": "arrival=2.0+3.1=5.1 ns；required=6.5-0.4-0.2=5.9 ns；setup slack=0.8 ns。外部 tCQ 和板级延迟已在 input delay 内，不应再加一次。",
+    "difficulty": "medium",
+    "tags": [
+      "sdc"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "把 input delay 当成芯片内部组合延迟。",
+      "重复计入外部 tCQ 或板级延迟。"
+    ],
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    },
+    "absoluteTolerance": 0.001,
+    "expectedValue": 0.8
+  },
+  {
+    "id": "ORIGINAL-STA-0008",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "skew-jitter",
+    "type": "multiple_choice",
+    "title": "时钟不确定度对裕量的影响",
+    "promptMd": "同一时钟的单周期 setup 与同沿 hold，固定实际发射/捕获时刻和数据延迟。规定 setup uncertainty 从 setup required time 扣除；hold uncertainty 加到 hold required time。以下哪些正确？",
+    "explanationMd": "在本题定义下，setup slack=required-arrival，hold slack=arrival-required。增大相应 uncertainty 都会减少对应裕量；增加 uncertainty 本身不会增加数据路径物理延迟，也不保证消除 CDC 亚稳态。",
+    "difficulty": "medium",
+    "tags": [
+      "skew-jitter"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "把 hold uncertainty 的裕量方向算反。",
+      "把约束预算当成已插入的物理延迟或 CDC 防护。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "setup uncertainty 增加 0.1 ns，setup slack 减少 0.1 ns"
+      },
+      {
+        "id": "B",
+        "textMd": "hold uncertainty 增加 0.1 ns，hold slack 减少 0.1 ns"
+      },
+      {
+        "id": "C",
+        "textMd": "增加 uncertainty 会直接插入数据延迟单元"
+      },
+      {
+        "id": "D",
+        "textMd": "设置足够大的 uncertainty 就不再需要 CDC 同步器"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "required 减少同样数值。",
+      "B": "required 增加同样数值，hold slack 相应减少。",
+      "C": "约束预算本身不是物理电路；题目还排除了重新优化。",
+      "D": "时序预算不能代替跨域协议和亚稳态防护。"
+    }
   }
 ]

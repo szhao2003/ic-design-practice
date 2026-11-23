@@ -78,5 +78,180 @@
       "把 E2 的 DATA_A 当成 HADDR=0x104 对应的数据。",
       "看到 E3 的 IDLE 就否认 B 的数据完成。"
     ]
+  },
+  {
+    "id": "ORIGINAL-AXI-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "type": "multiple_choice",
+    "title": "AXI 单通道背压时必须保持什么",
+    "promptMd": "AXI4 单个传输通道，发送端已有一个待发送 beat。所有握手在时钟上升沿进行。以下哪些正确？这里的 payload 包括该通道与该 beat 关联的数据和控制字段。",
+    "explanationMd": "传输只在沿上 VALID 与 READY 同为 1 时发生。发送端不能等待 READY 才提出 VALID；已提出但未接受的 beat 必须保持 VALID 与 payload。READY 可以先低后高，单凭 VALID=1 不能计作已传输。",
+    "difficulty": "medium",
+    "tags": [
+      "axi"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "背压期间更换 payload 或撤回 VALID。",
+      "发送端等 READY 才拉 VALID，造成握手死锁风险。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "VALID=1、READY=0 等待期间，发送端必须保持该 beat 的 payload"
+      },
+      {
+        "id": "B",
+        "textMd": "已有数据时发送端可以坚持等 READY=1 才首次拉高 VALID"
+      },
+      {
+        "id": "C",
+        "textMd": "握手沿 VALID=READY=1 表示该 beat 被接受"
+      },
+      {
+        "id": "D",
+        "textMd": "未握手时可以撤回 VALID 再换另一笔数据"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "背压不能改变待接受 beat 的内容。",
+      "B": "VALID 的提出不得依赖 READY，否则可能死锁。",
+      "C": "这是通道的沿上握手条件。",
+      "D": "VALID 必须保持到该 beat 握手。"
+    }
+  },
+  {
+    "id": "ORIGINAL-APB-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "apb",
+    "type": "waveform_analysis",
+    "title": "APB 等待周期的完成边沿",
+    "promptMd": "APB3 写传输，E0、E1、E2 表示各周期末的上升沿。E0 沿前为 SETUP（PSEL=1、PENABLE=0），E1 沿前为 ACCESS 且 PREADY=0，E2 沿前仍为 ACCESS 且 PREADY=1。地址、方向及写数据始终稳定。无下一笔传输。在哪个沿完成？从 SETUP 周期开始共用了几个时钟周期？E2 后控制如何变化？",
+    "explanationMd": "APB 在 ACCESS 且 PREADY 为高的周期末完成。SETUP 固定占一周期，PREADY 为低则保持 ACCESS；本题共一个准备周期、一个等待周期和一个完成周期。",
+    "difficulty": "medium",
+    "tags": [
+      "apb"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "在 SETUP 就因 PREADY 高提前完成。",
+      "把等待周期漏出总周期数。",
+      "等待时改变地址或写数据。"
+    ],
+    "referenceAnswerMd": "```text\n| 沿前阶段 | PSEL | PENABLE | PREADY | 本沿是否完成 |\n|---|---|---|---|---|\n| E0：SETUP | 1 | 0 | 任意 | 否 |\n| E1：ACCESS 等待 | 1 | 1 | 0 | 否 |\n| E2：ACCESS 完成 | 1 | 1 | 1 | 是 |\n```\n\n一次传输占一个 SETUP 周期和两个 ACCESS 周期，共 3 个 PCLK 周期。等待期间地址、方向和写数据保持不变。无后续传输时，E2 后进入 IDLE，PSEL=0、PENABLE=0。不能在 SETUP 因 PREADY 为高提前完成。",
+    "rubric": [
+      "SETUP 不完成；E1 等待；E2 完成。",
+      "共 3 个周期，含一个 SETUP 和两个 ACCESS。",
+      "等待期间控制和写数据保持。",
+      "E2 后回 IDLE，PSEL 和 PENABLE 清零。"
+    ]
+  },
+  {
+    "id": "ORIGINAL-SPI-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "spi",
+    "type": "single_choice",
+    "title": "SPI 模式 0 的采样边沿",
+    "promptMd": "SPI mode 0（CPOL=0、CPHA=0），MSB first，片选低有效。以下哪个描述符合该模式？题目仅讨论理想边沿关系，数据需满足实际建立/保持要求。",
+    "explanationMd": "CPOL=0 表示时钟空闲为低；CPHA=0 表示首个有效边沿采样。在空闲低时，首沿是上升沿；发送端需在首沿前准备首位，后续通常在下降沿改变数据。",
+    "difficulty": "medium",
+    "tags": [
+      "spi"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "混淆空闲电平 CPOL 与采样相位 CPHA。",
+      "首位等首个采样沿才更新，违反建立时间。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "空闲低，上升沿采样，首位需在首个上升沿前准备好"
+      },
+      {
+        "id": "B",
+        "textMd": "空闲低，下降沿采样，首位在首个上升沿才发出"
+      },
+      {
+        "id": "C",
+        "textMd": "空闲高，上升沿采样"
+      },
+      {
+        "id": "D",
+        "textMd": "空闲高，下降沿采样"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "符合 CPOL=0 与 CPHA=0。",
+      "B": "这是 CPOL=0、CPHA=1 的边沿关系。",
+      "C": "空闲高与 CPOL=0 不符。",
+      "D": "空闲高与 CPOL=0 不符。"
+    }
+  },
+  {
+    "id": "ORIGINAL-UART-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "uart",
+    "type": "numeric",
+    "title": "UART 8N1 的理论有效载荷率",
+    "promptMd": "UART 波特率 115200，格式 8N1：每帧 1 个起始位、8 个数据位、无校验、1 个停止位。帧之间无额外空闲，也无软件或流控开销。每个符号传一位，理论最大有效载荷是多少 byte/s？",
+    "explanationMd": "每帧 10 bit，传送 1 byte 有效数据，所以 115200/10=11520 byte/s。不能直接用波特率除以 8 忽略起止位；真实应用的空闲及流控会降低吞吐。",
+    "difficulty": "medium",
+    "tags": [
+      "uart"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "波特率直接除以 8，漏算起始位与停止位。",
+      "把 kB/s 的十进制倍率误作 1024。"
+    ],
+    "expectedValue": 11520,
+    "unit": "byte/s",
+    "defaultUnit": "byte/s",
+    "acceptedUnits": {
+      "byte/s": 1,
+      "kB/s": 1000
+    },
+    "absoluteTolerance": 0
   }
 ]
