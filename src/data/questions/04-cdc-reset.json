@@ -1,7 +1,7 @@
 [
   {
     "id": "ORIGINAL-CDC-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "single_choice",
     "topicId": "04",
     "subtopicId": "two-flop-synchronizer",
@@ -41,7 +41,7 @@
       "C": "错误。各 bit 独立同步可能产生不同延迟，不能保证目的域一次看到同一个源数据字。需要按场景设计握手、异步 FIFO 等方案。",
       "D": "错误。短脉冲可能完全落在两个目的时钟采样沿之间，第一级没有捕获到事件，两级结构也无法恢复它。"
     },
-    "explanationMd": "**答案 B。**\n\n1. 异步电平可以在目的时钟采样沿附近变化，第一级可能进入亚稳态。\n2. 后续逻辑只使用第二级输出，给第一级恢复留出时间，从概率上降低异常向后传播的风险。具体可靠性还与器件参数、时钟频率、数据翻转率及布线有关。\n3. 亚稳态风险、事件是否被采到、多 bit 数据是否一致是不同的问题。2-FF 主要降低第一类风险，不能同时解决后两类问题。\n\n题目限定输入是持续足够久的电平，并允许延迟，不要求目的域立即或固定周期看到变化。",
+    "explanationMd": "**答案：B。同步器给第一级留出恢复时间，降低异常传播的概率。**\n\n异步电平可能恰好在目的上升沿附近变化，使第一级违反 setup/hold。第一级到第二级之间的一段时间允许它向稳定的 0 或 1 解析；功能逻辑只使用第二级。解析时间、器件参数、目的频率、输入翻转率和布线共同影响可靠性。\n\n题目已保证电平保持足够久并允许同步延迟，所以能使用这种结构。它解决的是亚稳态传播风险，不自动保证短事件不丢、多 bit 同拍一致，也不承诺每次固定延迟。",
     "commonMistakes": [
       "把降低亚稳态传播风险说成彻底消除亚稳态。",
       "把电平同步、短脉冲传递和多 bit 数据一致性混为一谈。"
@@ -56,7 +56,7 @@
   },
   {
     "id": "ORIGINAL-CDC-0002",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "short_answer",
     "topicId": "04",
     "subtopicId": "pulse-toggle",
@@ -75,7 +75,7 @@
       "给出采样沿全部错过高电平的具体时间例子。",
       "说明握手保持请求并等待确认，且新事件需要流控；或正确说明其他方案的使用条件。"
     ],
-    "explanationMd": "本题区分**采样遗漏**和**亚稳态传播**。两级同步器降低后者的概率，但目的域从未采到高电平时，增加一级寄存器无法找回事件。方案设计需要同时考虑事件速率、反馈延迟、复位和排队能力。",
+    "explanationMd": "**关键区别：采样遗漏和亚稳态传播是两个问题。**\n\n源周期 `1000/100=10 ns`，目的周期 `1000/25=40 ns`。下面是一组无需亚稳态就会丢事件的时间线：\n\n```text\n时间(ns)   0     10    15                 55\n源脉冲     └──高──┘\n目的采样               ↑读到0             ↑读到0\n```\n\n目的域第一级一次高电平都没采到，后面的寄存器只能继续传 0。增加同步级数不会生成丢掉的信息。握手通过保持请求直到确认，让事件覆盖足够多的采样机会；toggle 则把瞬时事件转成保持的状态变化，但仍受事件间隔约束。源端若持续比握手完成速度更快，需要排队或背压。",
     "commonMistakes": [
       "只谈亚稳态，不检查脉冲是否跨过目的域采样沿。",
       "直接使用 toggle 却不限制连续事件间隔。"
@@ -90,7 +90,7 @@
   },
   {
     "id": "ADAPTED-RK26-CDC-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "rtl_coding",
     "topicId": "04",
     "subtopicId": "pulse-toggle",
@@ -114,23 +114,23 @@
       "note": "根据配套调研中的公开笔经索引，以“单 bit 脉冲跨时钟域”为线索独立编制。本题条件、数值、代码和解答均重新设计，不是原卷原题；来源链接未再次核验。"
     },
     "promptMd": "编写 `pulse_toggle_cdc`，输入 src_clk=100 MHz、dst_clk=25 MHz，彼此异步。src_pulse 是在源时钟上升沿采样、恰好一个源周期宽的事件脉冲；相邻事件至少间隔 160 ns，即 4 个目的周期。只传递“发生一次事件”，不携带数据。\n\nsrc_rst_n 和 dst_rst_n 均异步低有效，分别在各自域同步释放；系统保证两域都完成复位且同步链稳定后才产生事件，运行中不单独复位。所有 toggle 与同步寄存器复位为 0。功能推演假设亚稳态在后级采样前消退；工程上仍需做 CDC/时序约束，不能声称绝对消除亚稳态。\n\n要求源域用 toggle 编码，每个事件翻转一次；目的域用 2-FF 同步后检测变化，产生一个目的周期宽的寄存输出 dst_pulse。给出完整 SystemVerilog，并解释为什么事件间隔和复位约定不可省略。",
-    "referenceAnswerMd": "```systemverilog\nmodule pulse_toggle_cdc (\n  input logic src_clk, src_rst_n, src_pulse,\n  input logic dst_clk, dst_rst_n,\n  output logic dst_pulse\n);\n  logic src_toggle;\n  (* ASYNC_REG = \"TRUE\" *) logic sync1, sync2;\n  logic sync2_d;\n  always_ff @(posedge src_clk or negedge src_rst_n) begin\n    if (!src_rst_n) src_toggle <= 1'b0;\n    else if (src_pulse) src_toggle <= ~src_toggle;\n  end\n  always_ff @(posedge dst_clk or negedge dst_rst_n) begin\n    if (!dst_rst_n) begin\n      sync1 <= 1'b0; sync2 <= 1'b0;\n      sync2_d <= 1'b0; dst_pulse <= 1'b0;\n    end else begin\n      sync1 <= src_toggle; sync2 <= sync1;\n      sync2_d <= sync2;\n      dst_pulse <= sync2 ^ sync2_d;\n    end\n  end\nendmodule\n```\n\n源事件使 src_toggle 翻转，并保持到下一事件；目的域串联同步后，用 sync2 与其延迟副本比较，输出一个寄存的变化脉冲。代码中的 dst_pulse 使用同步寄存器旧值，因此比 sync2 更新再晚一个采样沿，但脉冲宽度仍为一个目的周期。\n\n160 ns 间隔给目的域观察每次 toggle 留出时间；如果在目的域观察前连续翻转两次，可能回到原值而丢失事件。复位必须协调，否则单边清零也可能被识别成事件，或把尚未处理的事件抹掉。本方案依赖明确的事件间隔，不适用于任意速率；没有该保证时应考虑握手/队列。",
+    "referenceAnswerMd": "接口分为源、目的两个时钟与复位域。源端保存事件翻转，目的端只从后级同步样本生成寄存脉冲。\n\n```systemverilog\nmodule pulse_toggle_cdc (\n  input  logic src_clk,\n  input  logic src_rst_n,  // Async assert; externally synchronized release\n  input  logic src_pulse,\n  input  logic dst_clk,\n  input  logic dst_rst_n,\n  output logic dst_pulse\n);\n  logic src_toggle;\n  (* ASYNC_REG = \"TRUE\" *) logic sync1, sync2;\n  logic sync2_d;\n\n  // Keep an event as a level change until the next source event.\n  always_ff @(posedge src_clk or negedge src_rst_n) begin\n    if (!src_rst_n) begin\n      src_toggle <= 1'b0;\n    end else if (src_pulse) begin\n      src_toggle <= ~src_toggle;\n    end\n  end\n\n  // Only sync2 may feed functional change detection; sync1 stays inside the chain.\n  always_ff @(posedge dst_clk or negedge dst_rst_n) begin\n    if (!dst_rst_n) begin\n      sync1     <= 1'b0;\n      sync2     <= 1'b0;\n      sync2_d   <= 1'b0;\n      dst_pulse <= 1'b0;\n    end else begin\n      sync1     <= src_toggle;\n      sync2     <= sync1;\n      sync2_d   <= sync2;\n      // NBA reads old sync2/sync2_d: register the pulse one edge later.\n      dst_pulse <= sync2 ^ sync2_d;\n    end\n  end\nendmodule\n```\n\n下面按数据流、边界与采样沿解释这份实现。参考实现并非唯一正确写法；网页仍使用人工自评，不执行提交的用户代码。",
     "rubric": [
       "源域每次 src_pulse 只翻转一次 toggle。",
       "同步器第一级只进入后级同步，不直接驱动事件检测。",
       "目的域变化检测与寄存脉冲、复位初值正确。",
       "解释间隔、复位协调、无数据载荷及亚稳态假设的边界。"
     ],
-    "explanationMd": "这是一种基于题目间隔约束的事件编码，不是把 10 ns 脉冲直接交给慢时钟采样。参考代码做了寄存更新顺序与复位检查，尚未运行 HDL 仿真，实际使用仍需约束与验证。",
+    "explanationMd": "**数据流：源事件 → 保持的 toggle → 两级同步 → 与历史样本比较 → 目的单周期脉冲。**\n\n源域每接受一次 src_pulse 就翻转 src_toggle，因此慢时钟不必直接采到 10 ns 高电平。目的域 sync1、sync2 使用同一目的时钟；只有 sync2 进入变化检测。历史寄存器 sync2_d 保存上一拍 sync2，二者不同表示发现一次翻转。\n\n代码中的 dst_pulse 本身也寄存：若某沿 sync2 刚更新为新值，同沿异或仍读取旧 sync2；再下一个目的沿才输出脉冲。不能把同步后电平变化和脉冲更新写成同一件事。连续无新事件时，两份历史一致，脉冲回 0。\n\n题设相邻事件至少 160 ns，且两域稳定完成协调复位后才工作，给目的域观察每次状态变化留出时间。两次未被观察的翻转会抵消；一侧单独复位还可能制造假事件。本实现不提供排队或确认，也不传 payload。数字 Testbench 只能检查这些约定内的事件行为，不能模拟模拟亚稳态或替代 CDC/物理约束。",
     "commonMistakes": [
-      "在源事件过密时仍宣称 toggle 一定不丢事件。",
-      "使用未同步的 toggle 与目的信号异或。",
-      "忽略单域复位引起的伪事件。"
+      "把 10 ns 脉冲直接送到 40 ns 周期的采样器，忽略可能完全错过。",
+      "漏掉 dst_pulse 寄存赋值读取旧 sync2 的额外一沿。",
+      "单独复位一个域，或让两次 toggle 在目的采样前抵消。"
     ]
   },
   {
     "id": "ADAPTED-INNO26-CDC-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "waveform_analysis",
     "topicId": "04",
     "subtopicId": "two-flop-synchronizer",
@@ -154,14 +154,14 @@
       "note": "根据配套调研中的公开笔经索引，以“CDC 波形与电路分析”为线索独立编制。本题条件、数值、代码和解答均重新设计，不是原卷原题；来源链接未再次核验。"
     },
     "promptMd": "目的域有如下寄存器链，复位已经结束，E0 前 s1=s2=0。\n\n```systemverilog\nalways_ff @(posedge dst_clk) begin\n  s1 <= async_level;\n  s2 <= s1;\nend\n```\n\n只做理想数字仿真推演：输入在每个采样沿前后足够稳定，不发生 setup/hold 违例或亚稳态；所有赋值均为非阻塞赋值。五个目的上升沿采样到的输入如下：\n\n```\n采样沿             E0  E1  E2  E3  E4\nasync_level         0   1   1   0   0\n```\n\n写出每个沿的非阻塞更新完成之后 s1 和 s2 的值，并说明为什么 s2 不能在 E1 就变成 1。",
-    "referenceAnswerMd": "```\n采样沿             E0  E1  E2  E3  E4\nasync_level         0   1   1   0   0\ns1（更新后）        0   1   1   0   0\ns2（更新后）        0   0   1   1   0\n```\n\n每个沿都先读取旧值，再完成非阻塞更新：`s1_new=input_sampled`，`s2_new=s1_old`。E1 读取的 s1_old 仍为 0，因此 s2 在 E1 后保持 0，到 E2 才取得 1。",
+    "referenceAnswerMd": "```\n采样沿             E0  E1  E2  E3  E4\nasync_level         0   1   1   0   0\ns1（更新后）        0   1   1   0   0\ns2（更新后）        0   0   1   1   0\n```\n\n每个沿都先读取旧值，再完成非阻塞更新：`s1_new=input_sampled`，`s2_new=s1_old`。E1 读取的 s1_old 仍为 0，因此 s2 在 E1 后保持 0，到 E2 才取得 1。\n\n![两级同步器理想数字逐沿图：输入为本沿采样，寄存器为 NBA 后值](/diagrams/content-v15/cdc-2ff.svg)",
     "rubric": [
       "s1 序列正确为 0/1/1/0/0。",
       "s2 序列正确为 0/0/1/1/0。",
       "明确非阻塞赋值读取旧值，不把同一过程的书写顺序当作组合串接。",
       "说明这是排除了亚稳态的理想模型，不据此保证真实异步输入的固定延迟。"
     ],
-    "explanationMd": "把每个采样沿拆成“旧值读取”和“寄存更新”两步，可避免误把 s1 的新值立刻传入 s2。这个数字波形不描述亚稳态持续时间，也不保证真实 CDC 每次延迟完全相同。来源只支持 CDC 波形方向，当前表格和代码为独立改编。",
+    "explanationMd": "**E1 后 s2 仍为 0；E2 后才变为 1。**\n\n每沿先读旧值，再完成 NBA 更新。逐沿关系只有两条：`s1_new = 本沿输入`，`s2_new = s1_old`。\n\n| 沿 | 沿前 s1 | 输入 | 沿后 s1 | 沿后 s2 |\n|---|---:|---:|---:|---:|\n| E0 | 0 | 0 | 0 | 0 |\n| E1 | 0 | 1 | 1 | 0 |\n| E2 | 1 | 1 | 1 | 1 |\n| E3 | 1 | 0 | 0 | 1 |\n| E4 | 0 | 0 | 0 | 0 |\n\nE1 的第二句读到旧 s1=0；第一句安排的新 s1=1 尚未成为本沿读取值。这里是题设无采样违例的数字推演；真实异步输入可能有不确定延迟，图不代表亚稳态保证。",
     "commonMistakes": [
       "在同一个沿先改 s1 再用新 s1 改 s2。",
       "把理想数字推演结果当作真实亚稳态的波形保证。"
@@ -169,13 +169,13 @@
   },
   {
     "id": "ORIGINAL-CDC-0003",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "04",
     "subtopicId": "multi-bit-cdc",
     "type": "multiple_choice",
     "title": "多位总线逐位同步的边界",
     "promptMd": "异步时钟域间传输一个可能同时改变多位的 8 bit 二进制数据字。接收端要求每次拿到一个完整、相干的数据字。以下哪些正确？",
-    "explanationMd": "逐位 2-FF 只降低各 bit 亚稳态传播概率，不能保证各 bit 同一拍更新，因此可能拼出从未发射的字。应根据吞吐量选择受控稳定数据加握手或异步 FIFO；独立状态位才可能按独立语义处理。",
+    "explanationMd": "**答案：B、C、D。**\n\n假设源字从 `00000000` 一次改成 `11111111`。若部分同步链早一拍采到新值，目的端可能先看到 `00001111`，这个混合字从未被源端发射。每一位是确定的 0/1，也不能说明整个字相干。\n\n偶发单字可以先锁存并保持数据，再以经过同步的请求/应答安排捕获；持续数据流可以用异步 FIFO 存储数据，以跨域指针协调可读、可写范围。两者都要满足各自的稳定窗口、吞吐和实现约束。",
     "difficulty": "medium",
     "tags": [
       "multi-bit-cdc"
@@ -216,21 +216,21 @@
       "D"
     ],
     "optionExplanations": {
-      "A": "同时改变多位时各位可能跨拍采到，字不相干。",
-      "B": "仍须满足数据稳定窗口、控制同步和实现约束。",
-      "C": "FIFO 用存储与跨域指针协调数据有效性。",
-      "D": "同步时延的不确定性会造成混合字。"
+      "A": "逐位 2-FF 的采样延迟可能不同，例如 00→11 被观察为 01；无法保证原子更新。",
+      "B": "源端保持同一 payload，目的端等同步后的控制到达再捕获，可建立相干传输；还需证明数据比控制更早稳定并保持足够久。",
+      "C": "异步 FIFO 让存储数据在合法读之前已稳定，并通过跨域指针管理两端进度，适合连续流；深度和实现仍需验证。",
+      "D": "当各位跨不同目的拍更新时，接收字会混合旧字与新字中的位，即使各位都没有 X。"
     }
   },
   {
     "id": "ORIGINAL-CDC-0004",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "04",
     "subtopicId": "handshake",
     "type": "short_answer",
     "title": "单笔多位数据握手的稳定窗口",
     "promptMd": "源域向异步目的域偶尔传一个 16 bit 字，允许背压且最多一笔在途。请设计 req/ack 握手思路，说明 payload 何时可以变化、怎样避免重复接收，以及复位和物理时序需要满足什么条件。无需给完整 RTL。",
-    "explanationMd": "握手的关键是源端保持数据直到确认，目的端每次请求只接收一次。控制信号同步与数据稳定窗口缺一不可；四相返回空闲流程用于区分连续请求。",
+    "explanationMd": "**可以采用单笔在途的四相握手；busy 期间源端不得覆盖 payload。**\n\n| 阶段 | 源端 | 目的端 |\n|---|---|---|\n| 空闲 | req=0，已看到 ack=0 | 等待新 req |\n| 发起 | 锁存 payload，使其稳定，再 req↑ | 等 req 经过控制同步链 |\n| 接收 | 保持 payload 与 req | 仅捕获一次，ack↑，进入等待撤销状态 |\n| 返回 | 同步看到 ack↑ 后 req↓ | 同步看到 req↓ 后 ack↓ |\n| 下一笔 | 同步看到 ack↓，回到空闲 | 等待下一次 req↑ |\n\n等待撤销的状态避免 req 连续为高时每拍重复接收。宽数据本身不逐位同步，而依赖从发起前到接收完成后的稳定窗口；应约束实际 bundled-data 路径，确保控制到达时 payload 已稳定。复位需让两端回到一致的空闲状态，不能把复位造成的请求变化误认为新事务。",
     "difficulty": "medium",
     "tags": [
       "handshake"
@@ -259,13 +259,13 @@
   },
   {
     "id": "ORIGINAL-CDC-0005",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "04",
     "subtopicId": "rdc-reset",
     "type": "rtl_coding",
     "title": "异步断言与同步释放复位",
     "promptMd": "编写 reset_release，端口 clk、arst_n、rst_n。外部低有效 arst_n 异步断言，使 rst_n 低；释放后经两个目的时钟上升沿再使 rst_n 高。无其他写进程，假定复位已断言过。给出 RTL 和理想逐沿说明，并说明多时钟域的使用边界。",
-    "explanationMd": "异步断言把两级都清零，释放后每个目的时钟沿向两级移入 1。输出取第二级，理想状态依次 00、01、11；真实电路还需正确实现同步器和复位时序。",
+    "explanationMd": "**异步拉低，目的时钟两沿后释放。**\n\n两个同步寄存器都接外部 arst_n，低电平时不等待时钟就清成 00。arst_n 变高不会立刻让输出变高，只会允许后续时钟向寄存器移入 1。\n\n| 时刻 | pipe[1:0] | rst_n |\n|---|---|---:|\n| arst_n=0 | 00 | 0 |\n| 释放后的第一个上升沿 | 01 | 0 |\n| 释放后的第二个上升沿 | 11 | 1 |\n\n输出只取末级，避免直接使用可能受释放时刻影响的第一级。若时钟停住，复位仍可异步断言，但不会自行释放。每个时钟域需要自己的释放同步器；同一域复位网络还要满足扇出、偏斜及库时序要求。此理想表不保证物理亚稳态总能在固定两沿内结束。",
     "difficulty": "medium",
     "tags": [
       "rdc-reset"
@@ -283,7 +283,7 @@
       "输出误取第一级，少了一拍释放延迟。",
       "在多个时钟域共用同一个域的同步释放结果。"
     ],
-    "referenceAnswerMd": "```systemverilog\nmodule reset_release (\n  input logic clk, arst_n,\n  output logic rst_n\n);\n  logic [1:0] pipe;\n  always_ff @(posedge clk or negedge arst_n) begin\n    if (!arst_n) pipe <= 2'b00;\n    else         pipe <= {pipe[0], 1'b1};\n  end\n  assign rst_n = pipe[1];\nendmodule\n```\n\n理想 RTL 中，异步断言后 pipe=00；arst_n 释放后的第一个时钟沿变为 01，第二个变为 11，rst_n 才释放。异步断言不需要等待时钟，释放需要时钟运行。每个目的域应有自身释放电路；实际实现还需同步器属性、布局、复位树及 recovery/removal 等检查。两级不等于绝对无亚稳态，跨域数据也不会因此自动安全。",
+    "referenceAnswerMd": "arst_n 是外部异步低有效复位，rst_n 是本目的域的释放同步输出。两级寄存器依次移入 1。\n\n```systemverilog\nmodule reset_release (\n  input  logic clk,\n  input  logic arst_n,\n  output logic rst_n\n);\n  (* ASYNC_REG = \"TRUE\" *) logic [1:0] pipe;\n\n  // Assertion clears both stages without waiting for clk.\n  // Release shifts in ones: 00 -> 01 -> 11 on two destination edges.\n  always_ff @(posedge clk or negedge arst_n) begin\n    if (!arst_n) begin\n      pipe <= 2'b00;\n    end else begin\n      pipe <= {pipe[0], 1'b1};\n    end\n  end\n\n  assign rst_n = pipe[1];\nendmodule\n```\n\n下面按数据流、边界与采样沿解释这份实现。参考实现并非唯一正确写法；网页仍使用人工自评，不执行提交的用户代码。",
     "rubric": [
       "异步低有效敏感事件与两级状态清零正确。",
       "释放时逐级移入 1，输出取第二级。",
@@ -293,13 +293,13 @@
   },
   {
     "id": "ORIGINAL-CDC-0006",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "04",
     "subtopicId": "pulse-toggle",
     "type": "single_choice",
     "title": "toggle 方案漏掉偶数次翻转",
     "promptMd": "事件编码为源域 toggle 每事件翻转一次，目的域同步该 toggle 后与历史值异或检测变化。初始双方均为 0。两个源事件使 toggle 依次 0→1→0，且整个过程都发生在目的域能观察该信号的两次采样之间；采样前后信号稳定且不考虑亚稳态。目的域能否据此恢复两次事件？",
-    "explanationMd": "不能。目的域仅观察到 0→0；偶数次翻转被抵消，没有足够信息区分零次与两次事件。必须保证足够事件间隔，或使用握手、计数/FIFO 等适配速率的协议。",
+    "explanationMd": "**答案：C，无法从 0→0 恢复两次事件。**\n\n| 时刻 | 源 toggle | 目的能否观察 |\n|---|---:|---|\n| 上次目的采样 | 0 | 看到 0 |\n| 第一次源事件 | 1 | 尚无采样 |\n| 第二次源事件 | 0 | 尚无采样 |\n| 下次目的采样 | 0 | 仍看到 0 |\n\n一位 toggle 只保存事件数的奇偶性。两个事件抵消，和完全没有事件的观测结果相同；后级无法凭空区分。限制事件间隔、使用请求/应答，或采用适当计数/FIFO，才可能保留所需信息。",
     "difficulty": "medium",
     "tags": [
       "pulse-toggle"
@@ -338,15 +338,15 @@
       "C"
     ],
     "optionExplanations": {
-      "A": "一位最终状态不包含事件次数。",
-      "B": "本题观察值没有变化，异或为 0。",
-      "C": "偶数次翻转抵消，事件信息已丢失。",
-      "D": "增加级数不能找回源端已抵消的信息。"
+      "A": "目的只观察两个 0，没有关于两次内部翻转的记录，不能恢复两个脉冲。",
+      "B": "变化检测计算 0 XOR 0=0，因此本例连一个脉冲也没有。",
+      "C": "在两次目的观测之间发生偶数次翻转，最终状态相同；事件信息在采样前已丢失。",
+      "D": "增加级数只把已采到的 0 延后传递，不能还原从未采到的中间 1。"
     }
   },
   {
     "id": "ADAPTED-COLLECTION-CDC-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "04",
     "subtopicId": "two-flop-synchronizer",
     "type": "numeric",
@@ -368,7 +368,7 @@
       "note": "参考公开练习汇编 Q68 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
     },
     "promptMd": "采用简化模型 MTBF=K×exp(Tres/τ)/(fclk×fdata)。K、τ、fclk、fdata 均固定，τ=0.05 ns。某布局调整使有效解析时间 Tres 增加 0.10 ns，其他条件不变。新 MTBF 是旧值的多少倍？填写无单位比值，可保留三位小数。",
-    "explanationMd": "比值为 exp(ΔTres/τ)=exp(0.10/0.05)=e²≈7.389。K 与频率项在比值中抵消。该估算依赖指定模型和参数，不表示实际器件获得绝对无亚稳态保证。",
+    "explanationMd": "**答案：约 7.389 倍。**\n\nMTBF 是平均失效间隔，题设模型中的 Tres 为可用解析时间、τ 为器件时间常数；K 与两个频率在本题固定。要求的是比值，不必求绝对 MTBF：\n\n`MTBF新 / MTBF旧 = exp(Tres新/τ) / exp(Tres旧/τ)`\n\n`= exp((Tres新−Tres旧)/τ) = exp(0.10 ns / 0.05 ns)`\n\n`= exp(2) ≈ 7.389`。\n\n指数的自变量必须无单位，ns 在相除时抵消。不是简单增加 0.10/0.05=2 倍；2 是指数而非最终倍率。更高 MTBF 表示模型中的风险更低，不表示绝不失效。",
     "expectedValue": 7.38905609893065,
     "absoluteTolerance": 0.001,
     "commonMistakes": [
@@ -378,7 +378,7 @@
   },
   {
     "id": "ADAPTED-COLLECTION-CDC-0002",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "04",
     "subtopicId": "multi-bit-cdc",
     "type": "single_choice",
@@ -400,7 +400,7 @@
       "note": "参考公开练习汇编 Q70 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
     },
     "promptMd": "源域的两个相关控制位 (A,B) 从 (1,0) 切换到 (0,1)，只讨论已给定的两个稳定状态，源端业务含义中 A 与 B 不应同时有效。目的域分别用两级同步器采 A、B，再计算 C=A_sync & B_sync。假设两条同步链可能相差一拍观察到变化。哪个说法正确？",
-    "explanationMd": "若目的域先看到 B 升高、稍后才看到 A 降低，就会短暂观察到 (1,1)，使 AND 输出出现源业务未允许的高电平。每位独立同步不保证相关位语义一致，应根据需求在源端生成并注册有意义的控制量，或使用相干的握手/数据协议；捕获事件还需满足速率与宽度条件。",
+    "explanationMd": "**答案：A。可能产生源业务中没有的 C=1。**\n\n| 目的观察阶段 | A_sync | B_sync | C=AND |\n|---|---:|---:|---:|\n| 旧样本 | 1 | 0 | 0 |\n| B 先更新、A 仍旧 | 1 | 1 | 1 |\n| 两路均更新 | 0 | 1 | 0 |\n\n两个源稳定状态的 AND 都是 0，但独立同步的延迟不保证一致。错误来自相关位组合后的业务语义，不要求仿真出现 X。应传递源端注册的有意义控制量，或用保持数据加握手等相干协议，而非把多路同步链视作整体快照。",
     "options": [
       {
         "id": "A",
@@ -423,10 +423,10 @@
       "A"
     ],
     "optionExplanations": {
-      "A": "先得到新 B 和旧 A 可以拼成 11。",
-      "B": "同步延迟具有不确定性，不能保证相关字同时变化。",
-      "C": "四态仿真中的确定 0/1 不等于多位业务相干。",
-      "D": "级数增加不等于消除两链之间的采样差异。"
+      "A": "若 B 上升先被观察，A 下降晚一拍，目的会短暂拼成 11，使 C=1。",
+      "B": "每条链的采样相位与解析情况独立；相同级数不保证同拍观察变化。",
+      "C": "11 是完全确定的二态值，却不属于题给源稳定状态，说明无 X 不等于相干。",
+      "D": "第三极给更多解析时间，但两路原有的先后采样差异仍可保留，不能保证对齐。"
     },
     "commonMistakes": [
       "把每位同步等同于相关控制字的原子更新。",
@@ -435,7 +435,7 @@
   },
   {
     "id": "ADAPTED-COLLECTION-CDC-0003",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "04",
     "subtopicId": "rdc-reset",
     "type": "short_answer",
@@ -457,7 +457,7 @@
       "note": "参考公开练习汇编 Q81 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
     },
     "promptMd": "说明异步低有效复位的 recovery 与 removal 分别约束什么。为什么“复位是异步的，所以复位释放不需要任何时序检查”不成立？再说明异步断言、同步释放的作用与边界。无需给出具体工具命令。",
-    "explanationMd": "时序风险来自释放与时钟采样边沿的相对位置，不是由复位是否写进敏感列表决定。同步释放是一种降低风险的实现结构，不是取消库时序约束或全域复位分析的理由。",
+    "explanationMd": "**复位断言可以异步，释放仍要相对时钟做时序检查。**\n\nRecovery 类似释放的 setup：释放边沿需早于后续有效时钟沿足够时间。Removal 类似释放的 hold：释放边沿不能太靠近前一个有效时钟沿。检查的极性、数值和具体窗口以目标库与 STA 报告为准。\n\n若在敏感窗口释放，同一复位网络上的寄存器可能不同步退出复位，也可能发生亚稳态。异步断言、同步释放让该域的解除复位跟随目的时钟，并通过同步级降低风险；仍要正确实现同步器、分析复位分发并覆盖多域协调。敏感列表里有 negedge arst_n 并不意味着释放天然安全。",
     "referenceAnswerMd": "Recovery 要求异步复位释放在后续有效时钟沿之前留出足够时间，类似对释放边沿的建立要求。Removal 要求释放不能过早靠近前一个有效时钟沿，类似保持要求。具体符号、有效极性和检查窗口以库及 STA 报告为准。\n\n异步断言不需要等待有效时钟，但释放仍可能落入器件的敏感窗口。异步断言、目的域同步释放可降低复位释放风险；仍须满足同步器和复位网络的实现条件，并分别分析各时钟域。不能由“异步”二字推导为完全不做时序检查。",
     "rubric": [
       "区分释放前的 recovery 与释放后的 removal 窗口。",
@@ -472,7 +472,7 @@
   },
   {
     "id": "ADAPTED-COLLECTION-CDC-0004",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "04",
     "subtopicId": "two-flop-synchronizer",
     "type": "multiple_choice",
@@ -494,7 +494,7 @@
       "note": "参考公开练习汇编 Q69 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
     },
     "promptMd": "一个目的时钟域的两级同步链用于接收低速、稳定保持的单 bit 电平。假设其 MTBF 随可用解析时间增大而改善，其他条件固定。以下哪些设计判断正确？",
-    "explanationMd": "第一级输出可能尚未充分稳定。同步链通常应使第一到第二级路径尽量直接，避免额外组合延迟挤占解析窗口，并在后级稳定输出后才做功能使用。级数、器件参数、物理时序和翻转率共同影响可靠性，不存在仅凭“两级”得到的绝对保证。",
+    "explanationMd": "**答案：A、B、D。保护解析窗口，并只在后级使用稳定样本。**\n\n第一级负责接触异步输入，不是普通功能逻辑的稳定接口。它到第二级的有效解析窗口，大致是目的周期扣除触发器、连线与建立等开销；中间再塞组合逻辑会吃掉这个窗口。同步器布局与约束因此和 RTL 级数同样重要。\n\n同步后的边沿检测比较后级与其历史值，可以避免把第一级的不稳定直接引入功能组合逻辑。题目是低速保持电平；事件捕获与多位相干还需另行设计。",
     "options": [
       {
         "id": "A",
@@ -519,10 +519,10 @@
       "D"
     ],
     "optionExplanations": {
-      "A": "第一级不是对普通功能逻辑承诺稳定的接口。",
-      "B": "在时钟及其他预算固定时，延迟占用了可用窗口。",
-      "C": "只能降低传播失效概率，不能作绝对保证。",
-      "D": "避免把尚在解析的第一级引入事件组合逻辑。"
+      "A": "第一级可能处于解析过程，直接扇出会让功能逻辑接触不稳定值，绕过第二级提供的保护。",
+      "B": "时钟与其余开销固定时，级间额外延迟压缩了第二级采样前的稳定时间，可降低 MTBF。",
+      "C": "异步单 bit 也可能在采样窗口变化；两级只能降低亚稳态传播概率，不能作零风险承诺。",
+      "D": "后级与历史寄存值的比较用于发现已同步状态变化；不要从第一级直接产生事件。"
     },
     "commonMistakes": [
       "在第一级后立即分支驱动功能逻辑。",

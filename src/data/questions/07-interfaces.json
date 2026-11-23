@@ -1,7 +1,7 @@
 [
   {
     "id": "ADAPTED-RK26-AXI-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "numeric",
     "topicId": "07",
     "subtopicId": "bandwidth",
@@ -33,7 +33,7 @@
       "B/s": 0.000001
     },
     "absoluteTolerance": 0.001,
-    "explanationMd": "成功握手发生在第 2、3、6、7 沿，共 4 次。有效载荷为 `4 × 4 = 16 B`。100 MHz 周期为 10 ns，窗口为 `8 × 10 = 80 ns`。\n\n`16 B / 80 ns = 200,000,000 B/s = 200 MB/s`。\n\n**答案 200 MB/s。** 全速单通道理论数据率为 400 MB/s，本窗口一半周期成功握手，因此达到一半。这里算的是题目定义的数据通道窗口效率，不是对原回忆中的 DDR/AXI 系统题进行还原。",
+    "explanationMd": "**答案：200 MB/s。**\n\n每沿只有 RVALID 与 RREADY 同时为 1 才传一个 beat。表中成功沿是 2、3、6、7，共 4 次；单独 READY=1 的第 4、8 沿不算传输。\n\n1. 每 beat 为 `32/8=4 B`，有效载荷 `4×4=16 B`。\n2. 100 MHz 周期 `1000/100=10 ns`，八个完整周期窗口为 `8×10=80 ns`。\n3. `16 B/(80×10^-9 s)=200,000,000 B/s=200 MB/s`，MB 按十进制定义。\n\n满速单通道为 `4 B×100 MHz=400 MB/s`，本窗口握手利用率 4/8，正好一半。不要用首末采样沿的七个间距替换题定八周期窗口，也不要加上题目排除的地址、DDR 或其他通道开销。",
     "commonMistakes": [
       "只要 RVALID=1 就计一次传输，忽略 RREADY。",
       "把 32 bit 当作 32 字节。",
@@ -42,7 +42,7 @@
   },
   {
     "id": "ADAPTED-RK26-AHB-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "waveform_analysis",
     "topicId": "07",
     "subtopicId": "ahb",
@@ -66,13 +66,13 @@
       "note": "根据配套调研中的公开笔经索引，以“AHB 读写时序”为线索独立编制。本题条件、数值、代码和解答均重新设计，不是原卷原题；来源链接未再次核验。"
     },
     "promptMd": "考虑单主单从 AHB-Lite 读操作，HRESP 始终 OKAY，选中传输时 HSEL=1，无 BUSY 或锁定操作。表中值是在各上升沿被采样的值；E0 之前没有待完成数据相位。\n\n```\n采样沿       E0       E1       E2       E3\nHREADY        1        0        1        1\nHTRANS     NONSEQ   NONSEQ   NONSEQ    IDLE\nHADDR       0x100    0x104    0x104      —\nHWRITE        0        0        0        —\nHRDATA        —      未有效    DATA_A   DATA_B\n```\n\nE0 接收地址 A=0x100。E0 之后主机提出下一地址 B=0x104，在等待期间保持 B 的地址/控制。请说明 A 地址被接受、A 数据完成、B 地址被接受、B 数据完成分别发生在哪个沿；解释 E1 为什么不能推进，以及哪个沿出现地址相位与数据相位重叠。",
-    "referenceAnswerMd": "- A 地址：E0 被接受。\n- A 数据：E1 的 HREADY=0，数据相位延长；E2 的 HREADY=1，DATA_A 在 E2 完成。\n- B 地址：虽然 E1 已呈现 0x104，但 HREADY=0，不能视为被接受；保持至 E2 后在 E2 接受。\n- B 数据：下一拍 E3 的 HREADY=1，DATA_B 在 E3 完成。\n\nE2 同时结束 A 的数据相位并接受 B 的地址相位，这是 AHB 的流水重叠。E3 上 HTRANS=IDLE 不会取消前一个周期已经接受的 B 数据相位，它只说明不接收新的有效地址传输。",
+    "referenceAnswerMd": "- A 地址：E0 被接受。\n- A 数据：E1 的 HREADY=0，数据相位延长；E2 的 HREADY=1，DATA_A 在 E2 完成。\n- B 地址：虽然 E1 已呈现 0x104，但 HREADY=0，不能视为被接受；保持至 E2 后在 E2 接受。\n- B 数据：下一拍 E3 的 HREADY=1，DATA_B 在 E3 完成。\n\nE2 同时结束 A 的数据相位并接受 B 的地址相位，这是 AHB 的流水重叠。E3 上 HTRANS=IDLE 不会取消前一个周期已经接受的 B 数据相位，它只说明不接收新的有效地址传输。\n\n![AHB 等待与地址数据重叠：信号值均为沿上采样值](/diagrams/content-v15/ahb-wait.svg)",
     "rubric": [
       "四个时刻分别为 E0、E2、E2、E3。",
       "E1 不推进，B 地址与控制必须保持到可接受的 E2。",
       "解释 E2 地址/数据重叠，且 E3 的 IDLE 不取消 B 的数据相位。"
     ],
-    "explanationMd": "分析时为每个被接受的地址建立独立数据相位，再使用 HREADY 判断相位何时完成。不要把同一列 HADDR 与 HRDATA 误认为一定属于同一事务。本题为带明确边界条件的自编时序，不是原帖原图。",
+    "explanationMd": "**E0 接受 A 地址，E2 同时完成 A 数据并接受 B 地址，E3 完成 B 数据。**\n\nAHB 的地址相位与上一笔数据相位可以重叠，不能把同一列 HADDR 和 HRDATA 配成同一事务。HREADY=0 会延长当前数据相位，并阻止下一地址相位向前推进。\n\n| 采样沿 | 当前数据相位 | 地址相位 | 该沿结果 |\n|---|---|---|---|\n| E0 | 无待完成数据 | A=0x100，NONSEQ | 接受 A 地址 |\n| E1 | A 等待，HREADY=0 | B=0x104 保持 | A 未完成、B 未接受 |\n| E2 | A 有效，HREADY=1 | B 仍保持 | 完成 DATA_A，并接受 B 地址 |\n| E3 | B 有效，HREADY=1 | IDLE | 完成 DATA_B，不接收新有效地址 |\n\nE3 的 IDLE 只描述当前地址相位，不会撤销已经接受的 B 数据相位。图中总线值均为沿上采样值，而非沿后新值。",
     "commonMistakes": [
       "把 E1 出现 B 地址当成 B 已经接受。",
       "把 E2 的 DATA_A 当成 HADDR=0x104 对应的数据。",
@@ -81,13 +81,13 @@
   },
   {
     "id": "ORIGINAL-AXI-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "07",
     "subtopicId": "axi",
     "type": "multiple_choice",
     "title": "AXI 单通道背压时必须保持什么",
     "promptMd": "AXI4 单个传输通道，发送端已有一个待发送 beat。所有握手在时钟上升沿进行。以下哪些正确？这里的 payload 包括该通道与该 beat 关联的数据和控制字段。",
-    "explanationMd": "传输只在沿上 VALID 与 READY 同为 1 时发生。发送端不能等待 READY 才提出 VALID；已提出但未接受的 beat 必须保持 VALID 与 payload。READY 可以先低后高，单凭 VALID=1 不能计作已传输。",
+    "explanationMd": "**答案：A、C。握手发生在 VALID 与 READY 同为 1 的采样沿。**\n\n| 采样周期 | VALID | READY | payload | 是否传输 |\n|---|---:|---:|---|---|\n| 1 | 1 | 0 | beat X，保持 | 否 |\n| 2 | 1 | 0 | 同一个 X，保持 | 否 |\n| 3 | 1 | 1 | 同一个 X | 是，接受 X |\n\n背压期间发送端不得撤回 VALID 或换掉 X；第 3 沿握手之后，才可更新为下一 beat 或撤下 VALID。发送端已有数据时不能把首次提出 VALID 依赖于 READY，否则接收端如果也等 VALID 才拉 READY，双方会互等。\n\n这是单个通道的规则。AW、W、B、AR、R 各有自己的握手，不能据此要求地址和数据同沿被接受。",
     "difficulty": "medium",
     "tags": [
       "axi"
@@ -127,21 +127,21 @@
       "C"
     ],
     "optionExplanations": {
-      "A": "背压不能改变待接受 beat 的内容。",
-      "B": "VALID 的提出不得依赖 READY，否则可能死锁。",
-      "C": "这是通道的沿上握手条件。",
-      "D": "VALID 必须保持到该 beat 握手。"
+      "A": "第 1、2 沿没有握手，beat X 仍未被消费，必须维持有效及所有相关 payload 字段不变。",
+      "B": "发送端不得等 READY 才首次提出 VALID；若接收端等待 VALID 才给 READY，这种依赖会造成死锁。",
+      "C": "在第 3 个采样沿两者都为 1，恰好接受一个 beat；不是在 VALID 拉高的瞬间传输。",
+      "D": "未握手仍是同一个待接收事务，撤回 VALID 或换数据会破坏接收端的稳定性契约。"
     }
   },
   {
     "id": "ORIGINAL-APB-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "07",
     "subtopicId": "apb",
     "type": "waveform_analysis",
     "title": "APB 等待周期的完成边沿",
     "promptMd": "APB3 写传输，E0、E1、E2 表示各周期末的上升沿。E0 沿前为 SETUP（PSEL=1、PENABLE=0），E1 沿前为 ACCESS 且 PREADY=0，E2 沿前仍为 ACCESS 且 PREADY=1。地址、方向及写数据始终稳定。无下一笔传输。在哪个沿完成？从 SETUP 周期开始共用了几个时钟周期？E2 后控制如何变化？",
-    "explanationMd": "APB 在 ACCESS 且 PREADY 为高的周期末完成。SETUP 固定占一周期，PREADY 为低则保持 ACCESS；本题共一个准备周期、一个等待周期和一个完成周期。",
+    "explanationMd": "**在 E2 完成，共 3 个 PCLK 周期；E2 后回 IDLE。**\n\nSETUP 用一周期提供地址与控制，PENABLE=0，这时即使 PREADY 高也不能完成。随后进入 ACCESS，PENABLE=1；只有该阶段的周期末看到 PREADY=1 才完成。\n\nE1 的 PREADY=0 使 ACCESS 再保持一周期，PSEL、PENABLE、地址、方向及写数据均不能提前改变。E2 沿采到 PSEL=PENABLE=PREADY=1，写完成。计数为一个 SETUP 加两个 ACCESS，共三周期，不是把三个沿间的两个间隔当成总耗时。\n\n题目无下一笔，因此 E2 后 PSEL=0、PENABLE=0。若有下一笔，需先回其 SETUP（PENABLE=0），也不能把 PENABLE 永久拉高。",
     "difficulty": "medium",
     "tags": [
       "apb"
@@ -159,7 +159,7 @@
       "把等待周期漏出总周期数。",
       "等待时改变地址或写数据。"
     ],
-    "referenceAnswerMd": "```text\n| 沿前阶段 | PSEL | PENABLE | PREADY | 本沿是否完成 |\n|---|---|---|---|---|\n| E0：SETUP | 1 | 0 | 任意 | 否 |\n| E1：ACCESS 等待 | 1 | 1 | 0 | 否 |\n| E2：ACCESS 完成 | 1 | 1 | 1 | 是 |\n```\n\n一次传输占一个 SETUP 周期和两个 ACCESS 周期，共 3 个 PCLK 周期。等待期间地址、方向和写数据保持不变。无后续传输时，E2 后进入 IDLE，PSEL=0、PENABLE=0。不能在 SETUP 因 PREADY 为高提前完成。",
+    "referenceAnswerMd": "| 沿前阶段 | PSEL | PENABLE | PREADY | 本沿是否完成 |\n|---|---|---|---|---|\n| E0：SETUP | 1 | 0 | 任意 | 否 |\n| E1：ACCESS 等待 | 1 | 1 | 0 | 否 |\n| E2：ACCESS 完成 | 1 | 1 | 1 | 是 |\n\n一次传输占一个 SETUP 周期和两个 ACCESS 周期，共 3 个 PCLK 周期。等待期间地址、方向和写数据保持不变。无后续传输时，E2 后进入 IDLE，PSEL=0、PENABLE=0。不能在 SETUP 因 PREADY 为高提前完成。\n\n![APB 准备、等待与完成：E2 沿完成后返回空闲](/diagrams/content-v15/apb-access.svg)",
     "rubric": [
       "SETUP 不完成；E1 等待；E2 完成。",
       "共 3 个周期，含一个 SETUP 和两个 ACCESS。",
@@ -169,13 +169,13 @@
   },
   {
     "id": "ORIGINAL-SPI-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "07",
     "subtopicId": "spi",
     "type": "single_choice",
     "title": "SPI 模式 0 的采样边沿",
     "promptMd": "SPI mode 0（CPOL=0、CPHA=0），MSB first，片选低有效。以下哪个描述符合该模式？题目仅讨论理想边沿关系，数据需满足实际建立/保持要求。",
-    "explanationMd": "CPOL=0 表示时钟空闲为低；CPHA=0 表示首个有效边沿采样。在空闲低时，首沿是上升沿；发送端需在首沿前准备首位，后续通常在下降沿改变数据。",
+    "explanationMd": "**答案：A。空闲低，上升沿采样，首位提前准备。**\n\nCPOL 决定空闲电平：0 即低。CPHA=0 表示第一个离开空闲电平的有效边沿就采样，所以 mode 0 的第一个上升沿必须已经看到有效 MSB；不能等到这个沿才开始发首位。\n\n后续通常在下降沿更新发送数据，为下一个上升沿留出建立时间。片选负责界定事务；这里讨论理想关系，实际仍需满足器件的 setup/hold 和片选时序。",
     "difficulty": "medium",
     "tags": [
       "spi"
@@ -214,21 +214,21 @@
       "A"
     ],
     "optionExplanations": {
-      "A": "符合 CPOL=0 与 CPHA=0。",
-      "B": "这是 CPOL=0、CPHA=1 的边沿关系。",
-      "C": "空闲高与 CPOL=0 不符。",
-      "D": "空闲高与 CPOL=0 不符。"
+      "A": "CPOL=0 给出空闲低，CPHA=0 给出首个边沿采样；因此首个上升沿前就应准备 MSB。",
+      "B": "空闲低而第二个边沿（下降沿）采样，描述的是 CPHA=1 的 mode 1。",
+      "C": "空闲高与 CPOL=0 矛盾；空闲高且上升沿采样对应 CPOL=1、CPHA=1。",
+      "D": "空闲高违反本题 CPOL=0；空闲高且下降沿先采样对应 CPOL=1、CPHA=0。"
     }
   },
   {
     "id": "ORIGINAL-UART-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "07",
     "subtopicId": "uart",
     "type": "numeric",
     "title": "UART 8N1 的理论有效载荷率",
     "promptMd": "UART 波特率 115200，格式 8N1：每帧 1 个起始位、8 个数据位、无校验、1 个停止位。帧之间无额外空闲，也无软件或流控开销。每个符号传一位，理论最大有效载荷是多少 byte/s？",
-    "explanationMd": "每帧 10 bit，传送 1 byte 有效数据，所以 115200/10=11520 byte/s。不能直接用波特率除以 8 忽略起止位；真实应用的空闲及流控会降低吞吐。",
+    "explanationMd": "**答案：11520 byte/s。**\n\n8N1 的 N 表示无校验。一帧由 1 个起始位、8 个数据位、1 个停止位组成，共 10 个线路 bit，只携带 1 byte 有效数据。\n\n题设每个符号一位，因此 115200 baud 对应 115200 线路 bit/s。\n\n`帧率 = 115200 / 10 = 11520 帧/s`\n\n`有效载荷 = 11520×1 = 11520 byte/s`。\n\n直接除以 8 得到 14400 byte/s 会忽略起止位。这里假设无帧间空闲、软件和流控开销；实际链路常低于这个理论上界。",
     "difficulty": "medium",
     "tags": [
       "uart"

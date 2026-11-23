@@ -1,6 +1,8 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { questionBankSchema } from '../src/domain/question-schema';
 import { topics } from '../src/data/topics';
+import { inspectTeachingContent } from './content-quality';
+import { access } from 'node:fs/promises';
 
 const directory = new URL('../src/data/questions/', import.meta.url);
 const files = (await readdir(directory)).filter((name) => name.endsWith('.json')).sort();
@@ -15,6 +17,21 @@ if (!result.success) {
   console.error(result.error.issues);
   process.exitCode = 1;
 } else {
+  const quality = inspectTeachingContent(result.data);
+  for (const question of result.data) {
+    const texts = [question.promptMd, question.explanationMd, ...('referenceAnswerMd' in question ? [question.referenceAnswerMd] : [])];
+    for (const text of texts) for (const match of text.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
+      const src = match[1];
+      if (/^(?:https?:)?\/\//.test(src)) { quality.warnings.push(`${question.id}: 外部配图不会加载，请改用本地资源`); continue; }
+      const asset = new URL(`../public/${src.replace(/^\//, '')}`, import.meta.url);
+      if (!asset.href.startsWith(new URL('../public/', import.meta.url).href)) { quality.errors.push(`${question.id}: 配图路径越界`); continue; }
+      try { await access(asset); } catch { quality.errors.push(`${question.id}: 配图不存在 ${src}`); }
+    }
+  }
+  quality.warnings.forEach(warning => console.warn(`Review Warning: ${warning}`));
+  quality.errors.forEach(error => console.error(error));
+  if (quality.errors.length) process.exitCode = 1;
+  console.log(`教学辅助检查：${quality.errors.length} 错误，${quality.warnings.length} 待人工判断的提醒（不代表技术认证）。`);
   const verified = result.data.filter((question) => question.reviewStatus === 'verified');
   console.log(`题库结构校验通过：${files.length} 个文件，${result.data.length} 道题，${verified.length} 道可练题。`);
   for (const topic of topics) console.log(`${topic.id} ${topic.name}: ${verified.filter((q) => q.topicId === topic.id).length}`);

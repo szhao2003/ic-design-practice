@@ -1,7 +1,7 @@
 [
   {
     "id": "ORIGINAL-SV-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "true_false",
     "topicId": "02",
     "subtopicId": "latch-inference",
@@ -22,7 +22,7 @@
     },
     "promptMd": "判断下面说法：只要过程使用 `always_comb`，即使存在输出未被赋值的分支，也能保证描述的是完整组合逻辑，不会产生保持旧值的需求。\n\n```systemverilog\nalways_comb begin\n  if (en) q = d;\nend\n```\n\n只讨论该过程的赋值完备性，q 不由其他过程驱动；不把工具报错或警告当成自动补值。",
     "correctValue": false,
-    "explanationMd": "**错误。** 当 en=0 时，该过程没有给 q 新赋值，语义上需要保留 q 的旧值，属于不完整组合赋值。`always_comb` 不会自动给缺失分支生成一个符合设计意图的值；工具可能报告锁存器相关警告或错误。\n\n若设计意图是 en=0 时输出 0，可写：\n```systemverilog\nalways_comb begin\n  q = '0;\n  if (en) q = d;\nend\n```\n默认值应符合接口要求，不能为了消除告警随便选择。",
+    "explanationMd": "**答案：错误。** 组合逻辑需要在每次执行时为输出确定新值。题目只写了 en=1 的分支，en=0 时没有任何语句更新 q，所以语义上要求 q 记住上一次的值。\n\n`always_comb` 表示组合设计意图，并帮助工具检查；它不会替设计者决定缺失分支应该输出什么。工具可能报告锁存器相关错误或警告，这也不等于自动把缺口补好。\n\n如果接口要求 en=0 输出零，可以明确给默认值：\n```systemverilog\nalways_comb begin\n  q = '0;\n  if (en) begin\n    q = d;\n  end\nend\n```\n\n这段默认值只适用于“禁用时输出零”的设计。若真正需要使能为低时保持数据，应采用相应存储结构，而不是随意加零来消除告警。",
     "commonMistakes": [
       "把过程关键字当作赋值完备性的自动保证。",
       "不先明确 en=0 时的设计行为，就随意补一个默认值。"
@@ -30,7 +30,7 @@
   },
   {
     "id": "ORIGINAL-SV-0002",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "single_choice",
     "topicId": "02",
     "subtopicId": "blocking-nba",
@@ -48,9 +48,10 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "SystemVerilog 中 a、b 均为 1 bit，某时钟沿前 a=1、b=0。唯一写进程为：\n```systemverilog\nalways_ff @(posedge clk) begin\n  a <= b;\n  b <= a;\nend\n```\n无复位或其他写入。该沿的 NBA 更新完成后，(a,b) 是多少？",
-    "explanationMd": "两条非阻塞赋值均在执行时读取旧值，再在 NBA 区更新，因此 a=0、b=1。",
+    "explanationMd": "**答案：A，(a,b)=(0,1)。** `<=` 先计算本条语句右边的值，再安排 NBA 区更新。第二行不会读到第一行尚未写入的新 a。\n\n| 阶段 | a | b | 当时发生什么 |\n|---|---|---|---|\n|上升沿前|1|0|题目给定旧值|\n|执行两条语句|仍为 1|仍为 0|安排 a←old_b=0、b←old_a=1|\n|NBA 更新完成|0|1|两个目标一起完成本沿更新|\n\n这也是流水线中后一级读取前一级旧寄存值的原因。分析同沿寄存器赋值时，先把沿前状态写在纸上，再计算沿后状态，比按代码顺序“边读边改”可靠。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "把 a<=b 当作立刻把 a 改成 0，继而错误地让 b 读取新 a。",
+      "认为同一时钟沿执行的 NBA 不会发生实际更新。"
     ],
     "options": [
       {
@@ -74,15 +75,15 @@
       "A"
     ],
     "optionExplanations": {
-      "A": "两个旧值交换。",
-      "B": "把第二条当成读取更新后的 a。",
-      "C": "忽略第一条读取的旧 b=0。",
-      "D": "两条赋值均已执行，不能保持旧状态。"
+      "A": "a 读取旧 b=0，b 读取旧 a=1，NBA 后为 (0,1)。两条右值都由沿前状态决定。",
+      "B": "(0,0) 来自把第一条误当成立刻更新，再让第二条读新 a=0；本题的非阻塞赋值不按这种方式读取。",
+      "C": "a 的右边是旧 b=0，因此 a 不可能在 NBA 完成后仍为 1；(1,1) 忽略了这次更新。",
+      "D": "(1,0) 是沿前状态。两条赋值均执行且无其他驱动，NBA 完成后不能保持这一旧状态。"
     }
   },
   {
     "id": "ORIGINAL-SV-0003",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "waveform_analysis",
     "topicId": "02",
     "subtopicId": "event-scheduling",
@@ -100,11 +101,12 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "q 初始为 0，只有以下进程写 q。en 在 E0、E1、E2 三个上升沿前均已稳定，依次为 0、1、0。列出每个沿全部 NBA 更新完成后的 q，并解释。\n```systemverilog\nalways_ff @(posedge clk) begin\n  q <= 1'b1;\n  if (en) q <= 1'b0;\nend\n```",
-    "explanationMd": "| 时钟沿 | en | 更新后的 q |\n|---|---|---|\n| E0 | 0 | 1 |\n| E1 | 1 | 0 |\n| E2 | 0 | 1 |\n\n同一顺序进程内，对同一变量且同一更新时刻，最后执行的非阻塞赋值决定最终值。en=1 时第二条覆盖第一条；en=0 时只执行第一条。",
+    "explanationMd": "**结果为 1、0、1。** 本题只有一个顺序进程写 q，因此可以按进程内的执行顺序确定最终安排。\n\n每沿都执行 `q<=1`；en=1 时还会执行后面的 `q<=0`。两条赋值的目标变量与 NBA 更新时间相同，最后执行的安排决定最终值。E1 因 en=1 得 0，E0/E2 因 en=0 根本不执行第二条，所以得 1。\n\n“最后执行”限定于题目这个确定的单进程顺序；若拆到不同 always 中写同一个变量，就可能成为多驱动或竞争，不能拿源码上下顺序套用。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "把 if 条件为假理解为 q 保持，却忘了前面无条件的 q<=1。",
+      "将单进程内有序安排推广到两个独立进程的先后顺序。"
     ],
-    "referenceAnswerMd": "| 时钟沿 | en | 更新后的 q |\n|---|---|---|\n| E0 | 0 | 1 |\n| E1 | 1 | 0 |\n| E2 | 0 | 1 |\n\n同一顺序进程内，对同一变量且同一更新时刻，最后执行的非阻塞赋值决定最终值。en=1 时第二条覆盖第一条；en=0 时只执行第一条。",
+    "referenceAnswerMd": "**结果为 1、0、1。** 本题只有一个顺序进程写 q，因此可以按进程内的执行顺序确定最终安排。\n\n每沿都执行 `q<=1`；en=1 时还会执行后面的 `q<=0`。两条赋值的目标变量与 NBA 更新时间相同，最后执行的安排决定最终值。E1 因 en=1 得 0，E0/E2 因 en=0 根本不执行第二条，所以得 1。\n\n“最后执行”限定于题目这个确定的单进程顺序；若拆到不同 always 中写同一个变量，就可能成为多驱动或竞争，不能拿源码上下顺序套用。",
     "rubric": [
       "结果依次为 1、0、1。",
       "说明条件为假时第二条不执行。",
@@ -113,7 +115,7 @@
   },
   {
     "id": "ORIGINAL-SV-0004",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "single_choice",
     "topicId": "02",
     "subtopicId": "four-state",
@@ -131,9 +133,10 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "SystemVerilog 四态变量 a=4'b10x1，b=4'b1001。表达式 (a == b) 与 (a === b) 依次是什么？",
-    "explanationMd": "== 对这里无法确定的相等关系返回 X；=== 将 X/Z 当作可精确比较的状态，第三位 X 与 0 不同，返回 0。",
+    "explanationMd": "**答案：B，依次是 X、0。** 先比较每一位：a=10x1 与 b=1001 的已知位都一致，只有第三位的 X 与 0 无法确定。\n\n`==` 问的是两个逻辑值是否相等；X 可能代表 0 或 1，所以这里不能判定，结果为 X。`===` 则把 X/Z 当作可以精确匹配的四态符号，X 与 0 明确不是同一符号，结果为 0。\n\n不要记成“== 只要出现 X 就一定为 X”：例如 4 位 1x00 与 0x00 的最高已知位已经不相等，逻辑相等可以明确为 0。本题没有这样的已知不等位。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "把 X 当成通配符，认为它可以直接匹配 0。",
+      "记住 == 遇 X 为 X，却漏掉已知位已经明确不等的反例。"
     ],
     "options": [
       {
@@ -157,15 +160,15 @@
       "B"
     ],
     "optionExplanations": {
-      "A": "== 在此没有已知不等位，结果不是确定的 0。",
-      "B": "逻辑相等未知，全等明确不等。",
-      "C": "=== 的结果总为确定的 0 或 1。",
-      "D": "X 不是任意匹配的通配符。"
+      "A": "全等确实为 0，但逻辑相等在本题没有已知不等位，只能为 X，不能确定为 0。",
+      "B": "== 无法判断 X 对应哪种逻辑值；=== 精确比较 X 与 0 得不相等，因此是 X、0。",
+      "C": "=== 的比较结果是确定的 0 或 1，不因操作数出现 X 就返回 X。",
+      "D": "对于 ===，X 与 0 不同；对于 ==，也没有信息保证两者相等，所以不能都是 1。"
     }
   },
   {
     "id": "ORIGINAL-SV-0005",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "multiple_choice",
     "topicId": "02",
     "subtopicId": "signed-width",
@@ -183,9 +186,10 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "所有变量已初始化且不含 X/Z：\n```systemverilog\nlogic signed [7:0] s = -8'sd1;\nlogic        [7:0] u = 8'hff;\n```\n下列表达式哪些为 1？",
-    "explanationMd": "s 的位模式为 11111111，有符号值为 -1；u 同位模式的无符号值为 255。显式转换在这里保留 8 bit，只改变有无符号解释。",
+    "explanationMd": "**答案：A、C、D。** s、u 的 8 位模式都是 11111111；区别在于 s 声明为 signed，解释成 -1，u 则解释成无符号 255。\n\n| 表达式 | 按什么值比较 | 结果 |\n|---|---|---|\n|s < 8 位 signed 0|-1 < 0|1|\n|u < 8 位 unsigned 0|255 < 0|0|\n|$signed(u) < signed 0|-1 < 0|1|\n|$unsigned(s) == unsigned 255|255 == 255|1|\n\n这里两边的位宽都明确为 8 bit，转换只改变有无符号解释，不把负一的位模式重新计算成另一串位。实际遇到不同位宽或混合 signed/unsigned 表达式时，还要继续分析尺寸和类型规则。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "把 8 位 ff 不分类型地固定解释为 -1。",
+      "以为 $signed/$unsigned 在本题会改变位串或额外增加一个符号位。"
     ],
     "options": [
       {
@@ -211,15 +215,15 @@
       "D"
     ],
     "optionExplanations": {
-      "A": "双方有符号，-1<0。",
-      "B": "双方无符号，255<0 为假。",
-      "C": "转换后按 8 位有符号数解释为 -1。",
-      "D": "转换后按 8 位无符号数解释为 255。"
+      "A": "s 的 11111111 按 signed 为 -1，右侧 8'sd0 同为八位 signed，-1<0 为真。",
+      "B": "u 是八位 unsigned 的 255，右侧也是 unsigned 零，255<0 为假；不能因最高位为 1 就自动当负数。",
+      "C": "$signed(u) 不改八位模式，却把 11111111 解释成 -1；与 signed 零比较得到真。",
+      "D": "$unsigned(s) 保留 11111111，改按无符号值 255 解释，与 8'd255 的值相等。"
     }
   },
   {
     "id": "ORIGINAL-SV-0006",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "numeric",
     "topicId": "02",
     "subtopicId": "sv-basics",
@@ -237,16 +241,17 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "p 为 logic [1:0]，值为 2'b10；y 为 logic [5:0]，由 assign y = {3{p}} 驱动。稳定后把 y 按无符号数解释，十进制值为多少？",
-    "explanationMd": "复制拼接得到 6'b101010，值为 32+8+2=42。复制次数不是算术乘数。",
+    "explanationMd": "**答案：42。** `{3{p}}` 是把 p 的位串复制三份后拼接，不是把 p 的数值乘以 3。\n\n已知 p 为两位 10，所以结果长度为 `3×2=6` 位，依次连接为 `10 10 10`，即 `101010`。按无符号二进制权重求值：`1×32+1×8+1×2=42`。\n\ny 恰为 6 位，不需要截断或扩展。若写算术 `3*p`，得到的是另一个运算，不能拿它代替复制拼接。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "把复制拼接当作十进制数值乘法，计算成 3×2=6。",
+      "没有先确定每份 p 的两位宽度，遗漏输出中的前导位置。"
     ],
     "expectedValue": 42,
     "absoluteTolerance": 0
   },
   {
     "id": "ORIGINAL-SV-0007",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "short_answer",
     "topicId": "02",
     "subtopicId": "four-state",
@@ -264,11 +269,12 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "四态仿真，sel=2'bx1。求下面 y 的值，再求仅将 casez 改为 casex 后的值，并解释调试风险。\n```systemverilog\nalways_comb begin\n  y = 1'b0;\n  casez (sel)\n    2'b1?: y = 1'b1;\n    default: y = 1'b0;\n  endcase\nend\n```",
-    "explanationMd": "casez 下 y=0：casez 把 Z 与 ? 作为通配状态，但不把 sel 中的 X 当通配。x1 无法匹配要求最高位为 1 的 1?，走 default。改为 casex 后 y=1，因为 X 也成为通配。\n\ncasex 可能把未初始化或冲突产生的 X 掩盖为有效命中。应先查明 X 的来源，并根据设计意图使用精确 case、明确的掩码比较及未知值检查；casez 也会掩盖 Z，不能一概视为安全。",
+    "explanationMd": "**把最高位单独拿出来比较就能看清差别。** 选择值是 x1，分支模式是 1?；低位 ? 可以匹配任意位，关键是高位 X 是否能被当作通配。\n\n- `casez` 允许 Z/? 作通配，但不把 X 当通配，因此高位 X 不等于模式的 1，走 default，y=0。\n- `casex` 连 X 也忽略，于是高位被当作可匹配 1，命中该分支，y=1。\n\n如果 X 来自未初始化或冲突，casex 会把真正的问题包装成合法命中。casez 也不是无条件安全：它仍会忽略 Z，是否允许这种输入状态必须由接口约定决定。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "以为 casez 与 casex 都会把输入 X 当通配。",
+      "把 casex 隐藏未知值后的确定输出当成设计没有初始化问题的证明。"
     ],
-    "referenceAnswerMd": "casez 下 y=0：casez 把 Z 与 ? 作为通配状态，但不把 sel 中的 X 当通配。x1 无法匹配要求最高位为 1 的 1?，走 default。改为 casex 后 y=1，因为 X 也成为通配。\n\ncasex 可能把未初始化或冲突产生的 X 掩盖为有效命中。应先查明 X 的来源，并根据设计意图使用精确 case、明确的掩码比较及未知值检查；casez 也会掩盖 Z，不能一概视为安全。",
+    "referenceAnswerMd": "**把最高位单独拿出来比较就能看清差别。** 选择值是 x1，分支模式是 1?；低位 ? 可以匹配任意位，关键是高位 X 是否能被当作通配。\n\n- `casez` 允许 Z/? 作通配，但不把 X 当通配，因此高位 X 不等于模式的 1，走 default，y=0。\n- `casex` 连 X 也忽略，于是高位被当作可匹配 1，命中该分支，y=1。\n\n如果 X 来自未初始化或冲突，casex 会把真正的问题包装成合法命中。casez 也不是无条件安全：它仍会忽略 Z，是否允许这种输入状态必须由接口约定决定。",
     "rubric": [
       "casez 输出 0，casex 输出 1。",
       "区分 X 与 Z/? 的通配规则。",
@@ -278,7 +284,7 @@
   },
   {
     "id": "ORIGINAL-SV-0008",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "single_choice",
     "topicId": "02",
     "subtopicId": "sv-basics",
@@ -296,9 +302,10 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "a 为 4 bit 四态向量，已知 a=4'b1010，不含 X/Z。(~a, &a, |a, ^a) 依次是什么？",
-    "explanationMd": "~ 保持 4 bit 并逐位取反为 0101；归约 AND 因有 0 得 0；归约 OR 因有 1 得 1；归约 XOR 有偶数个 1 得 0。",
+    "explanationMd": "**答案：A，(0101,0,1,0)。** `~` 是逐位运算，保留四位宽度；前缀归约运算 `&a`、`|a`、`^a` 则把所有位合成一个 bit。\n\n- `~1010=0101`：每一位分别反相。\n- `&a=1&0&1&0=0`：AND 需要全部为 1。\n- `|a=1|0|1|0=1`：OR 只需任一位为 1。\n- `^a=1^0^1^0=0`：两个 1 异或抵消，偶校验为零。\n\n逻辑非 `!a` 是另一个运算；本题 a 非零，所以 !a 为单 bit 0，不能写成四位反相结果。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "把按位取反 ~a 和逻辑非 !a 混为同一运算。",
+      "归约 XOR 没有按 1 的奇偶个数核对，两个 1 误算成 1。"
     ],
     "options": [
       {
@@ -322,15 +329,15 @@
       "A"
     ],
     "optionExplanations": {
-      "A": "逐位取反与三个归约值均正确。",
-      "B": "归约 AND 与 XOR 均算错。",
-      "C": "把按位取反 ~ 误当成逻辑非 !。",
-      "D": "~ 必须反转每一位。"
+      "A": "逐位反相得到 0101；AND 有零得 0，OR 有一得 1，两个 1 的 XOR 得 0，四个分量都符合定义。",
+      "B": "a 中有零，因此归约 AND 不能为 1；a 中恰有两个 1，因此归约 XOR 也不能为 1。",
+      "C": "第一项写成单个 0，实际对应非零向量的逻辑非 !a；题目要求的是四位按位取反 ~a。",
+      "D": "第一项仍为原位串 1010，没有执行题目要求的逐位反相。"
     }
   },
   {
     "id": "ORIGINAL-SV-0009",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "single_choice",
     "topicId": "02",
     "subtopicId": "event-scheduling",
@@ -348,9 +355,10 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "理想 RTL 仿真：rst_n 初始为 0 且复位已使 q=0；en=1、d=1 始终稳定。rst_n 在相邻两个时钟上升沿之间从 0 变为 1，没有其他事件。\n```systemverilog\nalways_ff @(posedge clk or negedge rst_n)\n  if (!rst_n) q <= 1'b0;\n  else if (en) q <= d;\n```\n复位释放后、下一时钟沿前的 q，以及下一上升沿 NBA 完成后的 q 是多少？",
-    "explanationMd": "rst_n 上升沿不在敏感事件列表内，所以释放本身不执行进程。下一 posedge clk 执行数据分支。此结论仅描述 RTL 事件语义，不保证物理复位释放满足 recovery/removal。",
+    "explanationMd": "**答案：A，释放后先保持 0，下一上升沿 NBA 后变为 1。** 敏感事件只有 `posedge clk` 与 `negedge rst_n`。\n\n| 事件 | 是否执行进程 | q |\n|---|---|---|\n|复位已断言|已执行复位分支|0|\n|rst_n 从 0 到 1|不是 negedge，也没有 clk 上升沿|保持 0|\n|下一 clk 上升沿|进入 rst_n=1、en=1 的数据分支|安排 q<=d=1，NBA 后为 1|\n\n这里讲的是理想 RTL 的触发与更新规则。物理电路的异步复位释放还需要 recovery/removal 等检查，不能因仿真没有 X 就认定释放已经安全。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "把复位信号的上升沿也当作 negedge rst_n 触发。",
+      "把理想 RTL 没有出现 X 当成器件复位释放满足时序的证明。"
     ],
     "options": [
       {
@@ -374,15 +382,15 @@
       "A"
     ],
     "optionExplanations": {
-      "A": "释放不触发，下一时钟沿才更新为 1。",
-      "B": "误把复位释放当作敏感事件。",
-      "C": "忽略下一上升沿 en=1 的数据赋值。",
-      "D": "题目给定理想事件及稳定初值，没有引入 X 的条件。"
+      "A": "rst_n 的 0→1 不在敏感事件中，因此先保持 0；下一 posedge clk 执行 en=1 的分支，NBA 后写入 d=1。",
+      "B": "第一项 1 需要复位释放立即执行数据分支，但过程只列 negedge rst_n，没有 posedge rst_n，故释放本身不更新 q。",
+      "C": "第二项 0 忽略了下一上升沿已满足 rst_n=1、en=1，代码会安排 q<=1，不能继续保持 0。",
+      "D": "题目限定理想 RTL、已确定复位与稳定输入，未引入 X 的条件；不能用物理释放风险替代题给数字推演。"
     }
   },
   {
     "id": "ADAPTED-YHC-SV-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "02",
     "subtopicId": "blocking-nba",
     "type": "short_answer",
@@ -403,7 +411,7 @@
       "note": "参考 YHCHub 练习汇编 Q3 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
     },
     "promptMd": "x、y 都为 1 bit，某个时钟沿前已稳定为 x=0、y=1。无其他驱动、复位、延时或并发操作。只有以下两个独立进程：\n```systemverilog\nalways @(posedge clk) x = y;\nalways @(posedge clk) y = x;\n```\n列出该沿两个进程都执行完后的可能结果。再说明两处都改为非阻塞赋值 <= 时，NBA 完成后的结果。",
-    "explanationMd": "单条阻塞赋值立即更新左值，不同进程之间没有指定执行顺序，因此存在读写竞争。非阻塞赋值能使本题两个寄存器各自读取沿前值；这不意味着所有任意多驱动竞争都可由 <= 自动解决。",
+    "explanationMd": "**关键是两个进程没有共同规定的先后。** 在一个进程内，阻塞赋值立即更新变量；另一进程随后读取时可能已经读到这个新值。\n\n沿前 x=0、y=1。如果 x=y 先执行，x 先变成 1，y=x 接着也得到 1；如果 y=x 先执行，两者最终都变成 0。因此“仿真某次得到 00”不能证明 00 是唯一正确答案。\n\n两处都改 NBA 时，各条右值在寄存器更新前计算，于是 x 取旧 y=1、y 取旧 x=0。此处能消除读写顺序依赖，是因为每个目标仍只有一个写进程，不是允许任意多进程同时写同一变量。",
     "referenceAnswerMd": "两个进程的执行顺序没有规定：\n\n- 若先执行 x=y，则 x 变成 1，随后 y=x 也为 1，得到 (1,1)。\n- 若先执行 y=x，则 y 变成 0，随后 x=y 也为 0，得到 (0,0)。\n\n因此原写法不能唯一确定这一沿的结果。把两处赋值均改为 <= 后，右值各取沿前值，NBA 更新完成后唯一得到 (x,y)=(1,0)。不能用源文件上下顺序约定两个独立进程的先后。",
     "rubric": [
       "列出 (0,0) 与 (1,1) 两种结果。",
@@ -418,7 +426,7 @@
   },
   {
     "id": "ADAPTED-YHC-SV-0002",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "02",
     "subtopicId": "latch-inference",
     "type": "single_choice",
@@ -439,7 +447,7 @@
       "note": "参考 YHCHub 练习汇编 Q7 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
     },
     "promptMd": "仅讨论下面过程。a=1、b=0 已稳定；t=1 ns 时 sel 从 1 降到 0，此次过程执行完成后 y=0；t=3 ns 时仅 b 从 0 变为 1，sel 保持 0。观察 t=4 ns 的 RTL 仿真值。\n```systemverilog\nalways @(sel) begin\n  if (sel) y = a;\n  else     y = b;\nend\n```\n哪项判断正确？",
-    "explanationMd": "显式敏感列表只包含 sel，b 的单独变化不会触发该过程，所以 t=4 ns 的 RTL y 仍为 0。每次过程实际执行时两个分支都给 y 赋值；这与缺少分支赋值引入的存储需求不同。常见综合工具按完整数据依赖实现组合 MUX，可能导致仿真/综合不一致；应改用 always_comb 或完整的 @*，并检查工具诊断。",
+    "explanationMd": "**答案：A。** t=1 ns 的 sel 下降沿会唤醒过程，当时选择 b=0，所以 y=0。t=3 ns 只有 b 改变，但显式敏感列表中没有 b，过程不会再次执行；t=4 ns 的 RTL y 因而仍为 0。\n\n这和“过程被执行时是否为所有分支赋值”是两件事。本题 if/else 对 y 都赋了值，不能仅凭仿真保留了旧值就断定硬件一定推断出锁存器。常见综合工具按完整数据依赖实现 MUX，可能与这个错误敏感列表的 RTL 仿真不同。\n\n组合设计应使用 always_comb 或合适的 @*，并检查工具诊断。把 = 换成 <= 不会改变哪些输入事件能唤醒过程。",
     "options": [
       {
         "id": "A",
@@ -462,10 +470,10 @@
       "A"
     ],
     "optionExplanations": {
-      "A": "b 变化没有触发过程，不能仅由敏感列表缺项断言综合硬件一定是锁存器。",
-      "B": "分支完整性和过程触发条件是不同问题。",
-      "C": "综合行为需看数据依赖和工具；不能给出此绝对结论。",
-      "D": "NBA 不会修复显式敏感列表缺项。"
+      "A": "t=3 ns 仅 b 变化，不会触发 @(sel)，所以 y 仍是先前写入的 0；分支已覆盖两种 sel，漏列敏感信号不等同于锁存器证明。",
+      "B": "if/else 完整只说明执行时有赋值，并不会自动扩展显式敏感列表；sel 未变，过程没有重新执行。",
+      "C": "常见综合按完整数据依赖实现 MUX；锁存器要看是否需要保留状态，不能由触发列表错误断言所有综合器都推断存储。",
+      "D": "<= 改的是更新调度方式，不改变 @(sel) 监听的事件；b 单独变化仍不能唤醒过程。"
     },
     "commonMistakes": [
       "混淆仿真中的旧值与综合的锁存器推断。",
@@ -474,7 +482,7 @@
   },
   {
     "id": "ADAPTED-YHC-SV-0003",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "02",
     "subtopicId": "sv-basics",
     "type": "multiple_choice",
@@ -495,7 +503,7 @@
       "note": "参考 YHCHub 练习汇编 Q29 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
     },
     "promptMd": "比较两种实现目标：A 是支持 HDL 常量初始化映射到配置 INIT 的 FPGA 流程；B 是没有规定上电态、也没有特殊初始化映射的普通 ASIC 寄存器。RTL 包含声明初始化 logic [3:0] q = 4'h9，之后在时钟沿按使能装载数据。以下哪些说法正确？",
-    "explanationMd": "初始化的硬件支持取决于目标器件、资源和综合流程。题目给定 A 支持 INIT，可以在配置后取得约定初态；B 没有这样的保证。即使支持上电初始化，也不等于支持用户运行途中按需重新复位。带任意仿真延时的 initial 语句更不能一概视为可综合。",
+    "explanationMd": "**答案：A、C。** 看初始化能否落地，必须先看目标资源与流程保证，而不是只看 HDL 中有没有 initial 形式。\n\n题目已经规定目标 A 支持把常量初值映射到 FPGA 的配置 INIT，因此配置后可以获得约定初态。目标 B 没有上电态或特殊初始化映射保证，不能凭声明中的 9 就认定硅上电后一定是 9。\n\n另一个独立问题是运行时复位：即使配置时 q=9，运行一段时间后想重新清状态，也仍需要符合接口要求的复位/重载机制。常量初始化的支持也不等于支持 initial 中任意 # 延时。",
     "options": [
       {
         "id": "A",
@@ -519,10 +527,10 @@
       "C"
     ],
     "optionExplanations": {
-      "A": "这是本题明确给定的 FPGA 流程能力，仍须检查具体资源映射。",
-      "B": "没有库或流程保证就不能依赖该初值。",
-      "C": "上电/配置行为与运行时复位接口不是同一功能。",
-      "D": "常量初始化支持不意味着支持任意仿真时间控制。"
+      "A": "题设目标 A 明确支持将常量映射到配置 INIT；只有在对应资源和流程支持时才能依赖这个配置初态。",
+      "B": "目标 B 没有库或流程承诺上电值，HDL 声明中的 9 不会自动赋予硬件确定上电行为。",
+      "C": "配置时得到初值不能在运行任意时刻重新触发；需要运行中复位/重载时，仍需相应接口和逻辑。",
+      "D": "映射常量初态是特定实现能力；任意 # 延时依赖仿真时间推进，不能由常量初始化支持推出可综合。"
     },
     "commonMistakes": [
       "把某一 ASIC 流程的限制推广到全部 FPGA。",

@@ -1,7 +1,7 @@
 [
   {
     "id": "ORIGINAL-STA-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "numeric",
     "topicId": "03",
     "subtopicId": "setup-hold",
@@ -22,7 +22,7 @@
       "ps": 0.001
     },
     "absoluteTolerance": 0.001,
-    "explanationMd": "**答案：+1.5 ns，也就是 +1500 ps。**\n\n1. 以发射沿为 0，数据最晚到达接收寄存器 D 端的时刻为 `arrival = 0.8 + 6.5 = 7.3 ns`。\n2. 接收端在 10 ns 的时钟沿捕获，需预留 setup 和 uncertainty：`required = 10 - 0.7 - 0.5 = 8.8 ns`。\n3. `setup slack = required - arrival = 8.8 - 7.3 = +1.5 ns`。\n\n本题已规定 skew 为 0，uncertainty 扣减可用预算。结果为正表示在这些假设下满足 setup 要求，不能据此判断 hold 是否满足。允许误差为 0.001 ns（1 ps）。",
+    "explanationMd": "**答案：+1.5 ns（+1500 ps），满足题设的 setup 检查。**\n\nSetup 要保证旧一拍发射的数据，在下一捕获沿之前已稳定。`tCQ,max` 是发射 FF 从时钟沿到 Q 最晚变化的时间；`tsetup` 是接收 FF 在采样沿前要求 D 稳定的时间；uncertainty 是本题预留的时钟预算。\n\n| 项目 | 代入（ns） | 含义 |\n|---|---|---|\n| 数据最晚到达 arrival | 0 + 0.8 + 6.5 = 7.3 | 发射沿到 D 端 |\n| 数据最迟允许到达 required | 10 − 0.7 − 0.5 = 8.8 | 捕获前预留 setup 和 uncertainty |\n| Setup slack | required − arrival = 8.8 − 7.3 = +1.5 | 剩余预算 |\n\n正裕量说明这一条最大延迟路径满足题内要求；hold 使用最小延迟，不能由本结果推出。skew 已规定为零，不再另加时钟项。",
     "commonMistakes": [
       "漏扣 uncertainty，误算成 2.0 ns。",
       "把 slack 定义成 arrival - required，导致正负号反了。",
@@ -38,7 +38,7 @@
   },
   {
     "id": "ORIGINAL-STA-0002",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "numeric",
     "topicId": "03",
     "subtopicId": "skew-jitter",
@@ -56,9 +56,10 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "单周期同频寄存器路径，周期 T=8 ns。发射沿实际到达时刻为 0，下一捕获沿为 8.4 ns。tCQ,max=0.7 ns，组合最大延迟 5.8 ns，setup=0.6 ns，setup uncertainty=0.3 ns（从 required time 扣除）。不含其他延迟。求 setup slack，单位 ns。",
-    "explanationMd": "数据到达=0+0.7+5.8=6.5 ns；required=8.4-0.6-0.3=7.5 ns；slack=required-arrival=+1.0 ns。捕获时钟晚到 0.4 ns 在本题中有利于 setup。",
+    "explanationMd": "**答案：+1.0 ns。**\n\n捕获沿已经给成实际时刻 8.4 ns，不能再加一次周期 8 ns。`tCQ,max=0.7 ns` 是发射 FF 的最晚响应，组合逻辑再用 5.8 ns；setup=0.6 ns 和 uncertainty=0.3 ns 都要留在捕获沿之前。\n\n1. 最晚到达：`arrival = 0 + 0.7 + 5.8 = 6.5 ns`。\n2. 最迟允许到达：`required = 8.4 − 0.6 − 0.3 = 7.5 ns`。\n3. Setup 裕量：`required − arrival = 7.5 − 6.5 = +1.0 ns`。\n\n若捕获沿为 8.0 ns，裕量只有 0.6 ns；晚到的 0.4 ns 给数据多留了时间。因此本题的正偏斜有利于 setup，但不能推广成也有利于 hold。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "将已经包含周期的 8.4 ns 再加 8 ns。",
+      "将捕获晚到 0.4 ns 当成数据路径延迟扣掉。"
     ],
     "unit": "ns",
     "defaultUnit": "ns",
@@ -71,7 +72,7 @@
   },
   {
     "id": "ORIGINAL-STA-0003",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "numeric",
     "topicId": "03",
     "subtopicId": "setup-hold",
@@ -89,7 +90,7 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "同一周期的发射沿到达 0 ns，捕获沿到达 +0.30 ns。tCQ,min=0.12 ns，组合最小延迟 0.18 ns，hold=0.10 ns，hold uncertainty=0.05 ns（额外增加 required hold time）。求 hold slack，单位 ns。不考虑其他延迟。",
-    "explanationMd": "最早新数据到达=0.12+0.18=0.30 ns；旧数据要求保持到 0.30+0.10+0.05=0.45 ns；hold slack=arrival-required=-0.15 ns，违反保持时间。这里检查同周期相邻数据，增加周期不能改变这些时刻。",
+    "explanationMd": "**答案：−0.15 ns，hold 违例。**\n\nHold 保护的是捕获沿附近的旧数据：新数据不能太早冲到 D 端。`tCQ,min=0.12 ns` 是发射 FF 最早改变 Q 的时间，组合最小延迟为 0.18 ns。\n\n| 检查量 | 计算（ns） |\n|---|---|\n| 新数据最早到达 arrival | 0 + 0.12 + 0.18 = 0.30 |\n| 旧数据需保持到 required | 捕获沿 0.30 + hold 0.10 + uncertainty 0.05 = 0.45 |\n| Hold slack = arrival − required | 0.30 − 0.45 = −0.15 |\n\n新数据比允许变化的时间早了 0.15 ns。这里比较同周期边沿，增加周期不会改变 0.30 ns 和 0.45 ns 的关系；修复应关注最小数据延迟或时钟到达关系。",
     "commonMistakes": [
       "把 hold slack 也写成 required-arrival。",
       "使用最大延迟或在同沿 hold 计算里额外加一个周期。"
@@ -105,7 +106,7 @@
   },
   {
     "id": "ORIGINAL-STA-0004",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "numeric",
     "topicId": "03",
     "subtopicId": "slack-fmax",
@@ -123,9 +124,10 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "零时钟偏斜、单周期同沿路径。tCQ,max=0.6 ns，组合最大延迟=4.8 ns，setup=0.4 ns，setup uncertainty=0.2 ns。假定没有其他瓶颈、例外或附加延迟，求满足 setup 的最高时钟频率，单位 MHz。",
-    "explanationMd": "最小周期=0.6+4.8+0.4+0.2=6.0 ns。fmax=1000/6=166.666… MHz。这是给定延迟模型下的上界，并非实际芯片频率保证。",
+    "explanationMd": "**答案：约 166.67 MHz。**\n\n最高频率对应刚好满足 setup 的最短周期。零偏斜下，数据必须经过发射 FF 和组合逻辑，并在接收沿前留出 setup 与 uncertainty：\n\n`Tmin = tCQ,max + tcomb,max + tsetup + Usetup`\n\n`= 0.6 + 4.8 + 0.4 + 0.2 = 6.0 ns`。\n\n频率是周期的倒数；因 `1/ns = 1000 MHz`，所以 `fmax = 1000 / 6.0 = 166.666… MHz`。只取组合逻辑的 4.8 ns 会漏掉触发器和时钟预算，得到过于乐观的频率。该上界仅适用于给定唯一瓶颈模型，不代表 hold、其他路径或实际芯片已签核。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "把 4.8 ns 当成完整最小周期，遗漏 tCQ、setup 和 uncertainty。",
+      "将 1/6 的单位直接写成 MHz，漏掉 ns 到 MHz 的 1000 倍换算。"
     ],
     "expectedValue": 166.66666666666666,
     "unit": "MHz",
@@ -138,7 +140,7 @@
   },
   {
     "id": "ORIGINAL-STA-0005",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "multiple_choice",
     "topicId": "03",
     "subtopicId": "timing-fixes",
@@ -156,9 +158,11 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "同一时钟、单周期路径；时钟偏斜和各单元延迟固定，不考虑工具因约束变化重新优化。以下说法哪些正确？",
-    "explanationMd": "Setup 检查下一捕获沿，放宽周期可以增加可用时间；同沿 hold 不依赖周期。数据路径增加延迟会推迟最早与最晚到达，可改善 hold 但损失 setup 裕量。例外约束必须有功能证据。",
+    "explanationMd": "**答案：A、C。两项分别改变时间预算和数据到达时刻，可以同时成立。**\n\nSetup 比较下一捕获沿：`slack = required − arrival,max`；hold 比较本周期边沿：`slack = arrival,min − required`。本题固定所有物理延迟与偏斜，因此仅改周期不会触发工具重新布线。\n\n若周期增加 1 ns，下一捕获沿晚 1 ns，setup 裕量增加 1 ns；同沿 hold 的两个时刻均不变。若数据路径的最小、最大延迟都增加 0.1 ns，hold 裕量增加 0.1 ns，setup 裕量则减少 0.1 ns。具体单元的 min/max 增量可能不同，所以工程上要两边重查。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "为了消除 hold 违例而只降低同源时钟频率。",
+      "插入数据延迟后只查 hold，不检查被吃掉的 setup 裕量。",
+      "用 false path 隐藏实际需要采样的数据路径。"
     ],
     "options": [
       {
@@ -183,15 +187,15 @@
       "C"
     ],
     "optionExplanations": {
-      "A": "其他条件固定时下一捕获沿推后。",
-      "B": "同沿 hold 的相关到达时刻没有变化。",
-      "C": "最早到达变晚有利于 hold，最晚到达变晚不利于 setup。",
-      "D": "错误屏蔽会漏掉真实功能路径。"
+      "A": "增加周期会推迟下一捕获沿，required 增大；题设其他量固定，因此 setup slack 增大。",
+      "B": "Hold 检查本周期的新旧数据交界，增加下一周期距离不改变这次交界，不能保证修复。",
+      "C": "新数据最早到达变晚可保护旧数据，但最晚到达也变晚，留给下一捕获沿的 setup 余量减少。",
+      "D": "若目的寄存器实际要采样该路径，屏蔽只会让报告漏查；必须有不可激活、模式互斥等功能证据。"
     }
   },
   {
     "id": "ORIGINAL-STA-0006",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "short_answer",
     "topicId": "03",
     "subtopicId": "sdc",
@@ -209,11 +213,12 @@
       "sourceClaimVerification": "not_applicable"
     },
     "promptMd": "同源时钟，源和目的寄存器使用相同、稳定的时钟使能，只在 E0、E2、E4……更新。稳态下 E0 发射 D0，E1 目的端禁止采样，E2 目的端捕获 D0、源端同时发射 D1，E4 捕获 D1。分析这是两周期 setup 的候选还是 false path，并解释 E2 附近为什么仍要检查 hold。无需写工具命令。",
-    "explanationMd": "这是两周期 setup 的候选路径，不能仅因 E1 不采样就设 false path：D0 必须在 E2 被正确捕获。\n\n| 边沿 | 源寄存器 | 目的寄存器 |\n|---|---|---|\n| E0 | 发射 D0 | 捕获上一笔数据 |\n| E1 | 保持 | 禁止采样 |\n| E2 | 发射 D1 | 捕获 D0 |\n| E4 | 发射 D2 | 捕获 D1 |\n\n在证明两端使能相位、每次发射与捕获关系、模式切换及复位边界均满足条件后，D0 的 setup 可按 E0→E2 分析。E2 同时发射 D1，D1 的最早到达仍不得破坏目的端对 D0 的 hold。不能盲目放宽 hold；应检查具体 STA 工具对多周期 setup/hold 的边沿选择与报告。本题不要求具体 SDC 命令。",
+    "explanationMd": "**直接回答：这是两周期 setup 的候选路径，不是 false path；E2 附近仍必须保护 D0 的 hold。**\n\n目的端 E1 不采样，只代表 D0 可以晚于 E1 到达，并不代表它永远不用到达。真正的截止时间是 E2 前的 setup 窗口。\n\n| 边沿 | 源寄存器动作 | 目的寄存器动作 | 需要检查 |\n|---|---|---|---|\n| E0 | 发射 D0 | 捕获上一笔 | D0 开始传播 |\n| E1 | 保持 D0 | 禁止采样 | 不要求在此捕获 D0 |\n| E2 | 发射 D1 | 捕获 D0 | D0 的 setup；D1 不得破坏 D0 的 hold |\n| E4 | 发射 D2 | 捕获 D1 | 同样的两类检查 |\n\nE0→E2 有 `2T` 的 setup 时间，但 E2 同时发射的新 D1 可能很快到达目的 D 端。因此两周期约束不能自动解释为放弃最小延迟检查。只有证明两端使能相位、复位和模式切换都维持这套关系，才能使用对应例外；实际还须核对 STA 工具的 setup/hold 边沿选择。本题不要求写 SDC 命令。",
     "commonMistakes": [
-      "忽略题目给出的位宽、时间点或前提。"
+      "看到 E1 不采样就屏蔽整条路径，导致 E2 真正需要的数据漏查。",
+      "给 setup 设两周期后，未核对工具改变的 hold 检查边沿。"
     ],
-    "referenceAnswerMd": "这是两周期 setup 的候选路径，不能仅因 E1 不采样就设 false path：D0 必须在 E2 被正确捕获。\n\n| 边沿 | 源寄存器 | 目的寄存器 |\n|---|---|---|\n| E0 | 发射 D0 | 捕获上一笔数据 |\n| E1 | 保持 | 禁止采样 |\n| E2 | 发射 D1 | 捕获 D0 |\n| E4 | 发射 D2 | 捕获 D1 |\n\n在证明两端使能相位、每次发射与捕获关系、模式切换及复位边界均满足条件后，D0 的 setup 可按 E0→E2 分析。E2 同时发射 D1，D1 的最早到达仍不得破坏目的端对 D0 的 hold。不能盲目放宽 hold；应检查具体 STA 工具对多周期 setup/hold 的边沿选择与报告。本题不要求具体 SDC 命令。",
+    "referenceAnswerMd": "**直接回答：这是两周期 setup 的候选路径，不是 false path；E2 附近仍必须保护 D0 的 hold。**\n\n目的端 E1 不采样，只代表 D0 可以晚于 E1 到达，并不代表它永远不用到达。真正的截止时间是 E2 前的 setup 窗口。\n\n| 边沿 | 源寄存器动作 | 目的寄存器动作 | 需要检查 |\n|---|---|---|---|\n| E0 | 发射 D0 | 捕获上一笔 | D0 开始传播 |\n| E1 | 保持 D0 | 禁止采样 | 不要求在此捕获 D0 |\n| E2 | 发射 D1 | 捕获 D0 | D0 的 setup；D1 不得破坏 D0 的 hold |\n| E4 | 发射 D2 | 捕获 D1 | 同样的两类检查 |\n\nE0→E2 有 `2T` 的 setup 时间，但 E2 同时发射的新 D1 可能很快到达目的 D 端。因此两周期约束不能自动解释为放弃最小延迟检查。只有证明两端使能相位、复位和模式切换都维持这套关系，才能使用对应例外；实际还须核对 STA 工具的 setup/hold 边沿选择。本题不要求写 SDC 命令。",
     "rubric": [
       "确认真实数据必须被捕获，不能设为 false path。",
       "以 E0→E2 说明两周期 setup。",
@@ -223,13 +228,13 @@
   },
   {
     "id": "ORIGINAL-STA-0007",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "03",
     "subtopicId": "sdc",
     "type": "numeric",
     "title": "外部输入路径的 setup 裕量",
     "promptMd": "外部器件在参考时钟 0 ns 发射数据。用 input delay,max=2.0 ns 表示数据最晚到达本芯片输入端口的时间，已含外部 tCQ 与板级延迟。端口到内部寄存器 D 的最大延迟 3.1 ns；捕获沿到达内部寄存器 CK 为 6.5 ns；setup=0.4 ns，setup uncertainty=0.2 ns（从 required 扣除）。无其他延迟，求 setup slack，单位 ns。",
-    "explanationMd": "arrival=2.0+3.1=5.1 ns；required=6.5-0.4-0.2=5.9 ns；setup slack=0.8 ns。外部 tCQ 和板级延迟已在 input delay 内，不应再加一次。",
+    "explanationMd": "**答案：+0.8 ns。**\n\n`input delay,max=2.0 ns` 已把外部 FF 的 tCQ 与板级传播合在一起，含义是“从参考发射沿到本芯片输入端口”的最晚时间。它不是芯片内部延迟。\n\n- 数据到内部 D 端：`arrival = 2.0 + 3.1 = 5.1 ns`。\n- 捕获 CK 实际在 6.5 ns 到达；预留 setup 0.4 ns、uncertainty 0.2 ns：`required = 6.5 − 0.4 − 0.2 = 5.9 ns`。\n- Setup slack：`5.9 − 5.1 = +0.8 ns`，题设路径满足 setup。\n\n若再加外部 tCQ 或板级延迟，就会把同一段传播计算两次。",
     "difficulty": "medium",
     "tags": [
       "sdc"
@@ -257,13 +262,13 @@
   },
   {
     "id": "ORIGINAL-STA-0008",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "03",
     "subtopicId": "skew-jitter",
     "type": "multiple_choice",
     "title": "时钟不确定度对裕量的影响",
     "promptMd": "同一时钟的单周期 setup 与同沿 hold，固定实际发射/捕获时刻和数据延迟。规定 setup uncertainty 从 setup required time 扣除；hold uncertainty 加到 hold required time。以下哪些正确？",
-    "explanationMd": "在本题定义下，setup slack=required-arrival，hold slack=arrival-required。增大相应 uncertainty 都会减少对应裕量；增加 uncertainty 本身不会增加数据路径物理延迟，也不保证消除 CDC 亚稳态。",
+    "explanationMd": "**答案：A、B。**\n\nUncertainty 是计算时预留的预算，不是信号实际走过的门延迟。令 `Us`、`Uh` 分别代表题设 setup、hold uncertainty，其余时刻固定：\n\n- `setup slack = (捕获沿 − setup − Us) − arrival,max`；Us 增加 0.1 ns，结果减少 0.1 ns。\n- `hold slack = arrival,min − (捕获沿 + hold + Uh)`；Uh 增加 0.1 ns，结果也减少 0.1 ns。\n\n两种检查的 slack 定义方向不同，但 uncertainty 都让检查更严格。这里没有重新实现电路，约束变化不会直接改变物理传播。",
     "difficulty": "medium",
     "tags": [
       "skew-jitter"
@@ -303,15 +308,15 @@
       "B"
     ],
     "optionExplanations": {
-      "A": "required 减少同样数值。",
-      "B": "required 增加同样数值，hold slack 相应减少。",
-      "C": "约束预算本身不是物理电路；题目还排除了重新优化。",
-      "D": "时序预算不能代替跨域协议和亚稳态防护。"
+      "A": "Setup 的 required 被扣去更多预算，arrival 固定，所以裕量等量减少。",
+      "B": "Hold 的 required 向后推迟 0.1 ns，旧数据要保持更久；arrival−required 因此减少。",
+      "C": "Uncertainty 是约束中的预算项，不是延迟单元；只有后续实现优化才可能间接改变电路，题设已固定延迟。",
+      "D": "异步信号没有稳定的采样相位关系，数字预算不能让亚稳态概率归零；仍需同步器及正确的跨域协议。"
     }
   },
   {
     "id": "ADAPTED-COLLECTION-STA-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "03",
     "subtopicId": "skew-jitter",
     "type": "numeric",
@@ -333,7 +338,7 @@
       "note": "参考公开练习汇编 Q45 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
     },
     "promptMd": "单周期路径的周期为 7 ns。参考时钟的本周期边沿到达发射寄存器 CK 的时刻为 1.1 ns；下一周期边沿到达捕获寄存器 CK 的时刻为 7.4 ns。tCQ,max=0.6 ns，数据组合延迟最大 4.3 ns，数据连线延迟最大 0.5 ns，setup=0.4 ns。无 uncertainty 或其他延迟。求 setup slack，单位 ns。",
-    "explanationMd": "arrival=1.1+0.6+4.3+0.5=6.5 ns；required=7.4-0.4=7.0 ns；slack=+0.5 ns。两端同周期插入延迟分别为 1.1 和 0.4 ns，捕获相对发射偏斜为 -0.7 ns，不能当作有利的正偏斜。",
+    "explanationMd": "**答案：+0.5 ns。**\n\n所有时刻都相对同一个参考零点。发射 CK 在 1.1 ns 到达，不能将它当成 0；下一捕获 CK 的 7.4 ns 已包含周期，不再加 7 ns。\n\n1. 数据最晚到达：`arrival = 1.1 + 0.6 + 4.3 + 0.5 = 6.5 ns`，依次是发射沿、tCQ,max、逻辑和连线。\n2. 最迟允许到达：`required = 7.4 − 0.4 = 7.0 ns`，本题没有 uncertainty。\n3. `setup slack = 7.0 − 6.5 = +0.5 ns`。\n\n同周期捕获时钟的插入延迟为 `7.4−7=0.4 ns`，相对发射的偏斜为 `0.4−1.1=−0.7 ns`，减少了可用时间。只比较绝对数字 7.4 与 1.1 会误判偏斜方向。",
     "expectedValue": 0.5,
     "absoluteTolerance": 0.001,
     "unit": "ns",
@@ -349,7 +354,7 @@
   },
   {
     "id": "ADAPTED-COLLECTION-STA-0002",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "03",
     "subtopicId": "setup-hold",
     "type": "numeric",
@@ -371,7 +376,7 @@
       "note": "参考公开练习汇编 Q43/Q45 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
     },
     "promptMd": "某同源时钟路径的本周期发射沿到达 CK 为 0.4 ns，本周期捕获沿到达 CK 为 0.9 ns。tCQ,min=0.15 ns，组合最小延迟 0.22 ns，连线最小延迟 0.13 ns，hold=0.12 ns，hold uncertainty=0.04 ns（增加 required hold time）。求 hold slack，单位 ns。不引入下一周期捕获沿。",
-    "explanationMd": "最早新数据 arrival=0.4+0.15+0.22+0.13=0.90 ns。旧数据要求稳定到 required=0.9+0.12+0.04=1.06 ns。hold slack=arrival-required=-0.16 ns。负值表示新数据可能过早到达；周期不参与本题同沿检查。",
+    "explanationMd": "**答案：−0.16 ns，存在 hold 违例。**\n\nHold 关心新数据最早何时追上旧数据。发射时刻 0.4 ns 后，最短传播由 tCQ,min=0.15 ns、逻辑 0.22 ns 和连线 0.13 ns 组成。\n\n| 项目 | 代入（ns） |\n|---|---|\n| 新数据 arrival,min | 0.4 + 0.15 + 0.22 + 0.13 = 0.90 |\n| 旧数据保持截止 required | 0.9 + 0.12 + 0.04 = 1.06 |\n| Hold slack | arrival − required = 0.90 − 1.06 = −0.16 |\n\n捕获时钟晚到，让旧数据也必须保持更晚；新数据提前 0.16 ns 到达。这里不使用下一周期沿，不能靠加周期把负号变正。",
     "expectedValue": -0.16,
     "absoluteTolerance": 0.001,
     "unit": "ns",
@@ -387,7 +392,7 @@
   },
   {
     "id": "ADAPTED-COLLECTION-STA-0003",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "03",
     "subtopicId": "sdc",
     "type": "multiple_choice",
@@ -409,7 +414,7 @@
       "note": "参考公开练习汇编 Q58 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
     },
     "promptMd": "组合 MUX 的选择 mode 在一次工作模式内保持不变，但模式 A 和 B 都会实际运行。两个数据输入在对应模式下都需要被目的寄存器正确捕获。STA 可以分别建立 A、B 的模式场景。以下哪些说法正确？",
-    "explanationMd": "同一个模式场景中，经过证明不可能被选择的分支可按具体约束建模；但另一模式仍需检查其真实工作路径。False path 不能作为隐藏 setup 违例的修复手段，模式切换、复位和测试场景也需单独考虑。",
+    "explanationMd": "**答案：A、C、D。**\n\nMUX 在某个模式只选择一路，不等于另一路在所有模式都没用。应按 mode=0 和 mode=1 建立场景，各自检查实际通路；约束反映功能事实，不能用来消除报告里的红字。\n\n例如 A 模式选择 input0，input1 在该场景不影响输出；切换到 B 模式后 input1 成为必须满足时序的真实路径。静态模式的证明还没有说明切换过程是否暂停采样、是否会经过毛刺或复位状态。",
     "options": [
       {
         "id": "A",
@@ -434,10 +439,10 @@
       "D"
     ],
     "optionExplanations": {
-      "A": "场景需要覆盖所有实际使用模式，并保留真实数据路径。",
-      "B": "两路在不同模式下都承载需要采样的数据，不能一并忽略。",
-      "C": "例外必须反映功能关系，不能代替修复。",
-      "D": "这些边界可能改变选择关系与采样条件。"
+      "A": "两个独立场景分别固定选择值，才能同时覆盖 A、B 模式的真实输入路径；必须确保场景完整。",
+      "B": "反例是 B 模式下目的端需要捕获 input1。永久屏蔽两路会连需要的数据一起漏查。",
+      "C": "Setup 违例只说明路径太慢，不能证明功能上不会使用；应优化实现或提供真实的例外证据。",
+      "D": "切换或复位可能改变选择与使能时刻，需要另外证明和建模，不能沿用静态模式结论。"
     },
     "commonMistakes": [
       "将模式内互斥误当作所有模式下都不存在路径。",
@@ -446,7 +451,7 @@
   },
   {
     "id": "ADAPTED-COLLECTION-STA-0004",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "03",
     "subtopicId": "slack-fmax",
     "type": "numeric",
@@ -468,7 +473,7 @@
       "note": "参考公开练习汇编 Q62 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
     },
     "promptMd": "一个单周期寄存器路径经过 5 级串联仲裁组合逻辑，每级最大延迟 1.4 ns，另有总连线最大延迟 0.7 ns。发射 tCQ,max=0.3 ns，捕获 setup=0.4 ns，setup uncertainty=0.2 ns，时钟偏斜为零。假设该路径是唯一瓶颈，求满足 setup 的最小周期，单位 ns。",
-    "explanationMd": "组合部分=5×1.4=7.0 ns。最小周期=0.3+7.0+0.7+0.4+0.2=8.6 ns。必须包括触发器、连线和时序预算，不能只把各级逻辑延迟相加。",
+    "explanationMd": "**答案：最小周期 8.6 ns。**\n\n5 级仲裁逻辑是串联，一笔数据要依次通过全部级；每级 1.4 ns，因此逻辑延迟 `5×1.4=7.0 ns`，不是并行取最大值。\n\n| 预算项 | 时间（ns） |\n|---|---:|\n| 发射 FF 的 tCQ,max | 0.3 |\n| 五级组合逻辑 | 7.0 |\n| 总数据连线 | 0.7 |\n| 接收 setup | 0.4 |\n| Setup uncertainty | 0.2 |\n| 总计 Tmin | 8.6 |\n\n零偏斜下满足 `T − setup − uncertainty ≥ tCQ,max + logic + wire`，所以 `Tmin=0.3+7.0+0.7+0.4+0.2=8.6 ns`。只加逻辑得到 7 ns 会遗漏寄存器、布线和时钟预算。",
     "expectedValue": 8.6,
     "absoluteTolerance": 0.001,
     "unit": "ns",

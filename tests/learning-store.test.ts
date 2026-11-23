@@ -5,6 +5,7 @@ import { validateBackup } from '../src/storage/backup-schema';
 import { revealAnswer, saveDraft, selfGrade, submitAutomatic } from '../src/domain/practice';
 import { single, manual } from './fixtures';
 import { createMock, saveMockAnswer } from '../src/domain/mock-session';
+import { canViewRoundLearning } from '../src/components/RoundLearningGate';
 
 const stores: LearningStore[] = [];
 function make(name = crypto.randomUUID(), fail?: () => void) { const store = new LearningStore(name, fail); stores.push(store); return store; }
@@ -36,6 +37,22 @@ describe('真实 IndexedDB API 的存储与原子恢复', () => {
     expect(restarted.round.snapshot.key).toBe(`${single.id}@2`);
     const state = await store.read(); expect(state.data.snapshots).toHaveLength(2);
     expect(state.data.events[0]).toMatchObject({ snapshotKey: `${single.id}@1`, result: { isCorrect: true } });
+  });
+  it('有旧笔记的新版重做刷新后仍隐藏，数据和旧版结果保留在备份', async () => {
+    const store = make(); await answerOne(store);
+    await store.saveRecord('notes', single.id, '旧版解题笔记');
+    const upgraded = {...single, contentVersion: 2, explanationMd: '新版解析'};
+    await store.begin(upgraded, true);
+    await store.close();
+    const resumed = await store.begin(upgraded);
+    expect(canViewRoundLearning(resumed.round)).toBe(false);
+    const backup = JSON.parse(await store.exportJSON());
+    expect(backup.events[0]).toMatchObject({snapshotKey: `${single.id}@1`, result:{isCorrect:true}});
+    expect(backup.records.find((r: {namespace:string})=>r.namespace==='notes').value).toBe('旧版解题笔记');
+    expect(backup.snapshots.map((s:{key:string})=>s.key)).toEqual(expect.arrayContaining([`${single.id}@1`,`${single.id}@2`]));
+    const revealed = await store.change(single.id, resumed, r=>revealAnswer(r,new Date().toISOString()));
+    expect(canViewRoundLearning(revealed.round)).toBe(true);
+    expect(revealed.round.events.at(-1)?.kind).toBe('revealed_without_submission');
   });
   it('第二个标签页拿旧 revision 不能覆盖新草稿', async () => {
     const name = crypto.randomUUID(); const a = make(name); const b = make(name);

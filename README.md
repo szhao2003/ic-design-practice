@@ -2,9 +2,11 @@
 
 面向数字 IC、ASIC RTL、DV 与 FPGA 的专题练习工具，中文界面。
 
-当前为 **1.1.0：继续扩充公开资料考点**。已有 15 个专题及子专题、74 道完整题（原创 44、公开资料考点改编 30，其中笔经考点 6、练习汇编考点 24）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
+当前为 **1.2.0：教学解析与重做保护升级**。已有 15 个专题及子专题、74 道完整题（原创 44、公开资料考点改编 30，其中笔经考点 6、练习汇编考点 24）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
 
 学习进度及统计口径见 [学习进度阶段说明](docs/SECTION_07_PROGRESS.md)，模拟考试见 [第五阶段说明](docs/SECTION_05_VERIFICATION.md)。新增第二批见 [继续扩充与中性来源显示](docs/CONTENT_BATCH_04_COLLECTION.md)。第一批题与来源审核见 [资料考点扩充（第一批）](docs/CONTENT_BATCH_03_YHCHUB.md)，首版功能及回归范围见 [V1 验收](docs/V1_ACCEPTANCE.md)。
+
+本轮 74 题逐题复查、七个参考 RTL/TB、四份精确时序图与重做前资料隐藏，见 [教学升级验收](docs/CONTENT_UPGRADE_V15.md) 和 [逐题日志](docs/CONTENT_REVIEW_LOG.md)。后续增题遵循 [公开题源检索流程](docs/QUESTION_SOURCING_WORKFLOW.md)。
 
 ## 本地运行
 
@@ -21,6 +23,7 @@ npm run dev
 npm run typecheck
 npm run validate:questions
 npm run test
+npm run test:rtl # 需要 iverilog/vvp
 npm run build
 npm run preview
 ```

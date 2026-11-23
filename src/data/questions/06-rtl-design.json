@@ -1,7 +1,7 @@
 [
   {
     "id": "ADAPTED-RK26-RTL-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "rtl_coding",
     "topicId": "06",
     "subtopicId": "adder-pipeline",
@@ -25,29 +25,29 @@
       "note": "根据配套调研中的公开笔经索引，以“32 bit 两级流水线加法器”为线索独立编制。本题条件、数值、代码和解答均重新设计，不是原卷原题；来源链接未再次核验。"
     },
     "promptMd": "设计 `pipeline_adder`：输入 `clk, rst_n, in_valid, a[31:0], b[31:0]`，输出 `out_valid, sum[32:0]`，保留无符号加法进位。rst_n 为同步低有效复位。没有 ready 或停顿，连续有效输入需要每拍接收。\n\n要求第一阶段计算低 16 bit 和并保存进位及高半部操作数，第二阶段完成高半部加法并拼接结果。无效周期不要求 sum 清零，out_valid 必须正确传递。\n\n给出完整可综合 SystemVerilog；说明在 E0 接收的一组输入在哪个上升沿之后得到有效输出，以及连续输入的吞吐率。按采样沿明确描述延迟，避免“两个周期”计数歧义。",
-    "referenceAnswerMd": "```systemverilog\nmodule pipeline_adder (\n  input logic clk, rst_n, in_valid,\n  input logic [31:0] a, b,\n  output logic out_valid,\n  output logic [32:0] sum\n);\n  logic v1;\n  logic [16:0] low_q;\n  logic [15:0] a_hi_q, b_hi_q;\n  logic [16:0] high_sum;\n  assign high_sum = {1'b0, a_hi_q} + {1'b0, b_hi_q}\n                  + {{16{1'b0}}, low_q[16]};\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin\n      v1 <= 1'b0; low_q <= '0;\n      a_hi_q <= '0; b_hi_q <= '0;\n    end else begin\n      v1 <= in_valid;\n      if (in_valid) begin\n        low_q <= {1'b0, a[15:0]} + {1'b0, b[15:0]};\n        a_hi_q <= a[31:16]; b_hi_q <= b[31:16];\n      end\n    end\n  end\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin out_valid <= 1'b0; sum <= '0; end\n    else begin\n      out_valid <= v1;\n      if (v1) sum <= {high_sum, low_q[15:0]};\n    end\n  end\nendmodule\n```\n\nE0 后第一级寄存低半部结果和高半部操作数；E1 的第二级读取第一级旧值，E1 后 sum 与 out_valid 对应 E0 接收的数据。即经过两个寄存级，从输入被接收的 E0 到结果更新的 E1 相隔一个时钟周期。流水线填充后吞吐率为每周期一组，无效输入通过 v1/out_valid 传播空泡。\n\n把 32 bit 进位传播拆为低/高两个约 16 bit 的组合阶段，有机会缩短单级组合路径；实际频率仍取决于综合、布线、寄存器及约束，不能按级数直接保证翻倍。",
+    "referenceAnswerMd": "32 bit 无符号输入按低、高 16 位拆分。第一级保存低半和/进位及高半操作数，第二级拼出 33 bit 结果，valid 跟随数据。\n\n```systemverilog\nmodule pipeline_adder (\n  input  logic        clk,\n  input  logic        rst_n,  // Synchronous active-low reset\n  input  logic        in_valid,\n  input  logic [31:0] a,\n  input  logic [31:0] b,\n  output logic        out_valid,\n  output logic [32:0] sum\n);\n  logic        v1;\n  logic [16:0] low_q;\n  logic [15:0] a_hi_q, b_hi_q;\n  logic [16:0] high_sum;\n\n  // Stage 2 uses the high operands and carry from the SAME accepted input.\n  assign high_sum = {1'b0, a_hi_q} + {1'b0, b_hi_q}\n                  + {{16{1'b0}}, low_q[16]};\n\n  // E0: capture the low sum/carry and the matching high halves.\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin\n      v1     <= 1'b0;\n      low_q  <= '0;\n      a_hi_q <= '0;\n      b_hi_q <= '0;\n    end else begin\n      v1 <= in_valid;\n      if (in_valid) begin\n        low_q  <= {1'b0, a[15:0]} + {1'b0, b[15:0]};\n        a_hi_q <= a[31:16];\n        b_hi_q <= b[31:16];\n      end\n    end\n  end\n\n  // E1: NBA reads stage-1 OLD values, even when the next input is accepted.\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin\n      out_valid <= 1'b0;\n      sum       <= '0;\n    end else begin\n      out_valid <= v1;\n      if (v1) begin\n        sum <= {high_sum, low_q[15:0]};\n      end\n    end\n  end\nendmodule\n```\n\n下面按数据流、边界与采样沿解释这份实现。参考实现并非唯一正确写法；网页仍使用人工自评，不执行提交的用户代码。",
     "rubric": [
       "低半部加法显式扩为 17 bit，保存低位和进位。",
       "高半部数据与低半部进位属于同一输入，第二级输出为 33 bit。",
       "同步复位及 valid 空泡传播正确，连续输入不被丢弃。",
       "明确 E0/E1 的寄存更新与每拍吞吐，不把工具未运行说成已仿真通过。"
     ],
-    "explanationMd": "关键在于**对齐同一输入的数据与进位**。高半部不能在第二级直接使用当前 a/b，否则会混入下一组数据。非阻塞赋值在上升沿读取旧寄存值，因此第二级自然取得上一拍第一级数据。本参考实现做了逐级数据流和位宽检查，尚未运行 HDL 仿真。",
+    "explanationMd": "**输入在 E0 接收，结果在 E1 后有效；填满后每拍可输出一笔。**\n\n第一级把低半部算成 17 bit，保存低 16 bit 结果和第 17 位进位，同时把高半部的 a、b 保存下来。第二级必须使用这组寄存的高半操作数，不能混入当前输入。\n\n```text\nE0: 输入A → [low_q + high_a_q/high_b_q + v1]\nE1: 输入B → [第一级B]；第一级A → [sumA + out_valid]\nE2: 输入C → [第一级C]；第一级B → [sumB + out_valid]\n```\n\n第二级高半和为 `{0,high_a_q}+{0,high_b_q}+低半进位`，用 17 bit 保留最高进位；拼成 `{高半17位,低半16位}` 得到 33 bit。NBA 让第二级在 E0 读到的仍是上一组第一级数据，因此 A 要等 E1 后才输出。\n\nv1 与数据逐级对齐，in_valid=0 插入一个空泡，下一沿 out_valid=0；sum 无效时可以保持，不得当有效新值。同步复位清掉两级 valid，避免复位前数据冒出。没有 ready，不能因下游来不及消费而停住。等价实现可用不同的寄存器组织，但需满足指定两级拆分、进位对齐和时序。",
     "commonMistakes": [
-      "第二级直接使用当前输入高半部，导致相邻事务串组。",
-      "低位和未扩位，丢失跨阶段进位。",
-      "sum 有效时刻与 out_valid 错位。"
+      "第二级使用当前 a[31:16]/b[31:16]，与上一组低半结果错配。",
+      "低半加法未扩成 17 bit，跨半部进位被截掉。",
+      "数据延迟了一拍，valid 却未按相同拍数传递。"
     ]
   },
   {
     "id": "ORIGINAL-RTL-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "counter",
     "type": "rtl_coding",
     "title": "带单周期溢出脉冲的模十计数器",
     "promptMd": "设计 mod10_counter：clk、同步低有效 rst_n、en；输出 count[3:0] 和 tick。先复位为 0。en=1 才从 0 递增到 9 后回 0；en=0 保持 count。仅在一次成功的 9→0 更新后 tick=1，且下一时钟沿必须清零，即使下一沿 en=0。不要求非法状态恢复。给出可综合 SystemVerilog。",
-    "explanationMd": "count 的使能保持与 tick 的每拍清零必须分开。先默认清 tick，再在 en 且旧 count=9 时置位，才能避免后续停顿拉长脉冲。",
+    "explanationMd": "**tick 的每拍清零，必须放在计数使能之外。**\n\n复位为同步低有效：rst_n=0 只有在上升沿才将 count、tick 清零。非复位沿先安排 tick<=0，随后仅在 en=1 且旧 count=9 时覆盖为 1；同一过程对同一寄存器的这些 NBA 以最后执行的赋值决定结果。\n\n| 沿前条件 | 沿后 count | 沿后 tick |\n|---|---:|---:|\n| count=8，en=1 | 9 | 0 |\n| count=9，en=1 | 0 | 1 |\n| 下一沿 en=0 | 0（保持） | 0 |\n\n若把 tick<=0 也放进 en 分支，回绕后遇到停顿会把脉冲粘住。count 在 en=0 时不赋新值，自然保持；本题没有要求非法状态恢复，不额外改变 10…15 的行为。",
     "difficulty": "medium",
     "tags": [
       "counter"
@@ -64,7 +64,7 @@
       "把 tick 清零也放在 en 内，停顿时脉冲被拉长。",
       "比较新 count 而不是当前寄存器值，导致脉冲偏一拍。"
     ],
-    "referenceAnswerMd": "```systemverilog\nmodule mod10_counter (\n  input logic clk, rst_n, en,\n  output logic [3:0] count,\n  output logic tick\n);\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin count <= 4'd0; tick <= 1'b0; end\n    else begin\n      tick <= 1'b0;\n      if (en) begin\n        if (count == 4'd9) begin\n          count <= 4'd0; tick <= 1'b1;\n        end else count <= count + 4'd1;\n      end\n    end\n  end\nendmodule\n```\n\n每次有效使能沿从 0…9 计数，9→0 的沿更新后 tick=1；下一沿默认清零，即使 en=0 也不延长脉冲。复位优先于 en。正常使用假定先经历同步复位，不要求非法状态恢复。",
+    "referenceAnswerMd": "en 只控制 count；tick 必须在所有非复位沿默认清零。同步复位优先于计数。\n\n```systemverilog\nmodule mod10_counter (\n  input  logic       clk,\n  input  logic       rst_n,  // Synchronous active-low reset\n  input  logic       en,\n  output logic [3:0] count,\n  output logic       tick\n);\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin\n      count <= 4'd0;\n      tick  <= 1'b0;\n    end else begin\n      // Clear EVERY edge; a disabled cycle must not stretch a prior wrap pulse.\n      tick <= 1'b0;\n      if (en) begin\n        if (count == 4'd9) begin\n          count <= 4'd0;\n          tick  <= 1'b1;\n        end else begin\n          count <= count + 4'd1;\n        end\n      end\n      // count intentionally holds when en=0; no illegal-state recovery required.\n    end\n  end\nendmodule\n```\n\n下面按数据流、边界与采样沿解释这份实现。参考实现并非唯一正确写法；网页仍使用人工自评，不执行提交的用户代码。",
     "rubric": [
       "同步复位清 count 和 tick，且优先。",
       "en=0 保持 count，en=1 正确模十循环。",
@@ -74,13 +74,13 @@
   },
   {
     "id": "ORIGINAL-RTL-0002",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "arbiter",
     "type": "rtl_coding",
     "title": "四路固定优先级仲裁器",
     "promptMd": "设计纯组合 priority_arbiter：输入 req[3:0]（只含 0/1）；输出 grant[3:0] 和 valid。索引 0 优先级最高；有请求时只授权最高优先级一路，无请求时输出全零。给出 RTL、req=1010 的结果，并说明是否保证公平性。",
-    "explanationMd": "默认赋值与 if/else 优先链同时保证无锁存器和至多一路授权。固定优先级实现简单，但不提供轮转仲裁的公平性。",
+    "explanationMd": "**req=1010 时，grant=0010，valid=1；不保证公平性。**\n\n先给 grant=0000，保证无请求时也有明确结果；valid=|req 判断任意请求是否存在。if/else 从索引 0 开始，第一个为 1 的分支获胜，后续分支不再执行，所以最多授权一路。\n\n1010 的 bit1、bit3 为 1，bit1 优先，得到 0010。若 req[0] 永久为 1，其他请求即使一直保持也无法获批，这是固定优先级的饥饿风险。需要公平性时应改用轮转等策略，但那是不同的功能契约。组合块使用阻塞赋值和默认值，不需要时钟或复位。",
     "difficulty": "medium",
     "tags": [
       "arbiter"
@@ -98,7 +98,7 @@
       "漏写无请求默认输出而推断锁存器。",
       "把固定优先级误认为公平调度。"
     ],
-    "referenceAnswerMd": "```systemverilog\nmodule priority_arbiter (\n  input logic [3:0] req,\n  output logic [3:0] grant,\n  output logic valid\n);\n  always_comb begin\n    grant = 4'b0000;\n    if      (req[0]) grant = 4'b0001;\n    else if (req[1]) grant = 4'b0010;\n    else if (req[2]) grant = 4'b0100;\n    else if (req[3]) grant = 4'b1000;\n    valid = |req;\n  end\nendmodule\n```\n\nreq=1010 时 grant=0010，valid=1；req=0000 时全零。if/else 优先链保证至多一个授权，默认赋值避免锁存器。固定优先级不保证低优先级公平性，持续的高优先级请求可使低优先级饥饿。输入限定二值，不在本题定义 X/Z 策略。",
+    "referenceAnswerMd": "req[0] 优先级最高。组合默认值配合 if/else 链得到至多一路 grant；valid 表示存在请求。\n\n```systemverilog\nmodule priority_arbiter (\n  input  logic [3:0] req,\n  output logic [3:0] grant,\n  output logic       valid\n);\n  always_comb begin\n    // Complete defaults prevent storage; an else-if chain grants only one lane.\n    grant = 4'b0000;\n    valid = |req;\n    if (req[0]) begin\n      grant = 4'b0001;\n    end else if (req[1]) begin\n      grant = 4'b0010;\n    end else if (req[2]) begin\n      grant = 4'b0100;\n    end else if (req[3]) begin\n      grant = 4'b1000;\n    end\n    // Fixed priority favors low indices; this is not a fair round-robin arbiter.\n  end\nendmodule\n```\n\n下面按数据流、边界与采样沿解释这份实现。参考实现并非唯一正确写法；网页仍使用人工自评，不执行提交的用户代码。",
     "rubric": [
       "默认输出全零，组合赋值完整。",
       "使用优先链或等价逻辑，只授权最低索引请求。",
@@ -108,13 +108,13 @@
   },
   {
     "id": "ORIGINAL-RTL-0003",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "fsm",
     "type": "short_answer",
     "title": "允许重叠的 101 序列检测",
     "promptMd": "每个时钟沿接收一个串行二值输入位，检测 101，允许重叠。复位后无已匹配前缀。给出基于已匹配前缀的状态转移表（含命中标志），并列出输入 10101 时每一位处理后的命中结果。命中按采样后登记的一拍脉冲理解。",
-    "explanationMd": "重叠检测在命中后不能一律返回空前缀：101 的末尾 1 已经是下一次匹配的有效前缀。因此输入 10101 可以命中两次。",
+    "explanationMd": "**10101 在第 3、5 位命中，结果为 0、0、1、0、1。**\n\n状态表示已经匹配的最长有效后缀：S0 没有，S1 是 1，S2 是 10。S2 再收到 1 完成 101，但最后一个 1 同时能作为下一次匹配的开头，所以命中后回 S1，而非 S0。\n\n| 已处理输入 | 状态变化 | 沿后命中 |\n|---|---|---:|\n| 1 | S0→S1 | 0 |\n| 10 | S1→S2 | 0 |\n| 101 | S2→S1 | 1 |\n| 1010 | S1→S2 | 0 |\n| 10101 | S2→S1 | 1 |\n\n命中脉冲按本沿输入与旧状态产生，未命中沿应清零。其他等价状态编码也可行，核心是保留重叠前缀。",
     "difficulty": "medium",
     "tags": [
       "fsm"
@@ -131,7 +131,7 @@
       "命中后返回 S0，遗漏第 5 位的重叠命中。",
       "未定义连续输入 1 时保留前缀 1。"
     ],
-    "referenceAnswerMd": "定义状态 S0=无匹配前缀，S1=末尾匹配 1，S2=末尾匹配 10。\n\n```text\n| 当前状态 | 输入 0：次态/命中 | 输入 1：次态/命中 |\n|---|---|---|\n| S0 | S0/0 | S1/0 |\n| S1 | S2/0 | S1/0 |\n| S2 | S0/0 | S1/1 |\n```\n\n在 S2 收到 1 时完成 101，并保留末尾的 1 作为下一次前缀，所以次态 S1。输入 1、0、1、0、1 的命中序列为 0、0、1、0、1（第 3、5 位命中）。命中在每次采样处理后登记为一拍脉冲；复位状态 S0、命中 0。",
+    "referenceAnswerMd": "定义状态 S0=无匹配前缀，S1=末尾匹配 1，S2=末尾匹配 10。\n\n| 当前状态 | 输入 0：次态/命中 | 输入 1：次态/命中 |\n|---|---|---|\n| S0 | S0/0 | S1/0 |\n| S1 | S2/0 | S1/0 |\n| S2 | S0/0 | S1/1 |\n\n在 S2 收到 1 时完成 101，并保留末尾的 1 作为下一次前缀，所以次态 S1。输入 1、0、1、0、1 的命中序列为 0、0、1、0、1（第 3、5 位命中）。命中在每次采样处理后登记为一拍脉冲；复位状态 S0、命中 0。",
     "rubric": [
       "定义无前缀、1、10 三个状态。",
       "给出每个状态两个输入的完整转移和命中。",
@@ -141,13 +141,13 @@
   },
   {
     "id": "ORIGINAL-RTL-0004",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "divider",
     "type": "numeric",
     "title": "偶数分频的半周期计数值",
     "promptMd": "输入时钟 100 MHz，要产生 10 MHz、50% 占空比方波。输出每经过 H 个输入上升沿翻转一次，半周期计数器从 0 计到 H-1 后清零并翻转。忽略复位启动相位，问计数器比较的终值 H-1 为多少？只填写整数。",
-    "explanationMd": "完整周期包含两次翻转，fout=fin/(2H)。H=100/(2×10)=5，因此比较终值为 4。该输出作为内部时钟使用还涉及生成时钟约束；本题只计算翻转计数。",
+    "explanationMd": "**答案：比较终值 4。**\n\n100 MHz 输入周期为 10 ns，10 MHz 输出完整周期为 100 ns。50% 占空比要求每 50 ns 翻转一次，即每 `H=50/10=5` 个输入沿翻转。也可用 `fout=fin/(2H)`，得到 `H=100/(2×10)=5`。\n\n计数从 0 开始，0、1、2、3、4 一共五个计数位置，所以比较值为 `H−1=4`。若比较 5，会累计六个位置，频率偏低。这里只算理想翻转计数；用于内部时钟还需相应时钟资源和生成时钟约束。",
     "difficulty": "medium",
     "tags": [
       "divider"
@@ -169,13 +169,13 @@
   },
   {
     "id": "ORIGINAL-RTL-0005",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "serial-parallel",
     "type": "waveform_analysis",
     "title": "串行移位与第八位的 NBA",
     "promptMd": "shift 为 8 bit，初始 0。连续 E0…E7 每沿接收一位，输入依次 1、0、1、1、0、0、1、0。每沿执行 shift <= {shift[6:0], serial_in}。byte_valid 仅在每组第八位采样后为 1 一拍，byte_data 应在同沿登记完整字节。列出更新后的 shift、byte_valid，并解释在 E7 写 byte_data <= shift 的问题。",
-    "explanationMd": "非阻塞赋值读取沿前状态。登记完整字节时必须把本沿 serial_in 拼入，而不是读取尚未更新的 shift；首位最终移动到最高位。",
+    "explanationMd": "**完整字节是 0xB2；直接登记旧 shift 会得到 0x59。**\n\n每沿新状态为 `{旧 shift[6:0], 本沿 serial_in}`，即左移一位并在最低位接入新位。第一位最终到最高位。\n\nE6 后 shift=01011001；E7 输入 0，所以新值为 10110010。若同一时序块执行 `byte_data <= shift`，右值仍读取 E7 沿前的 01011001，而不是刚安排的新 shift。应登记 `{shift[6:0],serial_in}`，或使用等价的组合 next_shift。\n\nbyte_valid 在第八位处理后的区间为 1，下一沿默认清零；不能提前一沿宣布完整字节，也不能让停顿把脉冲延长。图与参考表均标注 NBA 后寄存值，与本沿输入采样值分开。",
     "difficulty": "medium",
     "tags": [
       "serial-parallel"
@@ -192,7 +192,7 @@
       "第八沿用旧 shift 登记，遗漏最后一位。",
       "混淆首位在 MSB 还是 LSB 的移位方向。"
     ],
-    "referenceAnswerMd": "```text\n| 沿 | 输入 | 更新后的 shift | byte_valid |\n|---|---|---|---|\n| E0 | 1 | 00000001 | 0 |\n| E1 | 0 | 00000010 | 0 |\n| E2 | 1 | 00000101 | 0 |\n| E3 | 1 | 00001011 | 0 |\n| E4 | 0 | 00010110 | 0 |\n| E5 | 0 | 00101100 | 0 |\n| E6 | 1 | 01011001 | 0 |\n| E7 | 0 | 10110010 | 1 |\n```\n\n第一个输入最终到达最高位，所以字节为 0xB2。byte_data 必须用包含第八位的新拼接值，或等价的新状态；若写成 byte_data <= shift，则 NBA 读取旧 shift，得到 0x59。",
+    "referenceAnswerMd": "| 沿 | 输入 | 更新后的 shift | byte_valid |\n|---|---|---|---|\n| E0 | 1 | 00000001 | 0 |\n| E1 | 0 | 00000010 | 0 |\n| E2 | 1 | 00000101 | 0 |\n| E3 | 1 | 00001011 | 0 |\n| E4 | 0 | 00010110 | 0 |\n| E5 | 0 | 00101100 | 0 |\n| E6 | 1 | 01011001 | 0 |\n| E7 | 0 | 10110010 | 1 |\n\n第一个输入最终到达最高位，所以字节为 0xB2。byte_data 必须用包含第八位的新拼接值，或等价的新状态；若写成 byte_data <= shift，则 NBA 读取旧 shift，得到 0x59。\n\n![串并转换：逐沿输入与更新后的 shift、byte_valid](/diagrams/content-v15/serial-shift.svg)",
     "rubric": [
       "八个移位值依次 01、02、05、0B、16、2C、59、B2。",
       "byte_valid 仅 E7 为 1。",
@@ -202,7 +202,7 @@
   },
   {
     "id": "ADAPTED-YHC-RTL-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "fsm",
     "type": "single_choice",
@@ -223,7 +223,7 @@
       "note": "参考 YHCHub 练习汇编 Q11 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
     },
     "promptMd": "某 FSM 有 7 个可达状态，不计输出或其他数据通路寄存器。比较紧凑二进制编码与严格 one-hot 编码所需的状态寄存器位数。以下哪项正确？",
-    "explanationMd": "紧凑二进制编码需要 ceil(log2 7)=3 bit，严格 one-hot 需要每个状态一位，即 7 bit。寄存器位数不等于总面积或最终时序；转移逻辑、输出译码、器件结构及工具优化都影响结果，不能仅凭状态数保证某种编码的 Fmax 最优。",
+    "explanationMd": "**答案：A。紧凑二进制 3 bit，严格 one-hot 7 bit。**\n\n二进制 n 位能区分 2^n 个状态：2 位只有 4 种不够，3 位有 8 种，能编码 7 个可达状态并剩一个未用编码。One-hot 每个状态一个位置，7 个状态需要 7 个 FF。\n\n这里仅比较状态寄存器位数，不计数据通路与输出。One-hot 可能简化译码，却多用 FF；总面积和关键路径取决于转移逻辑、目标器件及实现，不能仅凭位数作性能保证。",
     "options": [
       {
         "id": "A",
@@ -246,10 +246,10 @@
       "A"
     ],
     "optionExplanations": {
-      "A": "3 bit 可提供 8 个编码，one-hot 用 7 个位置；性能结论需实现依据。",
-      "B": "把两种编码的定义颠倒。",
-      "C": "二进制可以组合位来区分多个状态。",
-      "D": "译码与触发器成本存在权衡，没有这个普遍保证。"
+      "A": "ceil(log2 7)=3；one-hot 七个位置各用一位。总实现还包含译码与转移逻辑。",
+      "B": "七位是 one-hot 的位置数，三位是二进制组合编码所需位数，选项将定义反过来。",
+      "C": "三位可组合成八种不同位模式，不要求每个二进制状态占一位。",
+      "D": "One-hot 增加 FF、可能减少译码，面积和 Fmax 存在取舍，没有同时最优的普遍保证。"
     },
     "commonMistakes": [
       "把触发器位数等同于总面积。",
@@ -258,7 +258,7 @@
   },
   {
     "id": "ADAPTED-YHC-RTL-0002",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "fsm",
     "type": "rtl_coding",
@@ -279,8 +279,8 @@
       "note": "参考 YHCHub 练习汇编 Q15 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
     },
     "promptMd": "编写 prefix_mod5。每个 clk 上升沿在 in_valid=1 时接收 bit_in，按 MSB first 追加到已接收的二进制前缀；输入为二值并满足采样条件；序列可以无限长，不能保存完整整数。输出 is_divisible 在至少接收一位且当前前缀数可被 5 整除时为 1。in_valid=0 时保持判断结果；同步低有效 rst_n 清空前缀，空前缀输出 0。给出完整 RTL 和状态转移依据。",
-    "explanationMd": "前缀附加一位等价于原数乘二再加新位；余数已经包含后续整除判断需要的全部信息。另用 seen 区分空前缀和数值为零的有效前缀。",
-    "referenceAnswerMd": "```systemverilog\nmodule prefix_mod5 (\n  input logic clk, rst_n, in_valid, bit_in,\n  output logic is_divisible\n);\n  logic [2:0] rem;\n  logic seen;\n  logic [3:0] candidate, reduced;\n  assign candidate = ({1'b0, rem} << 1) | {3'b000, bit_in};\n  assign reduced = candidate >= 4'd5 ? candidate - 4'd5 : candidate;\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin rem <= 3'd0; seen <= 1'b0; end\n    else if (in_valid) begin rem <= reduced[2:0]; seen <= 1'b1; end\n  end\n  assign is_divisible = seen && (rem == 3'd0);\nendmodule\n```\n\n每接收一位，前缀数 N 更新为 2N+bit，因此只需保存余数 r，转移为 (2r+bit) mod 5。r∈0…4，候选值只在 0…9，最多减一次 5；reduced≤4，截取低三位不会丢失有效信息。输入 11001 的余数依次 1、3、1、2、0，最后前缀 25 可整除；非空前缀 0 也可整除。",
+    "explanationMd": "**只保存除以 5 的余数，不保存可能无限增长的前缀。**\n\n旧前缀 N 追加 bit x 后变成 `2N+x`。若 N=5k+r，则 `2N+x=10k+2r+x`，所以新余数只取决于 `r_new=(2r+x) mod 5`。r 范围 0…4，只需 3 bit；候选 2r+x 最大 9，需要 4 bit。\n\n候选小于 5 时直接保留，否则减 5 一次足够，不需要通用除法器。例：依次输入 1、0、1，余数 1→2→0，对应前缀 1、2、5。\n\n复位时 r=0 却没有接收数据，故另设 seen，输出为 seen && r==0。接收一个 0 后 seen=1、r=0，应判可整除。in_valid=0 时两者保持，结果也保持。不同状态编码或查表实现同样合格，只要保留相同转移和空前缀语义。",
+    "referenceAnswerMd": "保存余数 rem 与非空标志 seen。每次接收一位时计算 (2×rem+bit_in) mod 5，停顿时保持状态。\n\n```systemverilog\nmodule prefix_mod5 (\n  input  logic clk,\n  input  logic rst_n,  // Synchronous active-low reset\n  input  logic in_valid,\n  input  logic bit_in,\n  output logic is_divisible\n);\n  logic [2:0] rem;\n  logic       seen;\n  logic [3:0] candidate, reduced;\n\n  // Append one bit: new remainder = (2*old_remainder + bit) mod 5.\n  // rem is 0..4, so candidate is 0..9 and one subtraction is sufficient.\n  assign candidate = ({1'b0, rem} << 1) | {3'b000, bit_in};\n  assign reduced = candidate >= 4'd5 ? candidate - 4'd5 : candidate;\n\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin\n      rem  <= 3'd0;\n      seen <= 1'b0;\n    end else if (in_valid) begin\n      rem  <= reduced[2:0];  // reduced <= 4: no significant bits are discarded\n      seen <= 1'b1;\n    end\n    // Stalls preserve the accepted prefix, not the unsampled bit_in.\n  end\n\n  // Empty prefix is NOT a number; an accepted prefix of zero IS divisible by 5.\n  assign is_divisible = seen && (rem == 3'd0);\nendmodule\n```\n\n下面按数据流、边界与采样沿解释这份实现。参考实现并非唯一正确写法；网页仍使用人工自评，不执行提交的用户代码。",
     "rubric": [
       "余数状态为 0…4，不能保存不断增长的完整整数。",
       "转移为 (2r+bit) mod 5，正确处理候选值 5…9。",
@@ -289,13 +289,14 @@
       "中间位宽足以容纳 2r+bit。"
     ],
     "commonMistakes": [
-      "用有限移位寄存器替代无限前缀的余数状态。",
-      "未区分空前缀与有效数字零。"
+      "把空前缀余数 0 直接当成有效的可整除数据。",
+      "2r+x 用 3 bit 保存，候选 8、9 被截断。",
+      "无效沿仍更新余数，破坏已接收前缀。"
     ]
   },
   {
     "id": "ADAPTED-YHC-RTL-0003",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "divider",
     "type": "numeric",
@@ -316,7 +317,7 @@
       "note": "参考 YHCHub 练习汇编 Q26 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
     },
     "promptMd": "设计一个时钟使能脉冲调度器，每个脉冲间隔只能为 6 或 7 个输入时钟周期。一个重复调度块包含 8 个完整间隔，总计恰好 50 个输入周期。每块中应有几个长度为 7 的间隔？这里要求平均脉冲间隔为 6.25，不要求输出方波或 50% 占空比。",
-    "explanationMd": "设长度 7 的间隔有 k 个，其余 8-k 个为 6，则 7k+6(8-k)=50，解得 k=2。六个 6 加两个 7 共 50，平均为 50/8=6.25。相邻脉冲仍有周期抖动；这不等于生成固定周期、50% 占空比的 6.25 分频时钟。",
+    "explanationMd": "**答案：2 个长度为 7 的间隔。**\n\n先假定八个间隔都是 6 周期，总共 `8×6=48` 周期，距离 50 还差 2。每把一个间隔从 6 改成 7，增加 1 周期，所以需要两个 7。\n\n列式也可：令 k 为 7 周期间隔数，`7k+6(8−k)=50`，解得 k=2；六个 6 与两个 7 合计 50，平均 `50/8=6.25`。\n\n题目没有指定这两个长间隔的排列，满足块总长的排列都可行。相邻脉冲仍存在 6/7 周期变化，这不是固定周期、50% 占空比的方波时钟。",
     "expectedValue": 2,
     "absoluteTolerance": 0,
     "commonMistakes": [
@@ -326,7 +327,7 @@
   },
   {
     "id": "ADAPTED-YHC-RTL-0004",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "adder-pipeline",
     "type": "rtl_coding",
@@ -347,8 +348,8 @@
       "note": "参考 YHCHub 练习汇编 Q34 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
     },
     "promptMd": "设计 popcount8：clk、同步低有效 rst_n、in_valid、data[7:0]，输出 out_valid 与 count[3:0]。输入不含 X/Z；每个 in_valid=1 的上升沿接收一个字，沿后登记其中 1 的数量。可连续每拍接收；无效沿 out_valid=0、count 保持。复位时二者清零。要求用分组求和的平衡组合加法树后接一层输出寄存器，明确各层位宽，不引入额外流水级。",
-    "explanationMd": "人口计数最大可达 8，输出至少需要 4 bit。平衡分组能把参考结构组织为三层求和，但实际映射与 Fmax 仍由综合、布局和时序决定；参考实现不宣称已完成器件实现。",
-    "referenceAnswerMd": "```systemverilog\nmodule popcount8 (\n  input logic clk, rst_n, in_valid,\n  input logic [7:0] data,\n  output logic out_valid,\n  output logic [3:0] count\n);\n  logic [1:0] p0, p1, p2, p3;\n  logic [2:0] s0, s1;\n  logic [3:0] total;\n  assign p0 = {1'b0,data[0]} + {1'b0,data[1]};\n  assign p1 = {1'b0,data[2]} + {1'b0,data[3]};\n  assign p2 = {1'b0,data[4]} + {1'b0,data[5]};\n  assign p3 = {1'b0,data[6]} + {1'b0,data[7]};\n  assign s0 = {1'b0,p0} + {1'b0,p1};\n  assign s1 = {1'b0,p2} + {1'b0,p3};\n  assign total = {1'b0,s0} + {1'b0,s1};\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin count <= 4'd0; out_valid <= 1'b0; end\n    else begin\n      out_valid <= in_valid;\n      if (in_valid) count <= total;\n    end\n  end\nendmodule\n```\n\n组合网络为三层：两位之和范围 0…2（2 bit），四位之和 0…4（3 bit），八位之和 0…8（4 bit）。8'hFF 对应 8，8'hA6 对应 4。每个有效采样沿后输出该沿采到的计数，不额外引入中间流水级。",
+    "explanationMd": "**三层组合加法树后接一层输出寄存器；接收沿后即可得到结果。**\n\n| 分组 | 最大结果 | 必要位宽 |\n|---|---:|---:|\n| 每两个输入 bit 相加 | 2 | 2 bit |\n| 两个二位组相加（4个输入） | 4 | 3 bit |\n| 两个四位组相加（8个输入） | 8 | 4 bit |\n\n每次相加前显式补零到下一层位宽，避免表达式先在较窄宽度计算而丢进位。组合层并行存在，不代表增加三个时钟流水级。\n\nE0 沿前 data 已稳定，E0 接收 in_valid=1，沿后 count 寄存全部八位的求和，out_valid=1。连续有效输入每拍接收；空泡时 out_valid=0、count 保持，不能把旧 count 误算成新事务。同步复位优先清零二者。不同等价分组可以接受，但应满足题定平衡树和单层输出寄存器约束；综合后的 Fmax 仍需实现验证。",
+    "referenceAnswerMd": "两位一组，再四位一组，最后八位合计；各层先扩宽再相加。三层都是组合逻辑，只在输出处寄存一次。\n\n```systemverilog\nmodule popcount8 (\n  input  logic       clk,\n  input  logic       rst_n,  // Synchronous active-low reset\n  input  logic       in_valid,\n  input  logic [7:0] data,\n  output logic       out_valid,\n  output logic [3:0] count\n);\n  logic [1:0] p0, p1, p2, p3;\n  logic [2:0] s0, s1;\n  logic [3:0] total;\n\n  // Layer 1: each pair counts 0..2, so operands are extended to TWO bits.\n  assign p0 = {1'b0, data[0]} + {1'b0, data[1]};\n  assign p1 = {1'b0, data[2]} + {1'b0, data[3]};\n  assign p2 = {1'b0, data[4]} + {1'b0, data[5]};\n  assign p3 = {1'b0, data[6]} + {1'b0, data[7]};\n\n  // Layers 2/3: groups of four need 3 bits; the final 0..8 count needs 4 bits.\n  assign s0 = {1'b0, p0} + {1'b0, p1};\n  assign s1 = {1'b0, p2} + {1'b0, p3};\n  assign total = {1'b0, s0} + {1'b0, s1};\n\n  // One output register stage, no internal pipeline: accept a new word each edge.\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin\n      count     <= 4'd0;\n      out_valid <= 1'b0;\n    end else begin\n      out_valid <= in_valid;\n      if (in_valid) begin\n        count <= total;\n      end\n      // Invalid cycles clear valid but keep the old count as the interface allows.\n    end\n  end\nendmodule\n```\n\n下面按数据流、边界与采样沿解释这份实现。参考实现并非唯一正确写法；网页仍使用人工自评，不执行提交的用户代码。",
     "rubric": [
       "所有 8 个输入位各参与一次求和。",
       "2/4/8 位分组的求和宽度分别足以容纳 2/4/8。",
@@ -357,13 +358,14 @@
       "全零、全一及交错位可核对。"
     ],
     "commonMistakes": [
-      "用 3 bit 输出导致全一输入的计数溢出。",
-      "分组时漏位、重复计数或中间加法丢进位。"
+      "输出只有 3 bit，八个 1 的结果 8 无法表示。",
+      "把三层组合加法误认为三个时钟延迟，造成 valid 错位。",
+      "无效沿将保持的旧 count 当作有效新结果。"
     ]
   },
   {
     "id": "ADAPTED-YHC-RTL-0005",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "serial-parallel",
     "type": "waveform_analysis",
@@ -384,7 +386,7 @@
       "note": "参考 YHCHub 练习汇编 Q16 的知识方向，条件、数值、代码与解答独立编制，非原题。已核对汇编页面可访问及对应考点，不代表核实其公司、届别或原卷归因；证据按教学/练习汇编 C 级记录。"
     },
     "promptMd": "in_sig 已同步到 clk，且在每个采样沿前后满足建立/保持。同步复位后 prev=0、pulse=0，之后 rst_n 保持 1。E0…E4 上升沿的 in_sig 依次为 0、1、1、0、1。\n```systemverilog\nalways_ff @(posedge clk) begin\n  if (!rst_n) begin prev <= 1'b0; pulse <= 1'b0; end\n  else begin\n    prev  <= in_sig;\n    pulse <= in_sig & ~prev;\n  end\nend\n```\n列出每沿 NBA 完成后的 pulse，并解释为何持续高电平不会每拍都产生上升沿脉冲。",
-    "explanationMd": "上升沿检测比较当前样本与上一样本，而不是比较两个都已经更新为当前输入的寄存器值。输出也是寄存器，在相邻上升沿之间保持。",
+    "explanationMd": "**沿后 pulse 为 0、1、0、0、1。**\n\n条件 `in_sig & ~prev` 表示“当前采样为 1，前次采样为 0”。两个 NBA 都读取沿前 prev；不会先把 prev 改成当前输入再计算 pulse。\n\nE1 输入为 1、旧 prev=0，所以置脉冲；E2 输入仍为 1，但旧 prev 已是 1，所以输出 0。E3 输入降为 0，把 prev 清回 0；E4 再次观察到 1，才产生第二次脉冲。\n\npulse 是寄存输出，在两个上升沿间保持；本题输入已同步并满足采样条件。若异步短脉冲落在两个沿之间，本电路可能完全漏掉，不能当通用跨域事件捕获器。",
     "referenceAnswerMd": "```text\n沿   采样 in_sig   沿前 prev   沿后 pulse\nE0       0            0             0\nE1       1            0             1\nE2       1            1             0\nE3       0            1             0\nE4       1            0             1\n```\n\n两个 NBA 右值都读取该沿前的值。prev 保存上一次采样，pulse 在当前样本为 1、前次样本为 0 时置位，所以连续高电平只在首次被观察到时产生一个脉冲。本题输入已经满足本时钟域采样条件；异步信号或两个沿之间的短脉冲需要另行设计 CDC/事件捕获协议。",
     "rubric": [
       "pulse 依次为 0、1、0、0、1。",
@@ -399,7 +401,7 @@
   },
   {
     "id": "ADAPTED-COLLECTION-RTL-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "counter",
     "type": "numeric",
@@ -421,7 +423,7 @@
       "note": "参考公开练习汇编 Q32 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
     },
     "promptMd": "一个 7 bit 无符号减法计数器先同步复位为十进制 9。之后只有 en=1 的有效沿才减 1，按模 128 回绕，en=0 时保持。从复位之后累计出现 300 个 en=1 的有效沿，中间可有任意个停顿。最终无符号十进制值是多少？",
-    "explanationMd": "最终值=(9-300) mod 128=(-291) mod 128=93。也可先把 300 mod 128=44，计算 9-44=-35，再加 128 得 93。停顿不改变有效递减次数。",
+    "explanationMd": "**答案：93。**\n\n7 bit 无符号寄存器有 128 种位模式，减到 0 后继续减会回绕到 127。只数 en=1 的更新沿，所以最终值是 `(9−300) mod 128`。\n\n先去掉完整回绕：`300=2×128+44`，等价于从 9 减 44，得到 −35；映射到 0…127 范围时加 128，结果 `93`。反查：`93+300=393`，模 128 等于初值 9。\n\n停顿沿保持寄存器，不增加递减次数；负的数学中间结果也不意味着最终寄存器是有符号负数。",
     "expectedValue": 93,
     "absoluteTolerance": 0,
     "commonMistakes": [
@@ -431,7 +433,7 @@
   },
   {
     "id": "ADAPTED-COLLECTION-RTL-0002",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "counter",
     "type": "numeric",
@@ -453,7 +455,7 @@
       "note": "参考公开练习汇编 Q33 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
     },
     "promptMd": "一个 5 bit Johnson 计数器，每次有效沿更新为 q_next={q[3:0],~q[4]}，初态 q=5'b00000。不考虑非法态注入，问从初态出发经过多少次更新首次回到 00000？",
-    "explanationMd": "序列为 00000→00001→00011→00111→01111→11111→11110→11100→11000→10000→00000，首次回到初态需要 10 次更新。这里指该初始化轨道的周期，不是断言全部 32 种位模式都在同一个环中。",
+    "explanationMd": "**答案：10 次更新。**\n\n每次左移低四位，并在最低位接入旧最高位的反相。由全零开始，先把 1 逐个填满，再把 0 逐个填回：\n\n```text\n更新次数  0     1     2     3     4     5\nq       00000 00001 00011 00111 01111 11111\n更新次数  6     7     8     9     10\nq       11110 11100 11000 10000 00000\n```\n\n0…9 没有重复初态，第 10 次首次回到 00000。这个 2N 周期结论针对给定初始轨道；不能说 5 bit 的所有 32 种状态都属于此环。若把反馈改成不取反，就变成另一类环形移位结构。",
     "expectedValue": 10,
     "absoluteTolerance": 0,
     "commonMistakes": [
@@ -463,7 +465,7 @@
   },
   {
     "id": "ADAPTED-COLLECTION-RTL-0003",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "06",
     "subtopicId": "fsm",
     "type": "single_choice",
@@ -485,7 +487,7 @@
       "note": "参考公开练习汇编 Q31 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
     },
     "promptMd": "设计一个自主同步序列发生器，复位后从第一位开始循环输出 00001，每周期输出一位。输出只能是内部有限状态的确定函数，不依赖外部计数或输入；允许任意组合输出译码。至少需要多少个二值状态寄存器 bit？",
-    "explanationMd": "00001 的最小重复周期为 5。自主确定性机器要区分循环中五个不同位置，至少需要 5 个有效状态，因此寄存器位数下界为 ceil(log2 5)=3。模五计数器加译码可达到该下界。不要求用移位寄存器直接保存所有五位。",
+    "explanationMd": "**答案：B，至少 3 bit。**\n\n序列 00001 的最短重复周期是 5。虽然前四个输出同为 0，它们距离下一个 1 的时间不同，机器必须区分五个相位；如果提前重复同一个内部状态，确定性的后续输出也会提前循环，无法得到最小周期 5。\n\n因此至少有 5 个状态，`2^2=4<5≤8=2^3`，位数下界为 3。模五计数器加组合译码在第五个相位输出 1，可达到这个下界。五位移位寄存器也是一种实现，但题目允许编码，不要求直接保存整个序列。",
     "options": [
       {
         "id": "A",
@@ -508,10 +510,10 @@
       "B"
     ],
     "optionExplanations": {
-      "A": "2 bit 只有 4 个状态，不能实现最小周期为 5 的确定循环。",
-      "B": "3 bit 可容纳至少五个状态，并可用模五循环实现。",
-      "C": "五位移位实现可行，但不是允许任意编码时的最小状态位数。",
-      "D": "输出宽度不等于内部相位状态所需位数。"
+      "A": "2 bit 最多四种内部状态，确定性自主机器无法形成最短五状态循环。",
+      "B": "3 bit 可编码五个相位，模五计数加输出译码给出达到下界的具体构造。",
+      "C": "五位环形移位确实可行，但允许任意状态编码后，三位计数已经足够，所以不是最小值。",
+      "D": "一位是输出宽度；内部还要记住当前在五拍循环中的位置，不能只靠两个状态。"
     },
     "commonMistakes": [
       "忽略“自主、无外部状态”的下界前提。",
