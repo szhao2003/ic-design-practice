@@ -1,9 +1,10 @@
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction } from 'idb';
 import { planBackupMerge, type BackupData, type JsonValue, type MutableRecord } from '../domain/backup-merge';
 import type { Question } from '../domain/question-schema';
-import { createRound, type LearningEvent, type PracticeRound } from '../domain/practice';
+import { createRound, revealAnswer, selfGrade, type SelfGrade, type LearningEvent, type PracticeRound } from '../domain/practice';
+import type { Answer } from '../domain/grading';
 import { rebuildProgress, type ReviewProgress } from '../domain/review';
-import { finishMock, type MockSession } from '../domain/mock-session';
+import { createMock, finishMock, saveMockAnswer, mockReviewDraftId, type MockSession } from '../domain/mock-session';
 import { canonical, type QuestionSnapshot } from '../domain/snapshots';
 import { storedRoundSchema, validateBackup, type StoredRound } from './backup-schema';
 import { sessionDraftId, type PracticeSession } from '../domain/practice-session';
@@ -54,6 +55,10 @@ export class LearningStore {
       tx.objectStore('events').getAll(), tx.objectStore('snapshots').getAll(), tx.objectStore('records').getAll(), tx.objectStore('sessions').getAll(), tx.objectStore('metadata').get('revision'), tx.objectStore('practiceSessions').getAll(),
     ]);
     await tx.done;
+    if (sessions.some(s => s.status === 'active' && s.deadlineAt && Date.parse(s.deadlineAt) <= Date.now())) {
+      for (const session of sessions) if (session.status === 'active' && session.deadlineAt && Date.parse(session.deadlineAt) <= Date.now()) await this.finishExam(session.id);
+      return this.read();
+    }
     return { data: { schemaVersion: 1, events, snapshots, records, sessions, practiceSessions }, revision: revision ?? 0, progress: rebuildProgress(events) };
   }
   private async write<T>(work: (tx: IDBPTransaction<LearningDB, typeof tables, 'readwrite'>) => Promise<T>): Promise<T> {
@@ -168,9 +173,88 @@ export class LearningStore {
       await tx.objectStore('records').put({ namespace, id, value, deleted, updatedAt }, key);
     });
   }
+  async startExam(questions: Question[], minutes?: number): Promise<MockSession> {
+    if (!questions.length || questions.length > 100 || questions.some(q => q.reviewStatus !== 'verified') || (minutes !== undefined && (!Number.isInteger(minutes) || minutes < 1 || minutes > 240))) throw new Error('请选择已审核题目，限时须为 1–240 分钟。');
+    return this.write(async tx => {
+      if ((await tx.objectStore('sessions').getAll()).some(s => s.status === 'active')) throw new Error('请先完成当前模拟考试。');
+      const at = new Date().toISOString();
+      const { session, snapshots } = createMock(crypto.randomUUID(), questions, at, minutes === undefined ? undefined : new Date(Date.parse(at) + minutes * 60_000).toISOString());
+      for (const snapshot of snapshots) {
+        const old = await tx.objectStore('snapshots').get(snapshot.key);
+        if (old && canonical(old) !== canonical(snapshot)) throw new Error('同版本题目内容发生变化，请检查题库版本。');
+        await tx.objectStore('snapshots').put(snapshot, snapshot.key);
+      }
+      await tx.objectStore('sessions').add(session, session.id);
+      return session;
+    });
+  }
+  private async settleExam(tx: IDBPTransaction<LearningDB, typeof tables, 'readwrite'>, session: MockSession, at: string, submit: boolean): Promise<MockSession> {
+    const result = finishMock(session, await tx.objectStore('snapshots').getAll(), at, submit);
+    if (result.session === session) return session;
+    for (const event of result.events) {
+      const existing = await tx.objectStore('events').get(event.id);
+      if (existing && canonical(existing) !== canonical(event)) throw new Error('模拟作答历史冲突，交卷未保存。');
+      if (!existing) await tx.objectStore('events').add(event, event.id);
+    }
+    const progress = rebuildProgress(await tx.objectStore('events').getAll());
+    for (const item of progress) await tx.objectStore('progress').put(item, item.questionId);
+    await tx.objectStore('sessions').put(result.session, session.id);
+    return result.session;
+  }
+  async saveExam(expected: MockSession, change: { key?: string; answer?: Answer; currentIndex?: number }): Promise<MockSession> {
+    return this.write(async tx => {
+      const session = await tx.objectStore('sessions').get(expected.id);
+      if (!session) throw new Error('模拟考试已被移除，请重新载入。');
+      if (session.status !== 'active') return session;
+      const now = Date.now();
+      if (session.deadlineAt && now >= Date.parse(session.deadlineAt)) return this.settleExam(tx, session, new Date(now).toISOString(), false);
+      if (canonical(session) !== canonical(expected)) throw new Error('其他页面已更新本卷，请重新载入后继续。');
+      if (change.key !== undefined && change.answer === undefined) throw new Error('答案格式无效。');
+      if (change.currentIndex !== undefined && (!Number.isInteger(change.currentIndex) || change.currentIndex < 0 || change.currentIndex >= session.questionKeys.length)) throw new Error('题目位置无效。');
+      const at = new Date(Math.max(now, Date.parse(session.updatedAt))).toISOString();
+      let next = change.key === undefined ? session : saveMockAnswer(session, change.key, change.answer!, at);
+      next = { ...next, updatedAt: at, currentIndex: change.currentIndex ?? next.currentIndex ?? 0 };
+      await tx.objectStore('sessions').put(next, session.id);
+      return next;
+    });
+  }
+  async finishExam(id: string, submit = false, expected?: MockSession): Promise<MockSession> {
+    return this.write(async tx => {
+      const session = await tx.objectStore('sessions').get(id);
+      if (!session) throw new Error('模拟考试不存在。');
+      if (session.status !== 'active') return session;
+      const now = new Date().toISOString();
+      if (submit && expected && canonical(expected) !== canonical(session) && (!session.deadlineAt || Date.parse(now) < Date.parse(session.deadlineAt))) throw new Error('其他页面已更新本卷，请重新载入再交卷。');
+      return this.settleExam(tx, session, now, submit);
+    });
+  }
+  async gradeExamManual(id: string, key: string, grade: SelfGrade): Promise<StoredRound> {
+    return this.write(async tx => {
+      const session = await tx.objectStore('sessions').get(id);
+      if (!session || session.status === 'active') throw new Error('请先交卷，再自评人工题。');
+      if ((await tx.objectStore('sessions').getAll()).some(s => s.status === 'active')) throw new Error('请先完成当前模拟考试，再查看历史自评。');
+      const pending = session.pendingManualRounds?.find(r => r.snapshot.key === key);
+      if (!pending) throw new Error('本题没有可自评的独立作答。');
+      const draftId = mockReviewDraftId(pending.id);
+      const old = await tx.objectStore('records').get(`drafts/${draftId}`);
+      if (old && !old.deleted) return storedRoundSchema.parse(old.value);
+      const at = new Date(Math.max(Date.now(), Date.parse(session.completedAt!))).toISOString();
+      const round = selfGrade(revealAnswer(structuredClone(pending), at, true), grade, at);
+      for (const event of round.events) {
+        const existing = await tx.objectStore('events').get(event.id);
+        if (existing && canonical(existing) !== canonical(event)) throw new Error('人工自评历史冲突。');
+        if (!existing) await tx.objectStore('events').add(event, event.id);
+      }
+      const saved: StoredRound = { round, revision: 0 };
+      await tx.objectStore('records').put({ namespace: 'drafts', id: draftId, deleted: false, updatedAt: at, value: JSON.parse(JSON.stringify(saved)) as JsonValue }, `drafts/${draftId}`);
+      const progress = rebuildProgress(await tx.objectStore('events').getAll()).find(p => p.questionId === pending.snapshot.question.id);
+      if (progress) await tx.objectStore('progress').put(progress, progress.questionId);
+      return saved;
+    });
+  }
   async exportJSON(): Promise<string> {
     const state = await this.read();
-    return JSON.stringify({ ...state.data, exportedAt: new Date().toISOString(), bankVersion: '0.3.2' }, null, 2);
+    return JSON.stringify({ ...state.data, exportedAt: new Date().toISOString(), bankVersion: '0.4.0' }, null, 2);
   }
   async previewImport(input: unknown, mode: 'merge' | 'replace', currentIds: string[]): Promise<ImportPreview> {
     const incoming = validateBackup(input);

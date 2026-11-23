@@ -11,6 +11,7 @@ export type MockSession = {
   updatedAt: string;
   deadlineAt?: string;
   status: 'active' | 'submitted' | 'expired';
+  currentIndex?: number;
   completedAt?: string;
   unansweredKeys?: string[];
   invalidAnswers?: { key: string; error: string }[];
@@ -24,7 +25,28 @@ export function createMock(id: string, questions: Question[], at: string, deadli
   if (!id.trim() || !questions.length || new Set(questions.map((q) => q.id)).size !== questions.length) throw new Error('模拟卷必须有 ID 和不重复的题目。');
   if (deadlineAt) { assertTimestamp(deadlineAt); if (Date.parse(deadlineAt) <= Date.parse(at)) throw new Error('截止时间必须晚于开始时间。'); }
   const snapshots = questions.map(snapshotQuestion);
-  return { session: { id, questionKeys: snapshots.map((item) => item.key), answers: {}, startedAt: at, updatedAt: at, deadlineAt, status: 'active' }, snapshots };
+  return { session: { id, questionKeys: snapshots.map((item) => item.key), answers: {}, startedAt: at, updatedAt: at, deadlineAt, status: 'active', currentIndex: 0 }, snapshots };
+}
+
+export const mockReviewDraftId = (roundId: string) => `mock:${roundId}`;
+export function mockRedirect(sessions: MockSession[], pathname: string): string | undefined {
+  const active = sessions.find(s => s.status === 'active');
+  const target = active && `/mock/${active.id}`;
+  return target && pathname !== target ? target : undefined;
+}
+export function isBlankMockAnswer(answer: Answer | undefined): boolean {
+  return answer === undefined || (typeof answer === 'string' && !answer.trim()) || (Array.isArray(answer) && !answer.length)
+    || (typeof answer === 'object' && answer !== null && 'raw' in answer && !answer.raw.trim());
+}
+
+export function buildMockPaper(pool: Question[], count: number, random = Math.random): Question[] {
+  if (!Number.isInteger(count) || count < 1 || count > 100) throw new Error('题量须为 1–100 的整数。');
+  const eligible = [...new Map(pool.filter(q => q.reviewStatus === 'verified').map(q => [q.id, q])).values()];
+  for (let i = eligible.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+  }
+  return eligible.slice(0, count);
 }
 
 export function saveMockAnswer(session: MockSession, key: string, answer: Answer, at: string): MockSession {
@@ -54,8 +76,7 @@ export function finishMock(session: MockSession, snapshots: QuestionSnapshot[], 
     if (!snapshot) throw new Error(`模拟卷缺少历史题面快照：${key}`);
     const question = snapshot.question;
     const answer = session.answers[key];
-    const blank = answer === undefined || (typeof answer === 'string' && !answer.trim()) || (Array.isArray(answer) && !answer.length)
-      || (typeof answer === 'object' && answer !== null && 'raw' in answer && !answer.raw.trim());
+    const blank = isBlankMockAnswer(answer);
     if (!isManual(question)) autoTotal++;
     if (blank) { unansweredKeys.push(key); continue; }
     let round = saveDraft(createRound(`${session.id}/${encodeURIComponent(question.id)}`, question, session.startedAt), answer);

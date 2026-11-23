@@ -4,7 +4,7 @@ import { gradeAnswer } from '../domain/grading';
 import { createRound, revealAnswer, saveDraft, selfGrade, submitAutomatic } from '../domain/practice';
 import { canonical } from '../domain/snapshots';
 import { planBackupMerge, type BackupData } from '../domain/backup-merge';
-import { finishMock } from '../domain/mock-session';
+import { finishMock, mockReviewDraftId } from '../domain/mock-session';
 import { practiceSessionSchema, sessionDraftId } from '../domain/practice-session';
 
 const timestamp = z.iso.datetime({ offset: true });
@@ -32,6 +32,7 @@ const record = z.object({ id: text, namespace: z.enum(['notes', 'bookmarks', 'is
 const session = z.object({
   id: text, questionKeys: z.array(text).min(1), answers: z.record(z.string(), answer), startedAt: timestamp, updatedAt: timestamp,
   deadlineAt: timestamp.optional(), status: z.enum(['active', 'submitted', 'expired']), completedAt: timestamp.optional(),
+  currentIndex: z.number().int().nonnegative().optional(),
   unansweredKeys: z.array(text).optional(), invalidAnswers: z.array(z.object({ key: text, error: text })).optional(),
   pendingManualRounds: z.array(roundSchema).optional(), autoTotal: z.number().int().nonnegative().optional(), autoCorrect: z.number().int().nonnegative().optional(),
 }).strict();
@@ -68,9 +69,12 @@ export function validateBackup(input: unknown): BackupData {
   }
   for (const session of data.sessions) {
     if (new Set(session.questionKeys).size !== session.questionKeys.length || Object.keys(session.answers).some((key) => !session.questionKeys.includes(key))) throw new Error('模拟会话含重复题目或未知答案。');
+    const examSnapshots = session.questionKeys.map(key => data.snapshots.find(s => s.key === key)!);
+    if (new Set(examSnapshots.map(s => s.question.id)).size !== session.questionKeys.length || (session.currentIndex ?? 0) >= session.questionKeys.length) throw new Error('模拟会话题序或位置无效。');
     if (Date.parse(session.updatedAt) < Date.parse(session.startedAt) || (session.deadlineAt && Date.parse(session.deadlineAt) <= Date.parse(session.startedAt))) throw new Error('模拟会话时间不一致。');
     if (session.status === 'active') {
       if (session.completedAt || session.autoTotal !== undefined || session.autoCorrect !== undefined || session.pendingManualRounds || session.unansweredKeys || session.invalidAnswers) throw new Error('活动模拟会话不应包含交卷结果。');
+      if (data.events.some(e => examSnapshots.some(s => e.roundId === `${session.id}/${encodeURIComponent(s.question.id)}`))) throw new Error('活动模拟会话不能提前包含交卷事件。');
     } else {
       if (!session.completedAt) throw new Error('已交卷的模拟会话缺少结束时间。');
       const active = { ...session, status: 'active' as const, updatedAt: session.startedAt, completedAt: undefined, unansweredKeys: undefined, invalidAnswers: undefined, pendingManualRounds: undefined, autoTotal: undefined, autoCorrect: undefined };
@@ -89,7 +93,9 @@ export function validateBackup(input: unknown): BackupData {
       const saved = parsedRound.data;
       const round = saved.round;
       const inSession = (data.practiceSessions ?? []).some((session) => session.roundIds.includes(round.id) && item.id === sessionDraftId(round.id));
-      if ((!inSession && item.id !== round.snapshot.question.id) || !data.snapshots.some((s) => canonical(s) === canonical(round.snapshot))) throw new Error('草稿与题面快照不匹配。');
+      const mockRound = data.sessions.filter(s => s.status !== 'active').flatMap(s => s.pendingManualRounds ?? []).find(r => r.id === round.id && item.id === mockReviewDraftId(r.id));
+      if (mockRound && (canonical(round.draft) !== canonical(mockRound.draft) || round.startedAt !== mockRound.startedAt || canonical(round.snapshot) !== canonical(mockRound.snapshot) || !round.independent || round.status !== 'complete')) throw new Error('模拟自评不能修改交卷时的答案或题面。');
+      if ((!inSession && !mockRound && item.id !== round.snapshot.question.id) || !data.snapshots.some((s) => canonical(s) === canonical(round.snapshot))) throw new Error('草稿与题面快照不匹配。');
       let replay = createRound(round.id, round.snapshot.question, round.startedAt);
       if (round.draft !== undefined) replay = saveDraft(replay, round.draft);
       if (round.revealedAt) replay = revealAnswer(replay, round.revealedAt, round.independent, Boolean(round.paperCompletedAt));
