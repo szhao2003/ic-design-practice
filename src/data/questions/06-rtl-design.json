@@ -1,1 +1,42 @@
-[]
+[
+  {
+    "id": "ADAPTED-RK26-RTL-0001",
+    "contentVersion": 1,
+    "type": "rtl_coding",
+    "topicId": "06",
+    "subtopicId": "adder-pipeline",
+    "title": "两级流水线 32 bit 加法器",
+    "difficulty": "medium",
+    "tags": [
+      "Pipeline",
+      "Adder",
+      "SystemVerilog"
+    ],
+    "estimatedMinutes": 15,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "firsthand_recall",
+      "evidenceGrade": "A",
+      "questionFidelity": "topic_only_reconstruction",
+      "company": "瑞芯微",
+      "graduationCohort": "2026届",
+      "url": "https://www.nowcoder.com/discuss/802688503929655296",
+      "sourceClaimVerification": "not_rechecked",
+      "note": "根据配套调研中的公开笔经索引，以“32 bit 两级流水线加法器”为线索独立编制。本题条件、数值、代码和解答均重新设计，不是原卷原题；来源链接未再次核验。"
+    },
+    "promptMd": "设计 `pipeline_adder`：输入 `clk, rst_n, in_valid, a[31:0], b[31:0]`，输出 `out_valid, sum[32:0]`，保留无符号加法进位。rst_n 为同步低有效复位。没有 ready 或停顿，连续有效输入需要每拍接收。\n\n要求第一阶段计算低 16 bit 和并保存进位及高半部操作数，第二阶段完成高半部加法并拼接结果。无效周期不要求 sum 清零，out_valid 必须正确传递。\n\n给出完整可综合 SystemVerilog；说明在 E0 接收的一组输入在哪个上升沿之后得到有效输出，以及连续输入的吞吐率。按采样沿明确描述延迟，避免“两个周期”计数歧义。",
+    "referenceAnswerMd": "```systemverilog\nmodule pipeline_adder (\n  input logic clk, rst_n, in_valid,\n  input logic [31:0] a, b,\n  output logic out_valid,\n  output logic [32:0] sum\n);\n  logic v1;\n  logic [16:0] low_q;\n  logic [15:0] a_hi_q, b_hi_q;\n  logic [16:0] high_sum;\n  assign high_sum = {1'b0, a_hi_q} + {1'b0, b_hi_q}\n                  + {{16{1'b0}}, low_q[16]};\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin\n      v1 <= 1'b0; low_q <= '0;\n      a_hi_q <= '0; b_hi_q <= '0;\n    end else begin\n      v1 <= in_valid;\n      if (in_valid) begin\n        low_q <= {1'b0, a[15:0]} + {1'b0, b[15:0]};\n        a_hi_q <= a[31:16]; b_hi_q <= b[31:16];\n      end\n    end\n  end\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin out_valid <= 1'b0; sum <= '0; end\n    else begin\n      out_valid <= v1;\n      if (v1) sum <= {high_sum, low_q[15:0]};\n    end\n  end\nendmodule\n```\n\nE0 后第一级寄存低半部结果和高半部操作数；E1 的第二级读取第一级旧值，E1 后 sum 与 out_valid 对应 E0 接收的数据。即经过两个寄存级，从输入被接收的 E0 到结果更新的 E1 相隔一个时钟周期。流水线填充后吞吐率为每周期一组，无效输入通过 v1/out_valid 传播空泡。\n\n把 32 bit 进位传播拆为低/高两个约 16 bit 的组合阶段，有机会缩短单级组合路径；实际频率仍取决于综合、布线、寄存器及约束，不能按级数直接保证翻倍。",
+    "rubric": [
+      "低半部加法显式扩为 17 bit，保存低位和进位。",
+      "高半部数据与低半部进位属于同一输入，第二级输出为 33 bit。",
+      "同步复位及 valid 空泡传播正确，连续输入不被丢弃。",
+      "明确 E0/E1 的寄存更新与每拍吞吐，不把工具未运行说成已仿真通过。"
+    ],
+    "explanationMd": "关键在于**对齐同一输入的数据与进位**。高半部不能在第二级直接使用当前 a/b，否则会混入下一组数据。非阻塞赋值在上升沿读取旧寄存值，因此第二级自然取得上一拍第一级数据。本参考实现做了逐级数据流和位宽检查，尚未运行 HDL 仿真。",
+    "commonMistakes": [
+      "第二级直接使用当前输入高半部，导致相邻事务串组。",
+      "低位和未扩位，丢失跨阶段进位。",
+      "sum 有效时刻与 out_valid 错位。"
+    ]
+  }
+]

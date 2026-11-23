@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "id": "ORIGINAL-SV-0001",
+    "contentVersion": 1,
+    "type": "true_false",
+    "topicId": "02",
+    "subtopicId": "latch-inference",
+    "title": "always_comb 能自动补齐赋值吗？",
+    "difficulty": "easy",
+    "tags": [
+      "SystemVerilog",
+      "always_comb",
+      "Latch"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "判断下面说法：只要过程使用 `always_comb`，即使存在输出未被赋值的分支，也能保证描述的是完整组合逻辑，不会产生保持旧值的需求。\n\n```systemverilog\nalways_comb begin\n  if (en) q = d;\nend\n```\n\n只讨论该过程的赋值完备性，q 不由其他过程驱动；不把工具报错或警告当成自动补值。",
+    "correctValue": false,
+    "explanationMd": "**错误。** 当 en=0 时，该过程没有给 q 新赋值，语义上需要保留 q 的旧值，属于不完整组合赋值。`always_comb` 不会自动给缺失分支生成一个符合设计意图的值；工具可能报告锁存器相关警告或错误。\n\n若设计意图是 en=0 时输出 0，可写：\n```systemverilog\nalways_comb begin\n  q = '0;\n  if (en) q = d;\nend\n```\n默认值应符合接口要求，不能为了消除告警随便选择。",
+    "commonMistakes": [
+      "把过程关键字当作赋值完备性的自动保证。",
+      "不先明确 en=0 时的设计行为，就随意补一个默认值。"
+    ]
+  }
+]

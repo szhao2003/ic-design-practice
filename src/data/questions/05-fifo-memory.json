@@ -1,1 +1,35 @@
-[]
+[
+  {
+    "id": "ADAPTED-ESP-FIFO-0001",
+    "contentVersion": 1,
+    "type": "numeric",
+    "topicId": "05",
+    "subtopicId": "fifo-depth",
+    "title": "有限 burst 的理论最小 FIFO 深度",
+    "difficulty": "medium",
+    "tags": [
+      "FIFO",
+      "burst",
+      "离散边沿"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "B",
+      "questionFidelity": "topic_only_reconstruction",
+      "company": "乐鑫",
+      "url": "https://ac.nowcoder.com/discuss/837148",
+      "sourceClaimVerification": "not_rechecked",
+      "note": "根据配套调研中的乐鑫 2022 领跑者实习笔试索引，以 FIFO 深度为线索独立改编；搜索索引可见 80/50 MHz 与 burst=100 的题目方向。原帖本次未能直接访问，链接未再次核验。本题额外指定起始相位与离散边沿，解答为独立推导，不是原卷原题，也不沿用原帖选项答案。"
+    },
+    "promptMd": "一个初始为空的理想队列，写端在 t=0 开始，以 80 MHz 连续写入 100 个数据，写入时刻为 0、12.5、25、……、1237.5 ns。读端在 t=20 ns 首次尝试读取，此后每 20 ns（50 MHz）读一次；非空时必读，空时不读。\n\n同时发生读写时按同一时刻的净变化计算占用。忽略跨域指针同步延迟、安全余量与容量必须为 2 的幂等实现限制。问不会溢出的理论最小存储深度，单位为“个数据”，请输入无单位整数。",
+    "expectedValue": 39,
+    "absoluteTolerance": 0,
+    "explanationMd": "**39 个数据。** 第 100 次写在 1237.5 ns。在此之前已完成 `floor(1237.5/20)=61` 次读取，且由于先从 t=0 写入，读取时队列始终非空。此刻占用为 `100-61=39`。\n\n倒数一次写在 1225 ns，此前同样已读 61 次，占用 38；最后一次写把占用升至 39，随后 1240 ns 的读取使占用下降。检查全部离散边沿，最大占用是 39。不能用平均速率简单算出 37.5 后四舍五入，因为读写起始相位和端点已明确指定。\n\n这是题目条件下的抽象队列深度，不能直接当作实际异步 FIFO 的最终硬件深度。",
+    "commonMistakes": [
+      "忽略首个读沿与最后写沿的位置，只用平均速率估算。",
+      "把实际异步 FIFO 的幂次容量或指针同步余量混入已明确排除的条件。"
+    ]
+  }
+]

@@ -8,26 +8,20 @@ import { useLearning } from '../storage/LearningContext';
 import { issueSchema, type StoredRound } from '../storage/backup-schema';
 import type { JsonValue } from '../domain/backup-merge';
 import { ReferenceAnswer, RichText, SourceDetails, sourceLabel, typeLabels } from '../components/QuestionContent';
+import { QuestionsPage } from './QuestionsPage';
 
-export function QuestionRows({ items }: { items: Question[] }) {
-  const { state } = useLearning();
-  return <div className="question-list">{items.map((question) => {
-    const progress = state.progress.find((p) => p.questionId === question.id);
-    return <Link className="question-row panel" key={question.id} to={`/practice/${encodeURIComponent(question.id)}`}><div><span className="badge">{typeLabels[question.type]}</span><span className="source-tag">{sourceLabel(question)}</span></div><h2>{question.title}</h2><div className="card-bottom"><span>{question.tags.join(' · ')}</span><span>{progress?.hasUnresolvedMistake ? '待巩固' : progress?.independentlyPracticed ? '已练习 · 可重做' : '开始练习'}</span></div></Link>;
-  })}</div>;
-}
 function answerText(answer: unknown) { return typeof answer === 'string' ? answer : JSON.stringify(answer ?? '未填写', null, 2); }
 
 export function PracticePage() {
   const { id } = useParams();
   const { state } = useLearning();
   const question = questions.find((q) => q.id === id) ?? state.data.snapshots.find((s) => s.question.id === id)?.question;
-  if (!id) return <><header className="page-heading"><p className="eyebrow">PRACTICE</p><h1>开始一次专项练习</h1><p>选择题目独立作答。每次重做保留新的记录，旧答案不会被覆盖。</p></header><QuestionRows items={questions} /></>;
+  if (!id) return <QuestionsPage practice />;
   if (!question) return <section className="panel"><h1>未找到题目</h1><Link to="/questions">返回题库</Link></section>;
   return <QuestionWorkspace key={id} question={question} removed={!questions.some((q) => q.id === id)} />;
 }
 
-function QuestionWorkspace({ question: latestQuestion, removed }: { question: Question; removed: boolean }) {
+export function QuestionWorkspace({ question: latestQuestion, removed, sessionContext }: { question: Question; removed: boolean; sessionContext?: { sessionId: string; draftId: string } }) {
   const { store, state, refresh } = useLearning();
   const [saved, setSaved] = useState<StoredRound>();
   const current = useRef<StoredRound | undefined>(undefined);
@@ -55,7 +49,7 @@ function QuestionWorkspace({ question: latestQuestion, removed }: { question: Qu
   async function load(restart = false) {
     try {
       await queue.current;
-      const value = await store.begin(latestQuestion, restart);
+      const value = await (sessionContext ? store.loadPracticeRound(sessionContext.sessionId) : store.begin(latestQuestion, restart));
       current.current = value; setSaved(value); setDraft(value.round.draft); setPaper(false); setError(''); await refresh();
     } catch (e) { setError(e instanceof Error ? e.message : '载入失败。'); }
   }
@@ -64,7 +58,7 @@ function QuestionWorkspace({ question: latestQuestion, removed }: { question: Qu
     setBusy((count) => count + 1); setError('');
     queue.current = queue.current.then(async () => {
       if (!current.current) throw new Error('请先载入题目。');
-      const next = await store.change(latestQuestion.id, current.current, transform);
+      const next = await store.change(latestQuestion.id, current.current, transform, sessionContext);
       current.current = next; setSaved(next);
       if (updateSummary) await refresh();
     }).catch((e: unknown) => setError(e instanceof Error ? e.message : '保存失败，请重新载入。')).finally(() => setBusy((count) => count - 1));
@@ -106,7 +100,7 @@ function QuestionWorkspace({ question: latestQuestion, removed }: { question: Qu
       {result?.kind === 'submitted' && <div className={result.result.isCorrect ? 'result correct' : 'result incorrect'} role="status">{result.result.isCorrect ? '回答正确' : '回答错误，已加入待巩固与复习'}<pre>你的答案：{answerText(result.answer)}</pre></div>}
       {round?.events.some((event) => event.kind === 'revealed_without_submission') && <p className="notice">本轮属于辅助学习，不计入自动正确率，也不累计独立掌握；下次请重新独立作答。</p>}
       {round?.status === 'awaiting_self_grade' && <div className="self-grade"><h3>对照评分点，自评本次掌握程度</h3><div className="button-row">{(['good', 'partial', 'again'] as const).map((grade) => <button key={grade} className="button secondary" disabled={!!busy || Boolean(error)} onClick={() => change((r) => selfGrade(r, grade, new Date().toISOString()))}>{({ good: '掌握', partial: '部分掌握', again: '不会' })[grade]}</button>)}</div></div>}
-      {round?.status === 'complete' && <div className="button-row"><button className="button secondary" disabled={!!busy || Boolean(error)} onClick={() => { void load(true); }}>重做本题</button><Link className="button secondary" to="/practice">选择下一题</Link></div>}
+      {!sessionContext && round?.status === 'complete' && <div className="button-row"><button className="button secondary" disabled={!!busy || Boolean(error)} onClick={() => { void load(true); }}>重做本题</button><Link className="button secondary" to="/practice">选择下一题</Link></div>}
       {progress && <p className="source-note">建议下次复习：{new Date(progress.nextReviewAt).toLocaleString()} · 连续独立掌握 {progress.consecutiveSuccesses} 次</p>}
     </section>}
     {hasReference && <ReferenceAnswer question={question} />}

@@ -2,6 +2,7 @@ import type { LearningEvent } from './practice';
 import type { MockSession } from './mock-session';
 import { assertTimestamp, canonical, type QuestionSnapshot } from './snapshots';
 import { rebuildProgress, type ReviewProgress } from './review';
+import type { PracticeSession } from './practice-session';
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 export type MutableRecord = {
@@ -11,7 +12,7 @@ export type MutableRecord = {
   deleted: boolean;
   value: JsonValue;
 };
-export type BackupData = { schemaVersion: 1; events: LearningEvent[]; snapshots: QuestionSnapshot[]; records: MutableRecord[]; sessions: MockSession[] };
+export type BackupData = { schemaVersion: 1; events: LearningEvent[]; snapshots: QuestionSnapshot[]; records: MutableRecord[]; sessions: MockSession[]; practiceSessions?: PracticeSession[] };
 export type MergeConflict = { kind: 'schema' | 'event' | 'snapshot' | 'record' | 'session' | 'reference'; id: string };
 export type MergePlan = { ok: false; conflicts: MergeConflict[] } | { ok: true; data: BackupData; progress: ReviewProgress[] };
 
@@ -46,6 +47,14 @@ export function planBackupMerge(local: BackupData, incoming: BackupData): MergeP
     if (sameExam && previous.status === 'active' && session.status !== 'active') sessions.set(session.id, structuredClone(session));
     else if (!(sameExam && previous.status !== 'active' && session.status === 'active')) conflicts.push({ kind: 'session', id: session.id });
   }
+  const practiceSessions = new Map<string, PracticeSession>();
+  for (const session of [...(local.practiceSessions ?? []), ...(incoming.practiceSessions ?? [])]) {
+    const previous = practiceSessions.get(session.id);
+    if (!previous || canonical(previous) === canonical(session)) { practiceSessions.set(session.id, structuredClone(session)); continue; }
+    const samePlan = canonical(previous.questionKeys) === canonical(session.questionKeys) && canonical(previous.roundIds) === canonical(session.roundIds) && previous.startedAt === session.startedAt && previous.kind === session.kind && canonical(previous.filtersSnapshot) === canonical(session.filtersSnapshot);
+    if (samePlan && previous.status === 'active' && session.status === 'completed') practiceSessions.set(session.id, structuredClone(session));
+    else if (!(samePlan && previous.status === 'completed' && session.status === 'active')) conflicts.push({ kind: 'session', id: session.id });
+  }
   for (const snapshot of snapshots) {
     if (snapshot.key !== `${snapshot.question.id}@${snapshot.question.contentVersion}`) conflicts.push({ kind: 'snapshot', id: snapshot.key });
   }
@@ -57,5 +66,7 @@ export function planBackupMerge(local: BackupData, incoming: BackupData): MergeP
     for (const key of session.questionKeys) if (!snapshots.some((item) => item.key === key)) conflicts.push({ kind: 'reference', id: `${session.id}/${key}` });
   }
   if (conflicts.length) return { ok: false, conflicts };
-  return { ok: true, data: { schemaVersion: 1, events, snapshots, records: [...records.values()], sessions: [...sessions.values()] }, progress: rebuildProgress(events) };
+  const data: BackupData = { schemaVersion: 1, events, snapshots, records: [...records.values()], sessions: [...sessions.values()] };
+  if (local.practiceSessions !== undefined || incoming.practiceSessions !== undefined) data.practiceSessions = [...practiceSessions.values()];
+  return { ok: true, data, progress: rebuildProgress(events) };
 }

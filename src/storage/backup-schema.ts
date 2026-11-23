@@ -5,6 +5,7 @@ import { createRound, revealAnswer, saveDraft, selfGrade, submitAutomatic } from
 import { canonical } from '../domain/snapshots';
 import { planBackupMerge, type BackupData } from '../domain/backup-merge';
 import { finishMock } from '../domain/mock-session';
+import { practiceSessionSchema, sessionDraftId } from '../domain/practice-session';
 
 const timestamp = z.iso.datetime({ offset: true });
 const text = z.string().min(1);
@@ -36,7 +37,7 @@ const session = z.object({
 }).strict();
 const backupSchema = z.object({
   schemaVersion: z.literal(1), exportedAt: timestamp.optional(), bankVersion: text.optional(),
-  events: z.array(eventSchema), snapshots: z.array(snapshot), records: z.array(record), sessions: z.array(session),
+  events: z.array(eventSchema), snapshots: z.array(snapshot), records: z.array(record), sessions: z.array(session), practiceSessions: z.array(practiceSessionSchema).optional(),
 }).strict();
 
 export function validateBackup(input: unknown): BackupData {
@@ -87,7 +88,8 @@ export function validateBackup(input: unknown): BackupData {
       if (!parsedRound.success) throw new Error('备份中有无法恢复的题目草稿。');
       const saved = parsedRound.data;
       const round = saved.round;
-      if (item.id !== round.snapshot.question.id || !data.snapshots.some((s) => canonical(s) === canonical(round.snapshot))) throw new Error('草稿与题面快照不匹配。');
+      const inSession = (data.practiceSessions ?? []).some((session) => session.roundIds.includes(round.id) && item.id === sessionDraftId(round.id));
+      if ((!inSession && item.id !== round.snapshot.question.id) || !data.snapshots.some((s) => canonical(s) === canonical(round.snapshot))) throw new Error('草稿与题面快照不匹配。');
       let replay = createRound(round.id, round.snapshot.question, round.startedAt);
       if (round.draft !== undefined) replay = saveDraft(replay, round.draft);
       if (round.revealedAt) replay = revealAnswer(replay, round.revealedAt, round.independent, Boolean(round.paperCompletedAt));
@@ -98,6 +100,17 @@ export function validateBackup(input: unknown): BackupData {
       }
       if (canonical(replay) !== canonical(round)) throw new Error('草稿状态不能从历史操作安全恢复。');
     }
+  }
+  for (const session of data.practiceSessions ?? []) {
+    const rounds = session.roundIds.map((id, index) => {
+      const record = data.records.find((r) => r.namespace === 'drafts' && r.id === sessionDraftId(id) && !r.deleted);
+      if (!record) throw new Error('连续练习缺少作答草稿。');
+      const stored = storedRoundSchema.parse(record.value);
+      if (stored.round.id !== id || stored.round.snapshot.key !== session.questionKeys[index]) throw new Error('连续练习轮次与题序不一致。');
+      return stored.round;
+    });
+    if (new Set(rounds.map((round) => round.snapshot.question.id)).size !== rounds.length) throw new Error('连续练习不能重复同一题的不同版本。');
+    if (rounds.slice(0, session.currentIndex).some((round) => round.status !== 'complete') || (session.status === 'completed' && rounds.some((round) => round.status !== 'complete'))) throw new Error('连续练习进度超前于已完成作答。');
   }
   // 当前尚无旧版正式备份；未知或未来版本明确拒绝，不做丢字段的猜测迁移。
   return plan.data;

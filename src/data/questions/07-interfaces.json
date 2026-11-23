@@ -1,1 +1,82 @@
-[]
+[
+  {
+    "id": "ADAPTED-RK26-AXI-0001",
+    "contentVersion": 1,
+    "type": "numeric",
+    "topicId": "07",
+    "subtopicId": "bandwidth",
+    "title": "AXI 读数据通道的有效吞吐率",
+    "difficulty": "medium",
+    "tags": [
+      "AXI",
+      "Bandwidth",
+      "VALID-READY"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "firsthand_recall",
+      "evidenceGrade": "A",
+      "questionFidelity": "topic_only_reconstruction",
+      "company": "瑞芯微",
+      "graduationCohort": "2026届",
+      "url": "https://www.nowcoder.com/discuss/802688503929655296",
+      "sourceClaimVerification": "not_rechecked",
+      "note": "根据配套调研中的公开笔经索引，以“AXI 相关带宽计算”为线索独立编制。本题条件、数值、代码和解答均重新设计，不是原卷原题；来源链接未再次核验。"
+    },
+    "promptMd": "仅统计 AXI 读数据通道，数据宽度 32 bit，时钟 100 MHz。8 个连续时钟周期的采样沿上，(RVALID,RREADY) 依次为：\n\n```\n周期       1    2    3    4    5    6    7    8\nVALID      1    1    1    0    1    1    1    0\nREADY      0    1    1    1    0    1    1    1\n```\n\n每次成功握手传输全部 4 字节，全部为有效载荷。统计窗口恰为 8 个完整周期（80 ns），不计窗口外数据，也不加入地址、响应或 DDR 层开销。求该窗口的有效吞吐率，单位 MB/s，规定 1 MB=10^6 字节。",
+    "expectedValue": 200,
+    "unit": "MB/s",
+    "defaultUnit": "MB/s",
+    "acceptedUnits": {
+      "MB/s": 1,
+      "B/s": 0.000001
+    },
+    "absoluteTolerance": 0.001,
+    "explanationMd": "成功握手发生在第 2、3、6、7 沿，共 4 次。有效载荷为 `4 × 4 = 16 B`。100 MHz 周期为 10 ns，窗口为 `8 × 10 = 80 ns`。\n\n`16 B / 80 ns = 200,000,000 B/s = 200 MB/s`。\n\n**答案 200 MB/s。** 全速单通道理论数据率为 400 MB/s，本窗口一半周期成功握手，因此达到一半。这里算的是题目定义的数据通道窗口效率，不是对原回忆中的 DDR/AXI 系统题进行还原。",
+    "commonMistakes": [
+      "只要 RVALID=1 就计一次传输，忽略 RREADY。",
+      "把 32 bit 当作 32 字节。",
+      "混淆十进制 MB 与 MiB，或擅自加入未给出的其他通道开销。"
+    ]
+  },
+  {
+    "id": "ADAPTED-RK26-AHB-0001",
+    "contentVersion": 1,
+    "type": "waveform_analysis",
+    "topicId": "07",
+    "subtopicId": "ahb",
+    "title": "AHB-Lite 等待周期与流水重叠",
+    "difficulty": "medium",
+    "tags": [
+      "AHB-Lite",
+      "HREADY",
+      "波形"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "firsthand_recall",
+      "evidenceGrade": "A",
+      "questionFidelity": "topic_only_reconstruction",
+      "company": "瑞芯微",
+      "graduationCohort": "2026届",
+      "url": "https://www.nowcoder.com/discuss/802688503929655296",
+      "sourceClaimVerification": "not_rechecked",
+      "note": "根据配套调研中的公开笔经索引，以“AHB 读写时序”为线索独立编制。本题条件、数值、代码和解答均重新设计，不是原卷原题；来源链接未再次核验。"
+    },
+    "promptMd": "考虑单主单从 AHB-Lite 读操作，HRESP 始终 OKAY，选中传输时 HSEL=1，无 BUSY 或锁定操作。表中值是在各上升沿被采样的值；E0 之前没有待完成数据相位。\n\n```\n采样沿       E0       E1       E2       E3\nHREADY        1        0        1        1\nHTRANS     NONSEQ   NONSEQ   NONSEQ    IDLE\nHADDR       0x100    0x104    0x104      —\nHWRITE        0        0        0        —\nHRDATA        —      未有效    DATA_A   DATA_B\n```\n\nE0 接收地址 A=0x100。E0 之后主机提出下一地址 B=0x104，在等待期间保持 B 的地址/控制。请说明 A 地址被接受、A 数据完成、B 地址被接受、B 数据完成分别发生在哪个沿；解释 E1 为什么不能推进，以及哪个沿出现地址相位与数据相位重叠。",
+    "referenceAnswerMd": "- A 地址：E0 被接受。\n- A 数据：E1 的 HREADY=0，数据相位延长；E2 的 HREADY=1，DATA_A 在 E2 完成。\n- B 地址：虽然 E1 已呈现 0x104，但 HREADY=0，不能视为被接受；保持至 E2 后在 E2 接受。\n- B 数据：下一拍 E3 的 HREADY=1，DATA_B 在 E3 完成。\n\nE2 同时结束 A 的数据相位并接受 B 的地址相位，这是 AHB 的流水重叠。E3 上 HTRANS=IDLE 不会取消前一个周期已经接受的 B 数据相位，它只说明不接收新的有效地址传输。",
+    "rubric": [
+      "四个时刻分别为 E0、E2、E2、E3。",
+      "E1 不推进，B 地址与控制必须保持到可接受的 E2。",
+      "解释 E2 地址/数据重叠，且 E3 的 IDLE 不取消 B 的数据相位。"
+    ],
+    "explanationMd": "分析时为每个被接受的地址建立独立数据相位，再使用 HREADY 判断相位何时完成。不要把同一列 HADDR 与 HRDATA 误认为一定属于同一事务。本题为带明确边界条件的自编时序，不是原帖原图。",
+    "commonMistakes": [
+      "把 E1 出现 B 地址当成 B 已经接受。",
+      "把 E2 的 DATA_A 当成 HADDR=0x104 对应的数据。",
+      "看到 E3 的 IDLE 就否认 B 的数据完成。"
+    ]
+  }
+]

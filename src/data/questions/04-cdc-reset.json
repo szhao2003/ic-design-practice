@@ -32,4 +32,84 @@
     "commonMistakes": ["只谈亚稳态，不检查脉冲是否跨过目的域采样沿。", "直接使用 toggle 却不限制连续事件间隔。"],
     "reviewStatus": "verified", "source": { "kind": "self_authored", "evidenceGrade": "none", "questionFidelity": "self_authored", "sourceClaimVerification": "not_applicable" }
   }
+,
+  {
+    "id": "ADAPTED-RK26-CDC-0001",
+    "contentVersion": 1,
+    "type": "rtl_coding",
+    "topicId": "04",
+    "subtopicId": "pulse-toggle",
+    "title": "有事件间隔约束的 toggle 脉冲跨域",
+    "difficulty": "medium",
+    "tags": [
+      "CDC",
+      "toggle",
+      "SystemVerilog"
+    ],
+    "estimatedMinutes": 15,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "firsthand_recall",
+      "evidenceGrade": "A",
+      "questionFidelity": "topic_only_reconstruction",
+      "company": "瑞芯微",
+      "graduationCohort": "2026届",
+      "url": "https://www.nowcoder.com/discuss/802688503929655296",
+      "sourceClaimVerification": "not_rechecked",
+      "note": "根据配套调研中的公开笔经索引，以“单 bit 脉冲跨时钟域”为线索独立编制。本题条件、数值、代码和解答均重新设计，不是原卷原题；来源链接未再次核验。"
+    },
+    "promptMd": "编写 `pulse_toggle_cdc`，输入 src_clk=100 MHz、dst_clk=25 MHz，彼此异步。src_pulse 是在源时钟上升沿采样、恰好一个源周期宽的事件脉冲；相邻事件至少间隔 160 ns，即 4 个目的周期。只传递“发生一次事件”，不携带数据。\n\nsrc_rst_n 和 dst_rst_n 均异步低有效，分别在各自域同步释放；系统保证两域都完成复位且同步链稳定后才产生事件，运行中不单独复位。所有 toggle 与同步寄存器复位为 0。功能推演假设亚稳态在后级采样前消退；工程上仍需做 CDC/时序约束，不能声称绝对消除亚稳态。\n\n要求源域用 toggle 编码，每个事件翻转一次；目的域用 2-FF 同步后检测变化，产生一个目的周期宽的寄存输出 dst_pulse。给出完整 SystemVerilog，并解释为什么事件间隔和复位约定不可省略。",
+    "referenceAnswerMd": "```systemverilog\nmodule pulse_toggle_cdc (\n  input logic src_clk, src_rst_n, src_pulse,\n  input logic dst_clk, dst_rst_n,\n  output logic dst_pulse\n);\n  logic src_toggle;\n  (* ASYNC_REG = \"TRUE\" *) logic sync1, sync2;\n  logic sync2_d;\n  always_ff @(posedge src_clk or negedge src_rst_n) begin\n    if (!src_rst_n) src_toggle <= 1'b0;\n    else if (src_pulse) src_toggle <= ~src_toggle;\n  end\n  always_ff @(posedge dst_clk or negedge dst_rst_n) begin\n    if (!dst_rst_n) begin\n      sync1 <= 1'b0; sync2 <= 1'b0;\n      sync2_d <= 1'b0; dst_pulse <= 1'b0;\n    end else begin\n      sync1 <= src_toggle; sync2 <= sync1;\n      sync2_d <= sync2;\n      dst_pulse <= sync2 ^ sync2_d;\n    end\n  end\nendmodule\n```\n\n源事件使 src_toggle 翻转，并保持到下一事件；目的域串联同步后，用 sync2 与其延迟副本比较，输出一个寄存的变化脉冲。代码中的 dst_pulse 使用同步寄存器旧值，因此比 sync2 更新再晚一个采样沿，但脉冲宽度仍为一个目的周期。\n\n160 ns 间隔给目的域观察每次 toggle 留出时间；如果在目的域观察前连续翻转两次，可能回到原值而丢失事件。复位必须协调，否则单边清零也可能被识别成事件，或把尚未处理的事件抹掉。本方案依赖明确的事件间隔，不适用于任意速率；没有该保证时应考虑握手/队列。",
+    "rubric": [
+      "源域每次 src_pulse 只翻转一次 toggle。",
+      "同步器第一级只进入后级同步，不直接驱动事件检测。",
+      "目的域变化检测与寄存脉冲、复位初值正确。",
+      "解释间隔、复位协调、无数据载荷及亚稳态假设的边界。"
+    ],
+    "explanationMd": "这是一种基于题目间隔约束的事件编码，不是把 10 ns 脉冲直接交给慢时钟采样。参考代码做了寄存更新顺序与复位检查，尚未运行 HDL 仿真，实际使用仍需约束与验证。",
+    "commonMistakes": [
+      "在源事件过密时仍宣称 toggle 一定不丢事件。",
+      "使用未同步的 toggle 与目的信号异或。",
+      "忽略单域复位引起的伪事件。"
+    ]
+  },
+  {
+    "id": "ADAPTED-INNO26-CDC-0001",
+    "contentVersion": 1,
+    "type": "waveform_analysis",
+    "topicId": "04",
+    "subtopicId": "two-flop-synchronizer",
+    "title": "理想模型下 2-FF 的逐沿变化",
+    "difficulty": "medium",
+    "tags": [
+      "CDC",
+      "NBA",
+      "波形"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "firsthand_recall",
+      "evidenceGrade": "A",
+      "questionFidelity": "topic_only_reconstruction",
+      "company": "芯动科技",
+      "examDate": "2026-09-12",
+      "url": "https://www.nowcoder.com/feed/main/detail/8659c53cb8124313828d5f36f09357fd",
+      "sourceClaimVerification": "not_rechecked",
+      "note": "根据配套调研中的公开笔经索引，以“CDC 波形与电路分析”为线索独立编制。本题条件、数值、代码和解答均重新设计，不是原卷原题；来源链接未再次核验。"
+    },
+    "promptMd": "目的域有如下寄存器链，复位已经结束，E0 前 s1=s2=0。\n\n```systemverilog\nalways_ff @(posedge dst_clk) begin\n  s1 <= async_level;\n  s2 <= s1;\nend\n```\n\n只做理想数字仿真推演：输入在每个采样沿前后足够稳定，不发生 setup/hold 违例或亚稳态；所有赋值均为非阻塞赋值。五个目的上升沿采样到的输入如下：\n\n```\n采样沿             E0  E1  E2  E3  E4\nasync_level         0   1   1   0   0\n```\n\n写出每个沿的非阻塞更新完成之后 s1 和 s2 的值，并说明为什么 s2 不能在 E1 就变成 1。",
+    "referenceAnswerMd": "```\n采样沿             E0  E1  E2  E3  E4\nasync_level         0   1   1   0   0\ns1（更新后）        0   1   1   0   0\ns2（更新后）        0   0   1   1   0\n```\n\n每个沿都先读取旧值，再完成非阻塞更新：`s1_new=input_sampled`，`s2_new=s1_old`。E1 读取的 s1_old 仍为 0，因此 s2 在 E1 后保持 0，到 E2 才取得 1。",
+    "rubric": [
+      "s1 序列正确为 0/1/1/0/0。",
+      "s2 序列正确为 0/0/1/1/0。",
+      "明确非阻塞赋值读取旧值，不把同一过程的书写顺序当作组合串接。",
+      "说明这是排除了亚稳态的理想模型，不据此保证真实异步输入的固定延迟。"
+    ],
+    "explanationMd": "把每个采样沿拆成“旧值读取”和“寄存更新”两步，可避免误把 s1 的新值立刻传入 s2。这个数字波形不描述亚稳态持续时间，也不保证真实 CDC 每次延迟完全相同。来源只支持 CDC 波形方向，当前表格和代码为独立改编。",
+    "commonMistakes": [
+      "在同一个沿先改 s1 再用新 s1 改 s2。",
+      "把理想数字推演结果当作真实亚稳态的波形保证。"
+    ]
+  }
 ]

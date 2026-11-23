@@ -1,1 +1,86 @@
-[]
+[
+  {
+    "id": "ORIGINAL-LOGIC-0001",
+    "contentVersion": 1,
+    "type": "multiple_choice",
+    "topicId": "01",
+    "subtopicId": "boolean-kmap",
+    "title": "二值 Boolean 恒等式",
+    "difficulty": "easy",
+    "tags": [
+      "Boolean",
+      "二值逻辑"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "仅考虑二值逻辑，A 只能取 0 或 1；不考虑 X/Z。以下哪些恒等式对所有 A 都成立？多选，必须选出全部正确项。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "`A & 1 = A`"
+      },
+      {
+        "id": "B",
+        "textMd": "`A ^ A = 1`"
+      },
+      {
+        "id": "C",
+        "textMd": "`A | ~A = 1`"
+      },
+      {
+        "id": "D",
+        "textMd": "`A & ~A = A`"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确。与 1 保持原值，A=0、1 时分别得到 0、1。",
+      "B": "错误。同一二值信号异或自身恒为 0。",
+      "C": "正确。在二值域，A 与反相值总有一个为 1，或运算恒为 1。",
+      "D": "错误。A 与反相值相与恒为 0；A=1 时右侧为 1，构成反例。"
+    },
+    "explanationMd": "**答案 A、C。** 分别令 A=0 和 A=1 检查即可穷尽二值输入。B 的左侧恒为 0，D 的左侧也恒为 0。题目特意排除 X/Z，不能把二值恒等式直接当作四态仿真的普遍规则。",
+    "commonMistakes": [
+      "忽略二值前提，把四态 X 传播规则混进本题。",
+      "多选只选一个正确项，或凭某一个 A 值成立便认定恒等式成立。"
+    ]
+  },
+  {
+    "id": "ORIGINAL-LOGIC-0002",
+    "contentVersion": 1,
+    "type": "numeric",
+    "topicId": "01",
+    "subtopicId": "signed-width",
+    "title": "8 bit 补码的无符号编码值",
+    "difficulty": "easy",
+    "tags": [
+      "补码",
+      "位宽"
+    ],
+    "estimatedMinutes": 5,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "promptMd": "把十进制 -37 表示为 8 bit 二进制补码。然后把同一组 8 bit 当作无符号整数解释，其十进制值是多少？请输入无单位整数，要求精确值。",
+    "expectedValue": 219,
+    "absoluteTolerance": 0,
+    "explanationMd": "8 bit 共有 256 种编码。-37 的补码编码值为 `256 - 37 = 219`，即 `11011011`。从 +37 的 `00100101` 出发，按位取反得到 `11011010`，再加 1 也得到 `11011011`。**答案 219**。编码位串不变，但有符号/无符号解释不同。",
+    "commonMistakes": [
+      "只取反未加 1，误得 218。",
+      "仍按有符号数回答 -37，忽略了题目要求的无符号解释。"
+    ]
+  }
+]

@@ -1,0 +1,20 @@
+.filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 20px}
+.filter-grid>div{min-width:0}.filter-grid select{max-width:100%}
+.filter-grid>div:has(input[type=search]){grid-column:span 2}
+.advanced-filters{margin-top:20px;padding-top:16px;border-top:1px solid #e3e9f2}
+.advanced-filters summary{font-size:.9rem;margin-bottom:12px}
+.filter-footer{display:flex;align-items:end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:20px}
+.filter-footer>strong{font-size:.95rem;padding-bottom:10px}.filter-footer>div{width:220px;margin-left:auto}
+.practice-builder{display:flex;justify-content:space-between;gap:22px;align-items:center}
+.practice-builder h2{margin-bottom:8px}.practice-builder p{font-size:.9rem;margin:0;max-width:470px}
+.builder-controls{display:flex;align-items:end;gap:12px;flex-shrink:0;flex-wrap:wrap}
+.builder-controls>div{max-width:130px}.builder-controls .button{white-space:nowrap;min-height:46px}
+.tag-button{border:1px solid #cfdaeb;background:#f0f4fa;color:#4b6383;border-radius:5px;padding:5px 11px;font-size:.85rem}
+.tag-button[aria-pressed=true]{border-color:#285fc5;background:#e0eaff;color:#244e98}
+.session-toolbar{display:flex;justify-content:space-between;align-items:center;gap:18px;position:sticky;top:12px;z-index:3;box-shadow:0 5px 15px #182a410d}
+.session-toolbar h2{margin:0}.session-toolbar p{font-size:.85rem;margin:5px 0 0}.session-toolbar .eyebrow{margin:0 0 5px}
+.session-toolbar .button-row{margin:0}.session-toolbar .button-row>a{font-size:.85rem;color:#4b6383}
+.session-result{margin:20px 0}.session-result>summary{font-weight:600}.session-result>h3{margin-top:20px}
+.review-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+@media(max-width:1300px){.practice-builder{display:block}.builder-controls{margin-top:18px}.filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-grid>div:has(input[type=search]){grid-column:auto}}
+@media(max-width:700px){.filter-grid{grid-template-columns:1fr}.filter-footer>div{width:100%;margin-left:0}.builder-controls{display:grid;grid-template-columns:1fr 1fr}.builder-controls>div{max-width:none;grid-column:span 2}.builder-controls .button{white-space:normal;padding:10px}.session-toolbar{display:block;top:5px;padding:14px}.session-toolbar p:not(.eyebrow){display:none}.session-toolbar .eyebrow{font-size:.7rem}.session-toolbar h2{font-size:1rem}.session-toolbar .button-row{margin-top:10px;gap:8px}.session-toolbar .button{padding:7px 12px}.review-actions{margin-top:12px}}

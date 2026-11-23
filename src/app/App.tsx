@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
-import { HashRouter, Link, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
+import { HashRouter, Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { topics, learningStages } from '../data/topics';
 import { questions } from '../data/question-bank';
 import { Dashboard } from '../pages/Dashboard';
-import { PracticePage, QuestionRows } from '../pages/PracticePage';
+import { PracticePage } from '../pages/PracticePage';
+import { QuestionsPage } from '../pages/QuestionsPage';
+import { PracticeSessionPage } from '../pages/PracticeSessionPage';
 import { ReviewPage } from '../pages/ReviewPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { LearningProvider, useLearning } from '../storage/LearningContext';
@@ -34,26 +36,6 @@ function TopicsPage() {
   </>;
 }
 
-function QuestionsPage() {
-  const [params, setParams] = useSearchParams();
-  const selected = params.get('topic') || '';
-  const topic = topics.find((item) => item.id === selected);
-  const query = params.get('q') || '';
-  const matched = questions.filter((question) => (!selected || question.topicId === selected) && `${question.title} ${question.promptMd} ${question.tags.join(' ')}`.toLowerCase().includes(query.toLowerCase()));
-  function update(key: string, value: string) {
-    const next = new URLSearchParams(params);
-    if (value) next.set(key, value); else next.delete(key);
-    setParams(next);
-  }
-  return <><PageTitle eyebrow="QUESTION BANK" title={topic ? topic.name : '题库'} description="按专题查找题目。题源标签会区分原创、考点改编、转述与可核实原题。" />
-    <section className="panel filter-panel"><div><label htmlFor="topic">知识专题</label><select id="topic" value={selected} onChange={(event) => update('topic', event.target.value)}><option value="">全部专题</option>{topics.map((item) => <option value={item.id} key={item.id}>{item.id} · {item.name}</option>)}</select></div>
-      <div><label htmlFor="search">搜索题目</label><input id="search" type="search" placeholder="题目、知识点或标签" value={query} onChange={(event) => update('q', event.target.value)} /></div><span className="result-count">匹配 {matched.length} 道</span></section>
-    {topic && <section className="panel"><h2>本专题覆盖范围</h2><div className="tags">{topic.subtopics.map((subtopic) => <span key={subtopic.id}>{subtopic.name}</span>)}</div></section>}
-    {selected && !topic ? <EmptyState title="未找到这个专题" description="请选择目录中的有效专题。" /> : matched.length === 0 ? <EmptyState title={questions.length === 0 ? '正式题目尚未加入' : '没有匹配的题目'} description="当前不使用演示题或考点摘要充当正式题目。题目通过内容检查后会显示在这里。" /> : <QuestionRows items={matched} />}
-    <p className="source-note">来源标签不代表官方考试认证。公开笔经考点改编题会明确标注“非原题”。</p>
-  </>;
-}
-
 function PageTitle({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
   return <header className="page-heading"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{description}</p></header>;
 }
@@ -66,13 +48,13 @@ function PlannedPage({ title, description }: { title: string; description: strin
 function RouteFocus() {
   const location = useLocation();
   useEffect(() => { window.scrollTo(0, 0); document.getElementById('main-content')?.focus({ preventScroll: true }); }, [location.pathname]);
-  return <span key={location.pathname} className="sr-only" role="status">当前页面：{navigation.find(([path]) => path === location.pathname)?.[1] || (location.pathname.startsWith('/practice/') ? '题目练习' : '页面未找到')}</span>;
+  return <span key={location.pathname} className="sr-only" role="status">当前页面：{navigation.find(([path]) => path === location.pathname)?.[1] || ((location.pathname.startsWith('/practice/') || location.pathname.startsWith('/practice-session/')) ? '题目练习' : '页面未找到')}</span>;
 }
 
 export function App() {
-  return <LearningProvider><HashRouter><a className="skip-link" href="#main-content" onClick={(event) => { event.preventDefault(); document.getElementById('main-content')?.focus(); }}>跳到主要内容</a><div className="shell"><aside className="sidebar"><Link to="/" className="brand"><span className="brand-mark" aria-hidden="true">IC</span><span>IC Design<br /><strong>Practice</strong></span></Link><p className="nav-label">学习工作台</p><nav aria-label="主导航">{navigation.map(([path, title, subtitle]) => <NavLink key={path} to={path} end={path === '/'}><span>{title}</span><small>{subtitle}</small></NavLink>)}</nav><div className="sidebar-footer"><span className="badge">练习与记录 · 0.2.0</span><p>循序练习，持续复习。</p></div></aside><main id="main-content" tabIndex={-1}><RouteFocus /><Routes>
+  return <LearningProvider><HashRouter><a className="skip-link" href="#main-content" onClick={(event) => { event.preventDefault(); document.getElementById('main-content')?.focus(); }}>跳到主要内容</a><div className="shell"><aside className="sidebar"><Link to="/" className="brand"><span className="brand-mark" aria-hidden="true">IC</span><span>IC Design<br /><strong>Practice</strong></span></Link><p className="nav-label">学习工作台</p><nav aria-label="主导航">{navigation.map(([path, title, subtitle]) => <NavLink key={path} to={path} end={path === '/'}><span>{title}</span><small>{subtitle}</small></NavLink>)}</nav><div className="sidebar-footer"><span className="badge">连续练习 · 0.3.0</span><p>循序练习，持续复习。</p></div></aside><main id="main-content" tabIndex={-1}><RouteFocus /><Routes>
     <Route path="/" element={<Dashboard />} /><Route path="/topics" element={<TopicsPage />} /><Route path="/questions" element={<QuestionsPage />} />
-    <Route path="/practice" element={<PracticePage />} /><Route path="/practice/:id" element={<PracticePage />} />
+    <Route path="/practice" element={<PracticePage />} /><Route path="/practice/:id" element={<PracticePage />} /><Route path="/practice-session/:id" element={<PracticeSessionPage />} />
     <Route path="/review" element={<ReviewPage />} />
     <Route path="/mock" element={<PlannedPage title="模拟练习" description="混合专题、限时作答，交卷后统一回顾。" />} />
     <Route path="/progress" element={<PlannedPage title="学习进度" description="从真实作答记录了解各专题的掌握情况。" />} />
