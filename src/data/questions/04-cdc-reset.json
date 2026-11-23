@@ -343,5 +343,190 @@
       "C": "偶数次翻转抵消，事件信息已丢失。",
       "D": "增加级数不能找回源端已抵消的信息。"
     }
+  },
+  {
+    "id": "ADAPTED-COLLECTION-CDC-0001",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "two-flop-synchronizer",
+    "type": "numeric",
+    "title": "解析时间改变后的 MTBF 比值",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "two-flop-synchronizer"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q68 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "采用简化模型 MTBF=K×exp(Tres/τ)/(fclk×fdata)。K、τ、fclk、fdata 均固定，τ=0.05 ns。某布局调整使有效解析时间 Tres 增加 0.10 ns，其他条件不变。新 MTBF 是旧值的多少倍？填写无单位比值，可保留三位小数。",
+    "explanationMd": "比值为 exp(ΔTres/τ)=exp(0.10/0.05)=e²≈7.389。K 与频率项在比值中抵消。该估算依赖指定模型和参数，不表示实际器件获得绝对无亚稳态保证。",
+    "expectedValue": 7.38905609893065,
+    "absoluteTolerance": 0.001,
+    "commonMistakes": [
+      "把指数关系当作线性提高两倍。",
+      "将比值解释成消除所有亚稳态。"
+    ]
+  },
+  {
+    "id": "ADAPTED-COLLECTION-CDC-0002",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "multi-bit-cdc",
+    "type": "single_choice",
+    "title": "相关控制位独立同步后的假组合",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "multi-bit-cdc"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q70 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "源域的两个相关控制位 (A,B) 从 (1,0) 切换到 (0,1)，只讨论已给定的两个稳定状态，源端业务含义中 A 与 B 不应同时有效。目的域分别用两级同步器采 A、B，再计算 C=A_sync & B_sync。假设两条同步链可能相差一拍观察到变化。哪个说法正确？",
+    "explanationMd": "若目的域先看到 B 升高、稍后才看到 A 降低，就会短暂观察到 (1,1)，使 AND 输出出现源业务未允许的高电平。每位独立同步不保证相关位语义一致，应根据需求在源端生成并注册有意义的控制量，或使用相干的握手/数据协议；捕获事件还需满足速率与宽度条件。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "目的域可能出现一拍 C=1，尽管两个源稳定状态的 AND 都为 0"
+      },
+      {
+        "id": "B",
+        "textMd": "两级同步器保证相关位总在同一拍更新"
+      },
+      {
+        "id": "C",
+        "textMd": "只要两路各自不含 X，C 就一定符合源端业务语义"
+      },
+      {
+        "id": "D",
+        "textMd": "增加第三个同步级就必定使两条链同时更新"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "先得到新 B 和旧 A 可以拼成 11。",
+      "B": "同步延迟具有不确定性，不能保证相关字同时变化。",
+      "C": "四态仿真中的确定 0/1 不等于多位业务相干。",
+      "D": "级数增加不等于消除两链之间的采样差异。"
+    },
+    "commonMistakes": [
+      "把每位同步等同于相关控制字的原子更新。",
+      "仅检查是否出现 X，忽略有效但非法的组合。"
+    ]
+  },
+  {
+    "id": "ADAPTED-COLLECTION-CDC-0003",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "rdc-reset",
+    "type": "short_answer",
+    "title": "异步复位释放为什么仍需时序检查",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "rdc-reset"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q81 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "说明异步低有效复位的 recovery 与 removal 分别约束什么。为什么“复位是异步的，所以复位释放不需要任何时序检查”不成立？再说明异步断言、同步释放的作用与边界。无需给出具体工具命令。",
+    "explanationMd": "时序风险来自释放与时钟采样边沿的相对位置，不是由复位是否写进敏感列表决定。同步释放是一种降低风险的实现结构，不是取消库时序约束或全域复位分析的理由。",
+    "referenceAnswerMd": "Recovery 要求异步复位释放在后续有效时钟沿之前留出足够时间，类似对释放边沿的建立要求。Removal 要求释放不能过早靠近前一个有效时钟沿，类似保持要求。具体符号、有效极性和检查窗口以库及 STA 报告为准。\n\n异步断言不需要等待有效时钟，但释放仍可能落入器件的敏感窗口。异步断言、目的域同步释放可降低复位释放风险；仍须满足同步器和复位网络的实现条件，并分别分析各时钟域。不能由“异步”二字推导为完全不做时序检查。",
+    "rubric": [
+      "区分释放前的 recovery 与释放后的 removal 窗口。",
+      "说明与有效时钟沿过近可能引入亚稳态或状态不一致。",
+      "异步断言与同步释放的作用区分清楚。",
+      "指出每域实现和库/STA 约束仍需核查。"
+    ],
+    "commonMistakes": [
+      "把异步断言不等待时钟误解为释放没有时序要求。",
+      "认为加入两级电路就能无条件消除风险。"
+    ]
+  },
+  {
+    "id": "ADAPTED-COLLECTION-CDC-0004",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "two-flop-synchronizer",
+    "type": "multiple_choice",
+    "title": "同步链中间节点与可用解析时间",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "two-flop-synchronizer"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q69 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "一个目的时钟域的两级同步链用于接收低速、稳定保持的单 bit 电平。假设其 MTBF 随可用解析时间增大而改善，其他条件固定。以下哪些设计判断正确？",
+    "explanationMd": "第一级输出可能尚未充分稳定。同步链通常应使第一到第二级路径尽量直接，避免额外组合延迟挤占解析窗口，并在后级稳定输出后才做功能使用。级数、器件参数、物理时序和翻转率共同影响可靠性，不存在仅凭“两级”得到的绝对保证。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "不应把第一级输出直接扇出给普通功能逻辑"
+      },
+      {
+        "id": "B",
+        "textMd": "额外的级间组合延迟可能减少第二级采样前的解析时间"
+      },
+      {
+        "id": "C",
+        "textMd": "既然信号只有一位，就可以保证完全没有亚稳态失效"
+      },
+      {
+        "id": "D",
+        "textMd": "同步后的边沿检测应使用后级稳定样本及其历史值"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "B",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "第一级不是对普通功能逻辑承诺稳定的接口。",
+      "B": "在时钟及其他预算固定时，延迟占用了可用窗口。",
+      "C": "只能降低传播失效概率，不能作绝对保证。",
+      "D": "避免把尚在解析的第一级引入事件组合逻辑。"
+    },
+    "commonMistakes": [
+      "在第一级后立即分支驱动功能逻辑。",
+      "把额外逻辑的功能正确等同于同步可靠性不变。"
+    ]
   }
 ]

@@ -320,5 +320,36 @@
       "把目的域跳过状态与源域一次跳步混为一谈。",
       "把 Gray 编码当作无需协议和物理约束的跨域通行证。"
     ]
+  },
+  {
+    "id": "ADAPTED-COLLECTION-FIFO-0001",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "gray-code",
+    "type": "true_false",
+    "title": "Gray 解码最低位与归约异或",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "gray-code"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q21 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "8 bit 二进制反射 Gray 编码满足 g=b XOR (b>>1)。已知 g=8'b01110110。判断：对应二进制数 b 的最低位 b[0] 为 1。",
+    "explanationMd": "Gray 反解为 b[7]=g[7]，b[i]=b[i+1] XOR g[i]。展开后 b[0] 等于全部 Gray 位的归约异或。01110110 中有 5 个 1，异或为 1。完整解码为 01011011，也可核对最低位。",
+    "correctValue": true,
+    "commonMistakes": [
+      "把 Gray 最低位直接当作二进制最低位。",
+      "误用归约 OR 代替异或。"
+    ]
   }
 ]

@@ -1,3 +1,4 @@
+import { displayTag } from '../domain/source-presentation';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { questions } from '../data/question-bank';
@@ -80,7 +81,7 @@ export function QuestionWorkspace({ question: latestQuestion, removed, sessionCo
   const result = round?.events.find((event) => event.kind === 'submitted');
   const progress = state.progress.find((p) => p.questionId === question.id);
   async function copyQuestion() {
-    let text = `${question.id} · ${question.title}\n${typeLabels[question.type]} · ${sourceLabel(question)}\n专题：${question.topicId} · 标签：${question.tags.join(", ")}\n\n${question.promptMd}`;
+    let text = `${question.id} · ${question.title}\n${typeLabels[question.type]} · ${sourceLabel(question)}\n专题：${question.topicId} · 标签：${question.tags.map(displayTag).join(", ")}\n\n${question.promptMd}`;
     if ('options' in question) text += `\n\n${question.options.map((option) => `${option.id}. ${option.textMd}`).join('\n')}`;
     if (includeAnswer && round?.status === 'complete') text += `\n\n本次作答：${answerText(round.draft)}\n参考答案：${'referenceAnswerMd' in question ? question.referenceAnswerMd : 'correctOptionIds' in question ? question.correctOptionIds.join(',') : question.type === 'numeric' ? `${question.expectedValue} ${question.unit || ''}` : question.type === 'true_false' ? String(question.correctValue) : ''}\n个人错因：${note}`;
     try { await navigator.clipboard.writeText(text); setCopied('已复制。'); } catch { setCopied('无法访问剪贴板，请手动选择题面复制。'); }

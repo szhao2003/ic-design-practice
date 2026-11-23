@@ -1,3 +1,4 @@
+import { displayTag } from '../domain/source-presentation';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { topics } from '../data/topics';
@@ -17,7 +18,7 @@ export function QuestionsPage({ practice = false }: { practice?: boolean }) {
   const matched = filterQuestions(questions, filters, state.data);
   const companies = [...new Set(questions.flatMap((q) => q.source.company ? [q.source.company] : []))].sort();
   const years = [...new Set(questions.flatMap(questionYears))].sort();
-  const tags = [...new Set(questions.flatMap((q) => q.tags))].sort();
+  const tags = [...new Set(questions.flatMap((q) => q.tags.map(displayTag)))].sort();
   const hasAdvanced = keys.some((key) => !['topic', 'q', 'sort'].includes(key) && filters[key]);
   function update(key: keyof QuestionFilters, value: string) {
     const next = new URLSearchParams(params); if (value) next.set(key, value); else next.delete(key);

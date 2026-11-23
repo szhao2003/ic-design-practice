@@ -1,6 +1,7 @@
 import type { Question } from './question-schema';
 import type { BackupData } from './backup-merge';
 import { rebuildProgress } from './review';
+import { displayTag } from './source-presentation';
 
 export type QuestionFilters = Partial<Record<'topic' | 'subtopic' | 'q' | 'type' | 'difficulty' | 'company' | 'year' | 'fidelity' | 'evidence' | 'progress' | 'tag' | 'sort', string>>;
 export const fidelityLabels = {
@@ -19,11 +20,11 @@ export function filterQuestions(bank: Question[], filters: QuestionFilters, data
     return q.reviewStatus === 'verified'
       && (!filters.topic || q.topicId === filters.topic)
       && (!filters.subtopic || q.subtopicId === filters.subtopic)
-      && (!needle || `${q.title} ${q.promptMd} ${q.tags.join(' ')}`.toLocaleLowerCase().includes(needle))
+      && (!needle || `${q.title} ${q.promptMd} ${q.tags.join(' ')} ${q.tags.map(displayTag).join(' ')}`.toLocaleLowerCase().includes(needle))
       && (!filters.type || q.type === filters.type) && (!filters.difficulty || q.difficulty === filters.difficulty)
       && (!filters.company || q.source.company === filters.company) && (!filters.year || questionYears(q).includes(filters.year))
       && (!filters.fidelity || q.source.questionFidelity === filters.fidelity) && (!filters.evidence || q.source.evidenceGrade === filters.evidence)
-      && (!filters.tag || q.tags.includes(filters.tag))
+      && (!filters.tag || q.tags.some(tag => tag === filters.tag || displayTag(tag) === filters.tag))
       && (!filters.progress || (filters.progress === 'unseen' ? !p?.independentlyPracticed : filters.progress === 'done' ? p?.independentlyPracticed : filters.progress === 'wrong' ? p?.hasUnresolvedMistake : filters.progress === 'correct' ? Boolean(p?.independentlyPracticed && p.consecutiveSuccesses) : filters.progress === 'bookmarked' ? bookmarks.has(q.id) : false));
   });
   const difficulty = { easy: 0, medium: 1, hard: 2 };

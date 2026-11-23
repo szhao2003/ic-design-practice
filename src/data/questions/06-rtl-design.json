@@ -396,5 +396,126 @@
       "先更新 prev 再代入 pulse 公式，误算为全零。",
       "把本域样本边沿检测当作无需前提的跨域脉冲捕获。"
     ]
+  },
+  {
+    "id": "ADAPTED-COLLECTION-RTL-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "counter",
+    "type": "numeric",
+    "title": "带使能的减法计数器回绕",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "counter"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q32 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "一个 7 bit 无符号减法计数器先同步复位为十进制 9。之后只有 en=1 的有效沿才减 1，按模 128 回绕，en=0 时保持。从复位之后累计出现 300 个 en=1 的有效沿，中间可有任意个停顿。最终无符号十进制值是多少？",
+    "explanationMd": "最终值=(9-300) mod 128=(-291) mod 128=93。也可先把 300 mod 128=44，计算 9-44=-35，再加 128 得 93。停顿不改变有效递减次数。",
+    "expectedValue": 93,
+    "absoluteTolerance": 0,
+    "commonMistakes": [
+      "直接按经过的全部时钟沿递减。",
+      "使用有符号余数的负结果而不转换到 0…127。"
+    ]
+  },
+  {
+    "id": "ADAPTED-COLLECTION-RTL-0002",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "counter",
+    "type": "numeric",
+    "title": "Johnson 计数器的指定初始化周期",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "counter"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q33 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "一个 5 bit Johnson 计数器，每次有效沿更新为 q_next={q[3:0],~q[4]}，初态 q=5'b00000。不考虑非法态注入，问从初态出发经过多少次更新首次回到 00000？",
+    "explanationMd": "序列为 00000→00001→00011→00111→01111→11111→11110→11100→11000→10000→00000，首次回到初态需要 10 次更新。这里指该初始化轨道的周期，不是断言全部 32 种位模式都在同一个环中。",
+    "expectedValue": 10,
+    "absoluteTolerance": 0,
+    "commonMistakes": [
+      "把 Johnson 计数器当成普通二进制计数器。",
+      "把有效轨道长度与寄存器全部可能位模式数混为一谈。"
+    ]
+  },
+  {
+    "id": "ADAPTED-COLLECTION-RTL-0003",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "fsm",
+    "type": "single_choice",
+    "title": "固定周期序列发生器的状态下界",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "fsm"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q31 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "设计一个自主同步序列发生器，复位后从第一位开始循环输出 00001，每周期输出一位。输出只能是内部有限状态的确定函数，不依赖外部计数或输入；允许任意组合输出译码。至少需要多少个二值状态寄存器 bit？",
+    "explanationMd": "00001 的最小重复周期为 5。自主确定性机器要区分循环中五个不同位置，至少需要 5 个有效状态，因此寄存器位数下界为 ceil(log2 5)=3。模五计数器加译码可达到该下界。不要求用移位寄存器直接保存所有五位。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "2 bit"
+      },
+      {
+        "id": "B",
+        "textMd": "3 bit"
+      },
+      {
+        "id": "C",
+        "textMd": "5 bit，任何实现都必须直接保存五位"
+      },
+      {
+        "id": "D",
+        "textMd": "仅 1 bit，因为每拍只输出一位"
+      }
+    ],
+    "correctOptionIds": [
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "2 bit 只有 4 个状态，不能实现最小周期为 5 的确定循环。",
+      "B": "3 bit 可容纳至少五个状态，并可用模五循环实现。",
+      "C": "五位移位实现可行，但不是允许任意编码时的最小状态位数。",
+      "D": "输出宽度不等于内部相位状态所需位数。"
+    },
+    "commonMistakes": [
+      "忽略“自主、无外部状态”的下界前提。",
+      "把输出序列长度直接当作触发器位数。"
+    ]
   }
 ]

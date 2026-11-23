@@ -1,6 +1,7 @@
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Question } from '../domain/question-schema';
+import { displaySourceNote } from '../domain/source-presentation';
 
 export const typeLabels: Record<Question['type'], string> = { single_choice: '单选', multiple_choice: '多选', true_false: '判断', numeric: '数值计算', short_answer: '简答 · 自评', rtl_coding: 'RTL · 自评', waveform_analysis: '波形 · 自评' };
 export function sourceLabel(question: Question) {
@@ -12,7 +13,7 @@ export function RichText({ text }: { text: string }) {
 }
 export function SourceDetails({ question }: { question: Question }) {
   const source = question.source;
-  return <details className="source-details"><summary>{sourceLabel(question)} · 来源说明</summary><p>{source.questionFidelity === 'self_authored' ? '本项目原创专项练习，与具体公司的考试题面无关。' : source.note}</p>
+  return <details className="source-details"><summary>{sourceLabel(question)} · 来源说明</summary><p>{source.questionFidelity === 'self_authored' ? '本项目原创专项练习，与具体公司的考试题面无关。' : displaySourceNote(source.note)}</p>
     {source.company && <p>参考笔经：{source.company} {source.graduationCohort}</p>}
     {source.evidenceGrade !== 'none' && <p>来源证据等级：{source.evidenceGrade}（不代表原题认证或答案审核等级）</p>}
     {(source.url || source.inspiredByUrl) && <p><a href={source.url || source.inspiredByUrl} target="_blank" rel="noreferrer">查看原始资料</a> · {source.sourceClaimVerification === 'checked' ? '来源链接已核对' : '来源链接未再次核验'}</p>}

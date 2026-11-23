@@ -308,5 +308,178 @@
       "C": "约束预算本身不是物理电路；题目还排除了重新优化。",
       "D": "时序预算不能代替跨域协议和亚稳态防护。"
     }
+  },
+  {
+    "id": "ADAPTED-COLLECTION-STA-0001",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "skew-jitter",
+    "type": "numeric",
+    "title": "发射时钟较晚到达时的建立裕量",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "skew-jitter"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q45 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "单周期路径的周期为 7 ns。参考时钟的本周期边沿到达发射寄存器 CK 的时刻为 1.1 ns；下一周期边沿到达捕获寄存器 CK 的时刻为 7.4 ns。tCQ,max=0.6 ns，数据组合延迟最大 4.3 ns，数据连线延迟最大 0.5 ns，setup=0.4 ns。无 uncertainty 或其他延迟。求 setup slack，单位 ns。",
+    "explanationMd": "arrival=1.1+0.6+4.3+0.5=6.5 ns；required=7.4-0.4=7.0 ns；slack=+0.5 ns。两端同周期插入延迟分别为 1.1 和 0.4 ns，捕获相对发射偏斜为 -0.7 ns，不能当作有利的正偏斜。",
+    "expectedValue": 0.5,
+    "absoluteTolerance": 0.001,
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    },
+    "commonMistakes": [
+      "把下一周期捕获时刻再加一次周期。",
+      "漏加发射时钟插入延迟或数据连线延迟。"
+    ]
+  },
+  {
+    "id": "ADAPTED-COLLECTION-STA-0002",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "setup-hold",
+    "type": "numeric",
+    "title": "同沿最小延迟与保持裕量",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "setup-hold"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q43/Q45 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "某同源时钟路径的本周期发射沿到达 CK 为 0.4 ns，本周期捕获沿到达 CK 为 0.9 ns。tCQ,min=0.15 ns，组合最小延迟 0.22 ns，连线最小延迟 0.13 ns，hold=0.12 ns，hold uncertainty=0.04 ns（增加 required hold time）。求 hold slack，单位 ns。不引入下一周期捕获沿。",
+    "explanationMd": "最早新数据 arrival=0.4+0.15+0.22+0.13=0.90 ns。旧数据要求稳定到 required=0.9+0.12+0.04=1.06 ns。hold slack=arrival-required=-0.16 ns。负值表示新数据可能过早到达；周期不参与本题同沿检查。",
+    "expectedValue": -0.16,
+    "absoluteTolerance": 0.001,
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    },
+    "commonMistakes": [
+      "使用最大数据延迟计算保持检查。",
+      "将 hold slack 方向写反。"
+    ]
+  },
+  {
+    "id": "ADAPTED-COLLECTION-STA-0003",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "sdc",
+    "type": "multiple_choice",
+    "title": "工作模式互斥与 false path 的证据",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "sdc"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q58 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "组合 MUX 的选择 mode 在一次工作模式内保持不变，但模式 A 和 B 都会实际运行。两个数据输入在对应模式下都需要被目的寄存器正确捕获。STA 可以分别建立 A、B 的模式场景。以下哪些说法正确？",
+    "explanationMd": "同一个模式场景中，经过证明不可能被选择的分支可按具体约束建模；但另一模式仍需检查其真实工作路径。False path 不能作为隐藏 setup 违例的修复手段，模式切换、复位和测试场景也需单独考虑。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "分别建立 mode=0 与 mode=1 的场景能分析各自实际使用的路径"
+      },
+      {
+        "id": "B",
+        "textMd": "因为同一时刻只选一路，所以两路都可以永久设为 false path"
+      },
+      {
+        "id": "C",
+        "textMd": "没有功能证明时，不能仅因路径违例就将其屏蔽"
+      },
+      {
+        "id": "D",
+        "textMd": "模式内静态选择的证明不自动涵盖模式切换和复位边界"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "场景需要覆盖所有实际使用模式，并保留真实数据路径。",
+      "B": "两路在不同模式下都承载需要采样的数据，不能一并忽略。",
+      "C": "例外必须反映功能关系，不能代替修复。",
+      "D": "这些边界可能改变选择关系与采样条件。"
+    },
+    "commonMistakes": [
+      "将模式内互斥误当作所有模式下都不存在路径。",
+      "只看工具报告变绿，没有验证真实功能关系。"
+    ]
+  },
+  {
+    "id": "ADAPTED-COLLECTION-STA-0004",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "slack-fmax",
+    "type": "numeric",
+    "title": "串联仲裁逻辑的最小周期",
+    "difficulty": "medium",
+    "tags": [
+      "公开资料考点改编",
+      "第二批资料改编",
+      "slack-fmax"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/%E6%95%B0%E5%AD%97%E5%89%8D%E7%AB%AF%E6%95%B0%E5%AD%97IC%E7%AC%94%E8%AF%95%E7%9C%9F%E9%A2%98%E4%B8%8E%E8%A7%A3%E6%9E%90.html",
+      "note": "参考公开练习汇编 Q62 已出现的题目方向，重新设定条件并独立推导解答，非原题。已核对汇编链接及对应题号；不代表核实公司、届别或原卷归因。"
+    },
+    "promptMd": "一个单周期寄存器路径经过 5 级串联仲裁组合逻辑，每级最大延迟 1.4 ns，另有总连线最大延迟 0.7 ns。发射 tCQ,max=0.3 ns，捕获 setup=0.4 ns，setup uncertainty=0.2 ns，时钟偏斜为零。假设该路径是唯一瓶颈，求满足 setup 的最小周期，单位 ns。",
+    "explanationMd": "组合部分=5×1.4=7.0 ns。最小周期=0.3+7.0+0.7+0.4+0.2=8.6 ns。必须包括触发器、连线和时序预算，不能只把各级逻辑延迟相加。",
+    "expectedValue": 8.6,
+    "absoluteTolerance": 0.001,
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    },
+    "commonMistakes": [
+      "漏算 tCQ、setup 或连线延迟。",
+      "把五级串联误当成并行取最大值。"
+    ]
   }
 ]
