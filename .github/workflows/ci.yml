@@ -1,0 +1,33 @@
+name: Validate project
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+    inputs:
+      upload_pages_artifact:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run validate:questions
+      - run: npm run test
+      - run: npm run build
+      - name: Upload validated site
+        if: inputs.upload_pages_artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
