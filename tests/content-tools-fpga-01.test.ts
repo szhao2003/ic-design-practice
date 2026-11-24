@@ -6,7 +6,7 @@ const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-TOOLSFPGA-${id}`)!;
 describe('电路工具与FPGA第一批：全专题与独立计算',()=>{
   it('新增八题使15专题均有内容，来源可追溯，旧90题仍在',()=>{
     const batch=questions.filter(q=>q.id.startsWith('ADAPTED-TOOLSFPGA-'));
-    expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(CORE|SYSTEM|EXTENSION|CORE3)-/.test(q.id))).toHaveLength(98);
+    expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(CORE|SYSTEM|EXTENSION|CORE3|MINI)-/.test(q.id))).toHaveLength(98);
     for(const topic of topics)expect(questions.filter(q=>q.topicId===topic.id).length).toBeGreaterThanOrEqual(2);
     for(const q of batch){expect(q.contentVersion).toBe(1);expect(q.source).toMatchObject({kind:'practice_collection',evidenceGrade:'C',questionFidelity:'topic_only_reconstruction',sourceClaimVerification:'checked'});expect(q.source.company).toBeUndefined();}
   });

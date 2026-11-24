@@ -131,5 +131,75 @@
     "type": "numeric",
     "expectedValue": 1.6666666666666667,
     "absoluteTolerance": 0.001
+  },
+  {
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "cache",
+    "type": "numeric",
+    "difficulty": "medium",
+    "tags": [
+      "Cache小补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.cs.cornell.edu/courses/cs3410/2024fa/notes/caches.html",
+      "note": "本次访问Cornell公开cache课程，参考组相联/LRU与多级平均访存时间方向；题设、参数、序列及解析独立构造，非公司原题。"
+    },
+    "id": "ADAPTED-MINI-CACHE-0001",
+    "title": "两路组相联LRU：命中也会改变替换顺序",
+    "promptMd": "初始为空的cache有2个set，每个set为2-way，每个line为16 B。按字节地址a，block=floor(a/16)，set=block mod 2。每组独立采用精确LRU：命中或装入的新block都变为MRU；miss先用空way，满时淘汰LRU。全部为只读访问，无预取和写回。\n\n依次访问字节地址0x00、0x20、0x00、0x40、0x20、0x00。问共发生几次hit？注意命中也更新近期使用顺序。",
+    "expectedValue": 1,
+    "absoluteTolerance": 0,
+    "explanationMd": "**答案：1次hit、5次miss。**\n\n地址分别对应block 0、2、0、4、2、0，全部映射set0；set1虽空着，也不能存放这些block。\n\n| 访问block | 命中？ | 淘汰 | set0沿访问后顺序（LRU→MRU） |\n|---:|---|---|---|\n| 0 | miss | 无 | 0 |\n| 2 | miss | 无 | 0,2 |\n| 0 | hit | 无 | 2,0 |\n| 4 | miss | 2 | 0,4 |\n| 2 | miss | 0 | 4,2 |\n| 0 | miss | 4 | 2,0 |\n\n第3次访问0命中，使0成为MRU。因此第4次装入4时淘汰2，而不是先装入的0。LRU与FIFO的关键区别就在于命中会刷新顺序。组相联允许一个set内选择way，不允许越过set映射去占其他空set；总容量足够不保证本序列不冲突。",
+    "commonMistakes": [
+      "把LRU当FIFO，命中后不更新顺序。",
+      "看到set1为空就把冲突block放进去，违反set映射。",
+      "把字节地址直接mod 2，漏掉先除16得到block。"
+    ]
+  },
+  {
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "cache",
+    "type": "numeric",
+    "difficulty": "medium",
+    "tags": [
+      "Cache小补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.cs.cornell.edu/courses/cs3410/2024fa/notes/caches.html",
+      "note": "本次访问Cornell公开cache课程，参考组相联/LRU与多级平均访存时间方向；题设、参数、序列及解析独立构造，非公司原题。"
+    },
+    "id": "ADAPTED-MINI-CACHE-0002",
+    "title": "两级AMAT：L2局部缺失率不能直接当全局概率",
+    "promptMd": "题定串行、阻塞式两级cache：所有CPU读先查L1，耗时1 ns；L1 miss概率10%。只有L1 miss才查L2，额外耗时6 ns。到达L2的请求中，20%再次miss；此20%是L2局部缺失率。L2 miss后访问内存再额外耗时50 ns。无并行重叠、写回、预取或其他开销。\n\n求每个CPU读的平均访问时间AMAT，单位ns。6 ns和50 ns均为额外时间，不包含之前层的查找时间。",
+    "expectedValue": 2.6,
+    "absoluteTolerance": 0.0001,
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    },
+    "explanationMd": "**答案：2.6 ns。**\n\nL2的20%以到达L2的请求为分母，真正访问内存的全局概率为0.10×0.20=0.02。\n\n| 路径 | 全局概率 | 总耗时 | 贡献 |\n|---|---:|---:|---:|\n| L1 hit | 0.90 | 1 ns | 0.90 ns |\n| L1 miss、L2 hit | 0.10×0.80=0.08 | 1+6=7 ns | 0.56 ns |\n| L1 miss、L2 miss | 0.10×0.20=0.02 | 1+6+50=57 ns | 1.14 ns |\n\n总和0.90+0.56+1.14=2.60 ns。也可按每层是否发生分解：AMAT=1+0.10×(6+0.20×50)=2.6 ns。\n\n每个请求都付L1的1 ns，只有10%付L2的6 ns，只有2%付内存50 ns。不能把局部20%直接乘50后当作所有CPU读的内存贡献；也不能将额外时间误当路径总时间重复扣除。实际非阻塞cache可有重叠，本题明确排除。",
+    "commonMistakes": [
+      "使用1+0.1×6+0.2×50，把L2局部miss率当全局。",
+      "对L1 hit也加上L2的6 ns。",
+      "把题定额外时间误作已包含前级的路径总时间。"
+    ]
   }
 ]

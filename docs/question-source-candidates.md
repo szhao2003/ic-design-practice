@@ -128,3 +128,7 @@ N1570/GNU位移手册本次超时未采用；UW PDF无可读正文，使用同�
 | ADAPTED-CORE3-SPI-0001 | SPI Mode 3：首个下降沿后才准备首位 | [公开技术/教学来源](https://onlinedocs.microchip.com/oxy/GUID-6F1B86DC-C230-43D1-A405-0CC2E7EDF7EE-en-US-2/GUID-EAC2D943-F395-4D47-98C8-4EEBC798BFA2.html) |
 
 独立模型、RTL/SV原生验证及限制见 [本批审核](CONTENT_BATCH_11_CORE.md)。MIT托管IEEE标准PDF过大，未作为完整读取来源。
+
+## Cache小补充（2026-11-23）
+
+实际访问 https://www.cs.cornell.edu/courses/cs3410/2024fa/notes/caches.html ，仅使用LRU与多级AMAT方向；独立构造ADAPTED-MINI-CACHE-0001/0002。去重和验证见 [审核](CONTENT_BATCH_12_CACHE_MINI.md)。

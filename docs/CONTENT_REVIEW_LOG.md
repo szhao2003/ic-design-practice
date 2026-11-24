@@ -104,3 +104,7 @@
 ## 2026-11-23 RTL与协议第三批
 
 新增ADAPTED-CORE3系列8题，原122题逐对象未改。逐题来源支持范围、去重、独立推导与HDL验证边界见 [审核](CONTENT_BATCH_11_CORE.md)。新增一个维护侧RTL/TB，严格CI共10模块；253项回归与18项Python测试通过，实际HDL结果以本提交CI为准。
+
+## 2026-11-23 Cache小补充
+
+新增2题，原130题未改。公开课程只支持方向，LRU时间戳模型和AMAT路径分解独立验证，见 [审核](CONTENT_BATCH_12_CACHE_MINI.md)。
