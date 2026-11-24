@@ -72,5 +72,175 @@
       "重复命中 (0,1) 多加一次分子，或把被忽略样本当成有效命中。",
       "用两个 coverpoint 的覆盖率代替 cross 的覆盖率。"
     ]
+  },
+  {
+    "id": "ADAPTED-CORE-DV-0001",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "sva",
+    "type": "waveform_analysis",
+    "title": "disable iff：复位中止后会续查旧请求吗？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://verificationacademy.com/forums/t/what-is-the-work-of-disable-iff-expression/34081",
+      "note": "参考公开教学/技术资料中的disable iff异步中止活动尝试方向，题设、参数、波形和代码独立构造，非公司原题。已核对原链接及相关主题，不继承公司或届别归因。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "核心进阶第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 9,
+    "reviewStatus": "verified",
+    "promptMd": "分析单时钟并发断言：\n```systemverilog\nassert property (@(posedge clk) disable iff (!rst_n) req |=> gnt);\n```\n采样沿E0…E5上的值如下，均不含X/Z：\n\n| 信号 | E0 | E1 | E2 | E3 | E4 | E5 |\n|---|---:|---:|---:|---:|---:|---:|\n| rst_n | 1 | 0 | 1 | 1 | 1 | 1 |\n| req | 1 | 1 | 1 | 0 | 1 | 0 |\n| gnt | 0 | 0 | 0 | 1 | 0 | 0 |\n\nrst_n在E0与E1中间拉低，在E1与E2中间拉高；两次变化都远离采样沿，没有同一时刻NBA竞争。只分析E0…E5启动的尝试，后续req保持0。\n\n分别说明E0、E1、E2、E4相关尝试是被中止、被禁止、通过还是失败，以及何时发生。复位释放后是否恢复E0的旧检查义务？区分禁用与空真。",
+    "referenceAnswerMd": "**E0尝试被复位中止；E1禁用；E2请求在E3通过；E4请求在E5失败。**\n\n| 起始沿/事件 | 结果 | 原因 |\n|---|---|---|\n| E0 req=1 | E0…E1之间中止 | disable条件变真，终止尚未完成的义务 |\n| E1 req=1 | 禁用，不建立有效检查义务 | rst_n=0 |\n| E2 req=1 | E3通过 | 复位已释放，新义务看下一拍gnt=1 |\n| E4 req=1 | E5失败 | 下一拍gnt=0 |\n\n释放复位不会恢复已经中止的E0尝试；E3/E5的req=0则是未匹配前件产生的空真，与复位禁用不同。",
+    "explanationMd": "**disable iff不是暂停键，而是活动断言尝试的中止条件。**\n\n原来E0的req会要求E1有gnt，但rst_n在两沿之间变为0，旧尝试已经结束，既不算该尝试通过，也不算失败。E1时仍禁用，req=1也不会留下一份等复位释放后补查的义务。\n\nE2恢复后重新启动的新请求才看E3；E4的新请求看E5。不要因为E1的gnt=0就给E0报失败，也不要在E2重新续查E0。\n\n这里将复位变化放在时钟沿之间，刻意排除了同沿采样区与NBA竞态，不能据此省略真实验证中的reset/sampling分析。本题用明确离散模型复核，没有运行原生SVA仿真器。",
+    "rubric": [
+      "E0尝试在复位拉低时中止，不判通过或失败。",
+      "E1禁用，不建立有效请求义务。",
+      "E2→E3通过，E4→E5失败。",
+      "复位释放不恢复旧尝试，并区分禁用与前件未发生的空真。"
+    ],
+    "commonMistakes": [
+      "把复位当作暂停，释放后续查旧请求。",
+      "将E1的gnt=0判为E0尝试失败，忽略中途disable。",
+      "把禁用的尝试计成一次有效后件检查通过。"
+    ]
+  },
+  {
+    "id": "ADAPTED-CORE-DV-0002",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "coverage",
+    "type": "multiple_choice",
+    "title": "组合覆盖100%，为什么加法器仍可能是错的？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://accellera.org/images/downloads/standards/uvm/uvm_users_guide_1.2.pdf",
+      "note": "参考公开教学/技术资料中的参考模型、scoreboard与功能检查职责方向，题设、参数、波形和代码独立构造，非公司原题。已核对原链接及相关主题，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "核心进阶第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 9,
+    "reviewStatus": "verified",
+    "promptMd": "规格为输入a,b均为单bit，输出y为2 bit无符号和，正确y=a+b。某错误DUT却计算y={1'b0,(a^b)}。测试依次施加(a,b)=(0,0)、(1,0)、(0,1)、(1,1)。功能覆盖模型只在输入上建立四个(a,b)组合bins，四个均命中；测试中没有比较y的checker，已有其他断言也没有检查加法结果，运行未报错。\n\n以下哪些结论正确？",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "四个输入组合覆盖100%，足以证明这个DUT符合加法规格。"
+      },
+      {
+        "id": "B",
+        "textMd": "输入(1,1)的正确输出应为2，错误DUT输出0，覆盖命中并未自动发现差异。"
+      },
+      {
+        "id": "C",
+        "textMd": "没有断言报错，就说明每一个已施加输入的输出都已经被验证。"
+      },
+      {
+        "id": "D",
+        "textMd": "增加按规格计算a+b并逐笔比较y的scoreboard，可以暴露本例中的错误。"
+      }
+    ],
+    "correctOptionIds": [
+      "B",
+      "D"
+    ],
+    "explanationMd": "**答案：B、D。Coverage记录是否遇到场景，checker判断场景下行为是否正确。**\n\n| a,b | 规格a+b | 错误DUT的零扩展XOR | 输入bin是否命中 |\n|---|---:|---:|---|\n| 0,0 | 0 | 0 | 是 |\n| 1,0 | 1 | 1 | 是 |\n| 0,1 | 1 | 1 | 是 |\n| 1,1 | 2 | 0 | 是 |\n\n最后一组已经激励到错误，却没有任何比较器检查输出，因此仿真可正常结束且输入覆盖仍100%。补充正确的参考模型和比较会在(1,1)处发现差异。\n\n覆盖目标达到100%不保证模型包含了全部规格场景；已有断言无报错也不保证断言检查了目标行为。有效验证要同时审核激励、观测、参考模型、比较逻辑与覆盖模型，不能用任意一个百分数代替完整结论。",
+    "optionExplanations": {
+      "A": "四个bins只观察输入，错误y不会影响这些bin的命中，本例提供了明确反例。",
+      "B": "1+1需两位结果10，而XOR为0，扩成两位仍为00；输入bin命中不会自动执行等价比较。",
+      "C": "题设已有断言没有检查加法结果，不报错只能说明那些检查没发现违例，不能证明未检查的y。",
+      "D": "使用独立的两位无符号加法模型逐笔比较，在最后输入处得到expected=2、actual=0并报错。"
+    },
+    "commonMistakes": [
+      "把输入组合被施加当成对应输出已经检查正确。",
+      "只看覆盖报告与仿真退出码，未确认checker实际比较了什么。",
+      "参考模型也写成同一份错误XOR逻辑，使DUT与模型一起错。"
+    ]
+  },
+  {
+    "id": "ADAPTED-CORE-DV-0003",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "scoreboard",
+    "type": "short_answer",
+    "title": "Python scoreboard：跨ID乱序、同ID有序",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://accellera.org/images/downloads/standards/uvm/uvm_users_guide_1.2.pdf",
+      "note": "参考公开教学/技术资料中的scoreboard检查和参考数据匹配方向，题设、参数、波形和代码独立构造，非公司原题。已核对原链接及相关主题，不继承公司或届别归因。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "核心进阶第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 15,
+    "reviewStatus": "verified",
+    "promptMd": "编写Python函数check_reads(requests,responses)，离线检查一个已完成的单beat读记录窗口。requests逐项为(id,expected_data)，responses逐项为(id,actual_data)，id和data均为整数；先装入全部requests，再检查全部responses，不检查实时握手先后。不同ID可乱序，同ID必须依请求顺序匹配。允许重复ID和相同数据值。\n\n返回错误元组列表，依次处理response：\n- 无此ID待返回项时追加(\"unexpected\",id,actual)，不消耗其他项。\n- 否则从该ID队首取expected，即使值不同也消费该项；不同时追加(\"mismatch\",id,expected,actual)。\n最后每个未返回项追加(\"missing\",id,expected)，按ID在requests中首次出现的顺序，再按该ID队列顺序列出。全正确返回[]。\n\n例：requests=[(1,10),(2,20),(1,30)]，responses=[(2,20),(1,10),(1,30)]应无错。给完整函数，并说明为何单一全局FIFO或每ID只存一个值不够。本题不是完整AXI/UVM协议checker，不含burst、超时或复位。",
+    "referenceAnswerMd": "按ID建立期望FIFO，response只消费对应ID的队首；数据不匹配和缺失分别报告。\n\n```python\nfrom collections import defaultdict, deque\n\n\ndef check_reads(requests, responses):\n    \"\"\"Check a completed single-beat trace; IDs may reorder, each ID is FIFO.\"\"\"\n    pending = defaultdict(deque)\n    for transaction_id, expected in requests:\n        pending[transaction_id].append(expected)\n\n    errors = []\n    for transaction_id, actual in responses:\n        queue = pending.get(transaction_id)\n        if not queue:\n            # Unexpected or duplicate response: consume no other ID's request.\n            errors.append((\"unexpected\", transaction_id, actual))\n            continue\n        expected = queue.popleft()\n        # A bad response still consumes this ID's oldest outstanding request.\n        if actual != expected:\n            errors.append((\"mismatch\", transaction_id, expected, actual))\n\n    # Dictionaries retain first-ID insertion order; each deque retains FIFO order.\n    for transaction_id, queue in pending.items():\n        for expected in queue:\n            errors.append((\"missing\", transaction_id, expected))\n    return errors\n```",
+    "explanationMd": "**给定样例返回[]；ID=2先完成不妨碍ID=1内部按10→30匹配。**\n\n初始队列为ID1:[10,30]、ID2:[20]。响应(2,20)只弹ID2；(1,10)再弹ID1队首；最后(1,30)清空剩余项。\n\n单一FIFO会错误地拿先返回的20与全局第一项10比较；每ID只留一个expected会让后来的30覆盖未完成的10。每ID一个deque同时解决两点。\n\n数据mismatch也消费当前期望项，这是题定的错误恢复规则：它代表收到了一笔错误响应，不应继续拿该旧项与后面所有响应比较而造成错位连锁。无待返回项的ID则不能消耗任何别的队列。窗口结束还要查missing，否则完全不返回数据也可能被误报通过。\n\n本函数只检查离线匹配：不能识别响应是否早于请求、真实时钟超时、AXI burst中的多beat或reset取消，不能作为完整协议签核。\n\n若两个事务的返回数据相同，单靠数据比较不能区分其真实身份是否交换；这里只能按ID队列消费，不能据此证明所有事务身份与时序都正确。",
+    "rubric": [
+      "每个ID维护FIFO，可保存多个同ID未完成项。",
+      "按对应ID匹配，允许不同ID的完成顺序变化。",
+      "unexpected不消费其他项，mismatch消费对应队首。",
+      "结束时报告所有missing，并遵守规定顺序。",
+      "给出独立完整函数，说明不覆盖实时协议、burst、超时及复位。"
+    ],
+    "commonMistakes": [
+      "全局FIFO拒绝合法跨ID乱序。",
+      "字典中每ID只保存一个值，覆盖该ID更早的未完成项。",
+      "只对已返回数据做比较，漏检完全没有返回的请求。"
+    ]
+  },
+  {
+    "id": "ADAPTED-CORE-DV-0004",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "random",
+    "type": "numeric",
+    "title": "dist范围权重：:/和:=的分母不同",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://verificationacademy.com/forums/t/i-have-small-doubt-in-dist-constraint/42477",
+      "note": "参考公开教学/技术资料中的dist范围权重的分配方向，题设、参数、波形和代码独立构造，非公司原题。已核对原链接及相关主题，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "核心进阶第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 9,
+    "reviewStatus": "verified",
+    "promptMd": "SystemVerilog rand int unsigned x，仅有以下分布约束，不存在其他约束、solve before或关联随机变量：\n```systemverilog\nconstraint c { x dist {0 := 1, [1:3] :/ 6}; }\n```\n求一次成功随机化得到x=2的目标概率，按百分数填写，可保留三位小数。这里求语言给定的权重比例，不要求有限次实际随机样本恰好达到该比例。",
+    "expectedValue": 28.571428571428573,
+    "unit": "%",
+    "defaultUnit": "%",
+    "acceptedUnits": {
+      "%": 1
+    },
+    "absoluteTolerance": 0.001,
+    "explanationMd": "**答案：约28.571%，精确概率2/7。**\n\n:/把权重6分摊给整个范围1…3，三个值各得到6/3=2；0单独的权重为1。\n\n| x | 权重 |\n|---:|---:|\n| 0 | 1 |\n| 1 | 2 |\n| 2 | 2 |\n| 3 | 2 |\n\n总权重1+2+2+2=7，所以P(x=2)=2/7，乘100约28.571%。\n\n若范围写成[1:3] := 6，则每个值各得6，总权重19，x=2概率会是6/19，而不是本题结果。分布权重是概率目标，不保证运行7次必定准确出现2次x=2；本题也未执行约束求解器统计实验。",
+    "commonMistakes": [
+      "将:/误读为范围内每个值各得6，错误使用分母19。",
+      "只算x=2的权重2，没有除以所有合法值的总权重。",
+      "把目标概率解释成任意小样本中必须精确满足的出现次数。"
+    ]
   }
 ]

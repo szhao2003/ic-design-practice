@@ -582,5 +582,43 @@
       "只比较修复后的 hold，漏掉新引入的 setup 违例。",
       "默认 capture 时钟提前能同时改善 setup 与 hold。"
     ]
+  },
+  {
+    "id": "ADAPTED-CORE-STA-0001",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "slack-fmax",
+    "type": "numeric",
+    "title": "重分配级间逻辑：最优频率不是总延迟倒数",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.amd.com/content/dam/amd/en/documents/products/adaptive-socs-and-fpgas/versal/maximizing-fabric-performance-for-versal-webinar.pdf",
+      "note": "参考公开教学/技术资料中的流水线划分和retiming方向方向，题设、参数、波形和代码独立构造，非公司原题。已核对原链接及相关主题，不继承公司或届别归因。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "核心进阶第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 9,
+    "reviewStatus": "verified",
+    "promptMd": "三级流水线的组合最大延迟依次为2.4、5.6、2.0 ns。每级的发射tCQ、接收setup和setup uncertainty合计固定为0.6 ns，时钟偏斜为0，无其他路径瓶颈。\n\n允许通过题定的等价逻辑重划分，把δ ns组合延迟从第2级移到第1级：三段变为(2.4+δ)、(5.6−δ)、2.0 ns，0≤δ≤2.0，δ可连续变化。已证明功能等价，寄存器级数和每级固定开销不变；本题不检查hold。\n\n选择最优δ后，求满足setup的最高频率，单位MHz。保留至少两位小数。这是理想模型，不要求实际EDA工具能连续切分门延迟。",
+    "expectedValue": 217.3913043478261,
+    "unit": "MHz",
+    "defaultUnit": "MHz",
+    "acceptedUnits": {
+      "MHz": 1,
+      "GHz": 1000
+    },
+    "absoluteTolerance": 0.02,
+    "explanationMd": "**答案：约217.39 MHz，最优δ=1.6 ns。**\n\n同拍工作的各段受同一个时钟周期约束，所以最短周期由最慢段决定：`Tmin=max(2.4+δ,5.6−δ,2.0)+0.6 ns`。\n\n前两段之和恒为8.0 ns，因此它们的最大值至少是4.0 ns；要达到下界，两段应相等：`2.4+δ=5.6−δ`，得δ=1.6，落在允许范围0…2.0。此时三段为4.0、4.0、2.0 ns，最长段4.0 ns。\n\n`Tmin=4.0+0.6=4.6 ns`，`fmax=1000/4.6≈217.391 MHz`。\n\n| δ | 第1/2/3段组合延迟(ns) | Tmin(ns) |\n|---:|---|---:|\n| 0 | 2.4 / 5.6 / 2.0 | 6.2 |\n| 1.6 | 4.0 / 4.0 / 2.0 | 4.6 |\n| 2.0 | 4.4 / 3.6 / 2.0 | 5.0 |\n\n把可移动逻辑全部搬走反而让第1级成为更慢瓶颈；也不能用总组合延迟10 ns的倒数代替流水线吞吐频率。实际重定时还需约束功能、复位、hold及物理实现。",
+    "commonMistakes": [
+      "只减小原关键级，不检查接收逻辑的第1级是否成为新瓶颈。",
+      "将三段延迟相加计算吞吐频率，忽略各级并行。",
+      "只算组合最大值4 ns，漏掉固定0.6 ns开销。"
+    ]
   }
 ]

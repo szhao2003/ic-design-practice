@@ -64,3 +64,16 @@
 | https://www.probabilitycourse.com/chapter2/2_1_3_unordered_without_replacement.php | ADAPTED-TOOLSFPGA-PROB-0002 | 不放回抽检：至少抽到一个坏件 |
 
 Python参考代码实际运行、其他独立模型与未执行的物理实现范围见 [本批审核](CONTENT_BATCH_07_TOOLS_FPGA.md)。
+
+## 核心进阶第二批已采用
+
+- ADAPTED-CORE-STA-0001：重分配级间逻辑：最优频率不是总延迟倒数
+- ADAPTED-CORE-CDC-0001：四相握手吞吐：两级同步后还要等状态机
+- ADAPTED-CORE-AXI-0001：AXI4 INCR burst 的4 KB边界与AxLEN
+- ADAPTED-CORE-AXI-0002：多个 outstanding read：哪种返回顺序不合法？
+- ADAPTED-CORE-DV-0001：disable iff：复位中止后会续查旧请求吗？
+- ADAPTED-CORE-DV-0002：组合覆盖100%，为什么加法器仍可能是错的？
+- ADAPTED-CORE-DV-0003：Python scoreboard：跨ID乱序、同ID有序
+- ADAPTED-CORE-DV-0004：dist范围权重：:/和:=的分母不同
+
+公开来源链接、使用范围及独立验证见 [本批审核](CONTENT_BATCH_08_CORE.md)。

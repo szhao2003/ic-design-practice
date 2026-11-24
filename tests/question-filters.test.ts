@@ -57,8 +57,14 @@ describe('题库多维过滤', () => {
 
 describe('随机组题', () => {
   it('一场内去重、不修改原题库，数量不足不凑数', () => {
-    const before = [...questions]; const selected = selectPracticeQuestions([...questions, questions[0]], 100, emptyBackup(), Date.now(), () => 0.5);
-    expect(selected).toHaveLength(questions.length); expect(new Set(selected.map((q) => q.id)).size).toBe(selected.length); expect(questions).toEqual(before);
+    const before = [...questions]; const candidates = questions.slice(0, 12);
+    const selected = selectPracticeQuestions([...candidates, candidates[0]], 100, emptyBackup(), Date.now(), () => 0.5);
+    expect(selected).toHaveLength(candidates.length); expect(new Set(selected.map((q) => q.id)).size).toBe(selected.length); expect(questions).toEqual(before);
+  });
+  it('题库超过请求数量时，只取请求数量且不重复', () => {
+    const selected = selectPracticeQuestions([...questions, questions[0]], 100, emptyBackup(), Date.now(), () => 0.5);
+    expect(selected).toHaveLength(Math.min(100, questions.length));
+    expect(new Set(selected.map(q=>q.id)).size).toBe(selected.length);
   });
   it('空匹配返回空，调用方不能启动空 session', () => expect(selectPracticeQuestions([], 10, emptyBackup())).toEqual([]));
   it.each([0, -1, 101, 1.5, NaN])('拒绝非法题量 %s', (count) => expect(() => selectPracticeQuestions(questions, count, emptyBackup())).toThrow());

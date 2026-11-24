@@ -290,5 +290,94 @@
       "只看到 BVALID=1 就认为 E3 已完成响应。",
       "把 E2 后登记 BVALID 误写成 E2 沿已经接受 B。"
     ]
+  },
+  {
+    "id": "ADAPTED-CORE-AXI-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "type": "numeric",
+    "title": "AXI4 INCR burst 的4 KB边界与AxLEN",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://documentation-service.arm.com/static/6425706579edab6d64fb6f54",
+      "note": "参考公开教学/技术资料中的AXI4突发长度与4 KB地址边界方向，题设、参数、波形和代码独立构造，非公司原题。已核对原链接及相关主题，不继承公司或届别归因。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "核心进阶第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 9,
+    "reviewStatus": "verified",
+    "promptMd": "AXI4完整接口，128 bit数据总线。请求从字节地址0x0F90开始连续传12个beat，每beat16 B，起始地址按16 B对齐，INCR地址递增，所有字节均有效。每个AXI burst不得跨越4 KB边界，单burst最多256 beat，AxLEN编码为beat数减1。\n\n将此请求拆成最少数量的合法burst，并让第一段尽可能长。第一段的AxLEN应填多少？只填写十进制整数。题目不使用AXI4-Lite，不讨论WRAP或非对齐访问。",
+    "expectedValue": 6,
+    "absoluteTolerance": 0,
+    "explanationMd": "**答案：第一段7个beat，AxLEN=6；第二段5个beat，从0x1000开始。**\n\n下一个4 KB边界为0x1000，从0x0F90到边界还剩 `0x1000−0x0F90=0x70=112 B`。每beat16 B，因此第一段最多112/16=7 beat，比分段长度上限256更严格。\n\n第一段beat地址为0xF90、0xFA0、0xFB0、0xFC0、0xFD0、0xFE0、0xFF0，最后一个beat覆盖0xFF0…0xFFF；第八个beat起点为0x1000，必须属于另一burst。\n\n第一段AxLEN=7−1=6，剩余12−7=5 beat的第二段AxLEN=4。两段已经最少，因为12个beat共192 B必然跨边界，单段不可能合法。\n\n4 KB限制看字节地址范围；不能把112 B直接填入长度字段，也不能将AxLEN误当beat数。",
+    "commonMistakes": [
+      "只看256 beat上限，忽略本次首先碰到4 KB边界。",
+      "算出7 beat后直接填7，漏掉AxLEN的减一编码。",
+      "认为只要首地址在同一页即可，不检查整个burst覆盖范围。"
+    ]
+  },
+  {
+    "id": "ADAPTED-CORE-AXI-0002",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "type": "single_choice",
+    "title": "多个 outstanding read：哪种返回顺序不合法？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://documentation-service.arm.com/static/6425706579edab6d64fb6f54",
+      "note": "参考公开教学/技术资料中的读响应同ID顺序与跨ID独立性方向，题设、参数、波形和代码独立构造，非公司原题。已核对原链接及相关主题，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "核心进阶第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 9,
+    "reviewStatus": "verified",
+    "promptMd": "同一AXI4 master、同一slave，三个互不重叠地址的单beat读已按顺序握手：A的ARID=1，B的ARID=2，C的ARID=1。数据A/B/C各不相同。每笔只有一个R beat且RLAST=1，响应无错误；不引入额外屏障或系统级顺序约束。\n\n以下给出三笔完整读响应的先后顺序，哪一项违反同ID请求的返回顺序？字母唯一标识事务，其RID必须与该事务ARID一致。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "B → A → C"
+      },
+      {
+        "id": "B",
+        "textMd": "C → B → A"
+      },
+      {
+        "id": "C",
+        "textMd": "A → C → B"
+      },
+      {
+        "id": "D",
+        "textMd": "A → B → C"
+      }
+    ],
+    "correctOptionIds": [
+      "B"
+    ],
+    "explanationMd": "**答案：B。ID=1这一组里，A必须先于C返回。**\n\nA和C共享ID=1，且来自同一slave；把返回序列按RID筛出ID=1后，应保持A→C。B使用另一个ID=2，在本题无额外约束时可先返回、夹在中间或后返回。\n\n| 整体顺序 | 只看ID=1 | 是否符合题定规则 |\n|---|---|---|\n| B,A,C | A,C | 是 |\n| C,B,A | C,A | 否 |\n| A,C,B | A,C | 是 |\n| A,B,C | A,C | 是 |\n\n“允许乱序”不代表同一ID内任意重排；也不能反过来强制不同ID都保持全局发出顺序。若系统有更强内存顺序或互连限制，应另行分析，本题已排除。",
+    "optionExplanations": {
+      "A": "B的ID=2可先完成；同ID=1内仍是A后C，符合约束。",
+      "B": "ID=1的C越过了更早发出的A，即使中间插入ID=2的B也不能修复该违例。",
+      "C": "将另一个ID的B放到最后不违反本题规则，A仍先于C。",
+      "D": "完全按发出顺序完成当然可行；协议允许某些乱序，不是要求必须乱序。"
+    },
+    "commonMistakes": [
+      "将允许跨ID乱序误读为同ID也可以随意重排。",
+      "把多ID接口当成只有一个全局FIFO，错误拒绝B先返回。",
+      "把单beat读结论未经分析套到其他通道、burst或更强内存顺序模型。"
+    ]
   }
 ]

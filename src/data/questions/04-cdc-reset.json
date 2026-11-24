@@ -565,5 +565,42 @@
       "在源端看到 ack=1 后马上再次拉高 req，没有等待 ack 返回 0。",
       "将控制同步延迟当成宽 payload 自动满足物理稳定窗口的证明。"
     ]
+  },
+  {
+    "id": "ADAPTED-CORE-CDC-0001",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "handshake",
+    "type": "waveform_analysis",
+    "title": "四相握手吞吐：两级同步后还要等状态机",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/2021.1-English/ug1344-versal-architecture-libraries/XPM_CDC_HANDSHAKE",
+      "note": "参考公开教学/技术资料中的完整握手结束后才能再次发起方向，题设、参数、波形和代码独立构造，非公司原题。已核对原链接及相关主题，不继承公司或届别归因。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "核心进阶第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 9,
+    "reviewStatus": "verified",
+    "promptMd": "只做理想数字推演：源时钟沿为0、10、20…ns，目的时钟沿为5、25、45…ns，两域没有同时到来的沿，所有输入已在相应沿前稳定。复位早已结束，所有同步寄存器及req/ack为0，两端状态均IDLE。\n\nreq从源到目的、ack从目的到源各经过两个寄存器：每沿s1<=远端信号，s2<=旧s1；本域状态机同沿只读**旧s2**，全部时序赋值NBA更新。\n\n- 源IDLE：有待发事件时置req=1，转WAIT_HI。\n- 源WAIT_HI：看到ack_s2=1则req=0，转WAIT_LO。\n- 源WAIT_LO：看到ack_s2=0则仅返回IDLE；不能在同沿再执行IDLE分支。\n- 目的IDLE：看到req_s2=1则接收一次、ack=1，转WAIT_LO。\n- 目的WAIT_LO：看到req_s2=0则ack=0，回IDLE。\n\n源在0 ns沿发起首笔请求，第二笔一直等待。列出首笔目的接收、源撤req、目的撤ack、源回IDLE、第二笔req上升的最早时刻。解释为何不能把“两级同步”理解成两拍后状态机同沿已使用新s2。不涉及payload或模拟亚稳态。",
+    "referenceAnswerMd": "**关键时刻依次为45、70、125、150、160 ns；相邻请求最早间隔160 ns。**\n\n| 路径/动作 | 第一级采到变化 | 第二级更新 | 状态机读取到变化 |\n|---|---:|---:|---:|\n| req↑，源0 ns发出 | 目的5 ns | 目的25 ns | 目的45 ns接收，ack↑ |\n| ack↑，目的45 ns发出 | 源50 ns | 源60 ns | 源70 ns撤req |\n| req↓，源70 ns发出 | 目的85 ns | 目的105 ns | 目的125 ns撤ack |\n| ack↓，目的125 ns发出 | 源130 ns | 源140 ns | 源150 ns回IDLE |\n\n源150 ns仅执行WAIT_LO分支；到160 ns沿前才处于IDLE，因此第二笔req最早160 ns上升。",
+    "explanationMd": "**同步链更新与使用同步结果是两件事。**\n\n以第一个req为例，5 ns后s1=1、s2=0；25 ns后s2=1，但25 ns状态机读取的旧s2仍是0。直到45 ns状态机才读到1，登记ack。返回路径同理，不能每跨一次时钟域就少算一次本域状态更新。\n\n四相协议还要让req、ack都返回低，不能在源看到ack高后立即发下一笔。源70 ns撤req之后，目的要经过同步与状态机才能在125 ns撤ack，源再等到150 ns确认返回。\n\n160 ns是题定时钟相位、同步级数和状态机契约的结果，不是所有握手器都固定如此；换相位、合并状态转移或增加流水都会改变时间。此模型也不能量化真实亚稳态延迟，真实实现仍须CDC与物理约束。",
+    "rubric": [
+      "正确区分s1采样、s2更新、状态机使用旧s2三个时刻。",
+      "接收45 ns、撤req70 ns、撤ack125 ns。",
+      "源150 ns回IDLE，第二笔最早160 ns，不同沿执行两次状态分支。",
+      "说明此吞吐依赖题定结构和相位，不能作为所有CDC固定延迟。"
+    ],
+    "commonMistakes": [
+      "在25 ns直接让目的状态机使用本沿刚更新的s2，漏掉NBA旧值读取。",
+      "在70 ns立即发第二笔，跳过返回低电平流程。",
+      "源150 ns刚回IDLE就同沿再执行发起分支，违背状态机契约。"
+    ]
   }
 ]

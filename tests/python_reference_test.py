@@ -75,5 +75,48 @@ class SlackSummaryTests(unittest.TestCase):
         self.assertEqual(Fraction(result["worst_ns"]), expected_value)
 
 
+score_spec = importlib.util.spec_from_file_location(
+    "read_scoreboard", ROOT / "examples/python/read_scoreboard.py"
+)
+score_module = importlib.util.module_from_spec(score_spec)
+score_spec.loader.exec_module(score_module)
+check_reads = score_module.check_reads
+
+
+class ReadScoreboardTests(unittest.TestCase):
+    def test_question_example_cross_id_reorder(self):
+        self.assertEqual(check_reads([(1, 10), (2, 20), (1, 30)], [(2, 20), (1, 10), (1, 30)]), [])
+
+    def test_same_id_wrong_order(self):
+        self.assertEqual(check_reads([(1, 10), (1, 30)], [(1, 30), (1, 10)]), [
+            ("mismatch", 1, 10, 30), ("mismatch", 1, 30, 10),
+        ])
+
+    def test_unexpected_and_duplicate_do_not_consume_others(self):
+        self.assertEqual(check_reads([(1, 10)], [(2, 20), (1, 10), (1, 10)]), [
+            ("unexpected", 2, 20), ("unexpected", 1, 10),
+        ])
+
+    def test_missing_uses_first_id_then_fifo_order(self):
+        self.assertEqual(check_reads([(3, 30), (1, 10), (3, 31)], []), [
+            ("missing", 3, 30), ("missing", 3, 31), ("missing", 1, 10),
+        ])
+
+    def test_mismatch_consumes_head_and_equal_payloads_count(self):
+        self.assertEqual(check_reads([(1, 10), (1, 20)], [(1, 99), (1, 20)]), [("mismatch", 1, 10, 99)])
+        self.assertEqual(check_reads([(1, 10), (1, 10)], [(1, 10), (1, 10)]), [])
+        self.assertEqual(check_reads([], []), [])
+
+    def test_all_six_permutations_against_explicit_order_relation(self):
+        from itertools import permutations
+        requests = [(1, 10), (2, 20), (1, 30)]
+        valid = 0
+        for trace in permutations(requests):
+            allowed = trace.index((1, 10)) < trace.index((1, 30))
+            self.assertEqual(check_reads(iter(requests), iter(trace)) == [], allowed)
+            valid += allowed
+        self.assertEqual(valid, 3)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
