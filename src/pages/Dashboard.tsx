@@ -22,6 +22,7 @@ export function Dashboard() {
     <section className="metrics" aria-label="学习概况"><div><p>可练题目</p><strong>{questions.length}<small> 道</small></strong></div><div><p>独立练习过</p><strong>{attempted}<small> 道</small></strong></div><div><p>自动题正确率</p><strong>{autoAttempts ? `${Math.round(autoCorrect / autoAttempts * 100)}%` : '—'}</strong><p>{autoCorrect} / {autoAttempts} 次有效提交</p></div><div><p>待复习</p><strong>{due}<small> 道</small></strong></div></section>
     <div className="section-heading"><div><p className="eyebrow">YOUR WORKSPACE</p><h2>练习与回顾</h2></div><Link to="/topics">浏览全部 15 个知识专题</Link></div>
     <div className="action-grid"><Link className="panel" to="/practice"><h2>按条件组一轮题</h2><p>七种题型、{questions.length} 道可练题。按知识点和来源筛选，保存题序与当前位置。</p></Link><Link className="panel" to="/review"><h2>错题与个人记录</h2><p>{progress.filter((p) => p.hasUnresolvedMistake).length} 道未解决错题；查看收藏、笔记与历史作答。</p></Link><Link className="panel" to="/progress"><h2>专题学习进度</h2><p>按专题查看覆盖率、自动题正确率、人工自评与待巩固知识点。</p></Link></div>
+    <section className="panel"><h2>不知道先练哪道？</h2><p>STA、CDC、FIFO、RTL和总线各有一条9题路径，按规则、边界和综合应用循序练习。</p><Link className="button secondary" to="/topics">选择核心练习路径</Link></section>
     <p className="source-note">题库持续扩充。个人记录保存在当前浏览器，不会自动同步到其他设备。</p>
   </>;
 }

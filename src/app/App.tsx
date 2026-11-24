@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { HashRouter, Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { CoreLearningPaths } from '../components/CoreLearningPaths';
 import { topics, learningStages } from '../data/topics';
 import { questions } from '../data/question-bank';
 import { Dashboard } from '../pages/Dashboard';
@@ -35,7 +36,8 @@ function TopicCards() {
 function TopicsPage() {
   return <><PageTitle eyebrow="KNOWLEDGE MAP" title="知识专题" description="15 个专题，按知识点组织训练；可根据目标岗位调整顺序。" />
     <section className="panel learning-path"><h2>推荐学习顺序</h2><ol>{learningStages.map((stage) => <li key={stage.name}><strong>{stage.name}</strong><span>{stage.topicIds.join(' / ')}</span></li>)}<li><strong>混合模拟与错题回顾</strong><span>综合练习</span></li></ol><p className="muted">学习顺序是复习建议，不代表实际考试频率，也不限制进入其他专题。</p></section>
-    <TopicCards />
+    <CoreLearningPaths />
+    <h2>全部知识专题</h2><TopicCards />
   </>;
 }
 
@@ -59,7 +61,7 @@ function AppShell() {
   const active = state.data.sessions.find(s => s.status === 'active');
   const redirect = mockRedirect(state.data.sessions, location.pathname);
   if (redirect) return <Navigate to={redirect} replace />;
-  return <><a className="skip-link" href="#main-content" onClick={(event) => { event.preventDefault(); document.getElementById('main-content')?.focus(); }}>跳到主要内容</a><div className="shell"><aside className="sidebar"><Link to={active ? `/mock/${active.id}` : '/'} className="brand"><span className="brand-mark" aria-hidden="true">IC</span><span>IC Design<br /><strong>Practice</strong></span></Link><p className="nav-label">学习工作台</p><nav aria-label="主导航">{navigation.map(([path, title, subtitle]) => active && path !== '/mock' ? <span className="nav-disabled" aria-disabled="true" key={path}><span>{title}</span><small>{subtitle}</small></span> : <NavLink key={path} to={active ? `/mock/${active.id}` : path} end={path === '/'}><span>{title}</span><small>{subtitle}</small></NavLink>)}</nav>{active && <p className="exam-locked-note">考试进行中，交卷后恢复其他入口。离开页面不暂停计时。</p>}<div className="sidebar-footer"><span className="badge">V1 · 1.17.0</span><p>循序练习，持续复习。</p></div></aside><main id="main-content" tabIndex={-1}><RouteFocus /><Routes>
+  return <><a className="skip-link" href="#main-content" onClick={(event) => { event.preventDefault(); document.getElementById('main-content')?.focus(); }}>跳到主要内容</a><div className="shell"><aside className="sidebar"><Link to={active ? `/mock/${active.id}` : '/'} className="brand"><span className="brand-mark" aria-hidden="true">IC</span><span>IC Design<br /><strong>Practice</strong></span></Link><p className="nav-label">学习工作台</p><nav aria-label="主导航">{navigation.map(([path, title, subtitle]) => active && path !== '/mock' ? <span className="nav-disabled" aria-disabled="true" key={path}><span>{title}</span><small>{subtitle}</small></span> : <NavLink key={path} to={active ? `/mock/${active.id}` : path} end={path === '/'}><span>{title}</span><small>{subtitle}</small></NavLink>)}</nav>{active && <p className="exam-locked-note">考试进行中，交卷后恢复其他入口。离开页面不暂停计时。</p>}<div className="sidebar-footer"><span className="badge">V1 · 1.18.0</span><p>循序练习，持续复习。</p></div></aside><main id="main-content" tabIndex={-1}><RouteFocus /><Routes>
     <Route path="/" element={<Dashboard />} /><Route path="/topics" element={<TopicsPage />} /><Route path="/questions" element={<QuestionsPage />} />
     <Route path="/practice" element={<PracticePage />} /><Route path="/practice/:id" element={<PracticePage />} /><Route path="/practice-session/:id" element={<PracticeSessionPage />} />
     <Route path="/review" element={<ReviewPage />} />
