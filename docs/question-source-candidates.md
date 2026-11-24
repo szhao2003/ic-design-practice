@@ -47,3 +47,20 @@
 | https://www.eecs.umich.edu/courses/eecs627/testability.html | ADAPTED-FOUNDATION-DFT-0002 | Stuck-at-0：激活了故障还要传播出去；具体题设独立构造 |
 
 完整技术核对及SVA/coverage原生仿真限制见 [本批审核](CONTENT_BATCH_06_FOUNDATION.md)。其他未成功打开的笔经未作为本批题源。
+
+## 电路工具与FPGA第一批实际使用（2026-11-23）
+
+下面页面均本次实际打开，仅用其教学/技术方向，条件独立构造，无公司归因。
+
+| URL | 使用 ID | 候选方向 |
+|---|---|---|
+| https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c3/c3s1/ | ADAPTED-TOOLSFPGA-CMOS-0001 | 静态 CMOS NAND 的上下拉网络 |
+| https://circuits.mit.edu/F26/psets/04/rc_tutorial | ADAPTED-TOOLSFPGA-CMOS-0002 | RC 延迟预算下最多能接几个负载？ |
+| https://docs.python.org/3.10/library/re.html | ADAPTED-TOOLSFPGA-TOOLS-0001 | Python：统计混合单位的时序日志 |
+| https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf | ADAPTED-TOOLSFPGA-TOOLS-0002 | C：替换寄存器位域而不破坏其他位 |
+| https://docs.amd.com/r/en-US/ug953-vivado-7series-libraries/LUT4 | ADAPTED-TOOLSFPGA-FPGA-0001 | LUT INIT：真值表位序不能反过来 |
+| https://docs.amd.com/r/en-US/ug573-ultrascale-memory-resources/Block-RAM-Summary | ADAPTED-TOOLSFPGA-FPGA-0002 | BRAM 拼接：总位数够不代表形状够 |
+| https://www.probabilitycourse.com/chapter2/2_1_3_unordered_without_replacement.php | ADAPTED-TOOLSFPGA-PROB-0001 | 独立误码：四位中恰有一位翻转 |
+| https://www.probabilitycourse.com/chapter2/2_1_3_unordered_without_replacement.php | ADAPTED-TOOLSFPGA-PROB-0002 | 不放回抽检：至少抽到一个坏件 |
+
+Python参考代码实际运行、其他独立模型与未执行的物理实现范围见 [本批审核](CONTENT_BATCH_07_TOOLS_FPGA.md)。

@@ -2,7 +2,7 @@
 
 面向数字 IC、ASIC RTL、DV 与 FPGA 的专题练习工具，中文界面。
 
-当前为 **1.4.0：跨专题基础第一批**。已有 15 个专题及子专题、90 道完整题（原创 44、公开资料考点改编 46，其中笔经考点 7、教学/练习资料考点 39）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
+当前为 **1.5.0：电路工具与FPGA第一批**。已有 15 个专题及子专题、98 道完整题（原创 44、公开资料考点改编 54，其中笔经考点 7、教学/练习资料考点 47）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
 
 学习进度及统计口径见 [学习进度阶段说明](docs/SECTION_07_PROGRESS.md)，模拟考试见 [第五阶段说明](docs/SECTION_05_VERIFICATION.md)。新增第二批见 [继续扩充与中性来源显示](docs/CONTENT_BATCH_04_COLLECTION.md)。第一批题与来源审核见 [资料考点扩充（第一批）](docs/CONTENT_BATCH_03_YHCHUB.md)，首版功能及回归范围见 [V1 验收](docs/V1_ACCEPTANCE.md)。
 
@@ -11,6 +11,8 @@
 新增 8 道 STA/CDC/FIFO/RTL/AXI 进阶练习，含背压缓冲和轮转仲裁；搜索“进阶练习第一批”可集中练习。来源、去重、独立验证见 [本批审核](docs/CONTENT_BATCH_05_ADVANCED.md)。目前维护侧 RTL 参考模块共 9 个。
 
 新增跨专题基础8题，首次填充低功耗、DV/SVA、体系结构及DFT各2题；搜索“跨专题基础第一批”集中练习。[本批来源与验证](docs/CONTENT_BATCH_06_FOUNDATION.md) 明确区分笔经线索、教学资料和独立模型，不冒充公司原题。
+
+新增电路/工具/FPGA/概率8题，15个专题现均有可练内容；搜索“电路工具与FPGA第一批”。Python参考函数已加入实际运行测试，[本批来源与审核](docs/CONTENT_BATCH_07_TOOLS_FPGA.md)记录模型和未覆盖边界。
 
 ## 本地运行
 
@@ -28,11 +30,12 @@ npm run typecheck
 npm run validate:questions
 npm run test
 npm run test:rtl # 需要 iverilog/vvp
+npm run test:python # 需要 Python 3；只测试维护侧参考代码
 npm run build
 npm run preview
 ```
 
-`validate:questions` 检查数据结构、分类引用、逐项解析、来源字段及 ID 唯一性，允许开发阶段空题库。`npm run validate:questions -- --release` 额外检查正式 V1 的题量与题型最低数量，当前 90 题满足该内容门槛；CI 同样执行 --release，内容门槛不能替代技术审核或浏览器验收。结构校验不能替代技术内容审核。
+`validate:questions` 检查数据结构、分类引用、逐项解析、来源字段及 ID 唯一性，允许开发阶段空题库。`npm run validate:questions -- --release` 额外检查正式 V1 的题量与题型最低数量，当前 98 题满足该内容门槛；CI 同样执行 --release，内容门槛不能替代技术审核或浏览器验收。结构校验不能替代技术内容审核。
 
 ## 项目结构
 

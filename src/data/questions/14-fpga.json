@@ -1,0 +1,91 @@
+[
+  {
+    "id": "ADAPTED-TOOLSFPGA-FPGA-0001",
+    "contentVersion": 1,
+    "topicId": "14",
+    "subtopicId": "lut",
+    "type": "single_choice",
+    "title": "LUT INIT：真值表位序不能反过来",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/en-US/ug953-vivado-7series-libraries/LUT4",
+      "note": "参考公开教学/技术资料中的LUT4真值表及INIT配置方向，独立构造题面、参数与解析，非公司原题。已核对页面和知识范围，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路工具与FPGA第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "promptMd": "一个理想4输入LUT，定义输出 O=INIT[index]，其中 index={I3,I2,I1,I0}，I0是索引最低位，INIT[0]对应输入0000。要实现 O=(I0 XOR I1) AND (I2 OR I3)，应选择哪个16 bit INIT？不讨论综合重映射或具体物理LUT分裂。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "16'h6660"
+      },
+      {
+        "id": "B",
+        "textMd": "16'h0666"
+      },
+      {
+        "id": "C",
+        "textMd": "16'h9990"
+      },
+      {
+        "id": "D",
+        "textMd": "16'h6000"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "explanationMd": "**答案：A，INIT=16'h6660。**\n\n把输入按index从0到15枚举，但写十六进制数时，最高索引那一组在最左边。\n\n| index范围 | I3 I2 | 输出按低索引→高索引列出 | 对应INIT四位（高→低） |\n|---|---|---|---|\n| 0…3 | 00 | 0,0,0,0 | 0000 = 0 |\n| 4…7 | 01 | 0,1,1,0 | 0110 = 6 |\n| 8…11 | 10 | 0,1,1,0 | 0110 = 6 |\n| 12…15 | 11 | 0,1,1,0 | 0110 = 6 |\n\n(I2 OR I3)=0时低四位全部为0；其他组均由I0 XOR I1决定。按INIT[15:0]排列，四组是6、6、6、0。\n\n列真值表的先后顺序不等于常量书写顺序；例如输入0001应输出0，所以INIT[1]必须是0。",
+    "optionExplanations": {
+      "A": "低四位0，其余三组均为XOR模式6，匹配全部16种输入。",
+      "B": "将四位分组的常量书写顺序反了；INIT[1]=1，但0001时I2 OR I3=0，应输出0。",
+      "C": "输入0100时I0=I1=0，XOR应为0；该候选INIT[4]=1，相当于在有效组用了XNOR。",
+      "D": "只在最高四位保留XOR模式；例如0101应输出1，但INIT[5]=0。"
+    },
+    "commonMistakes": [
+      "从index0开始列表后，直接把第一组写到十六进制常量最左边。",
+      "混淆I0和I3谁是索引最低位。",
+      "把XOR模式0110错当成XNOR模式1001。"
+    ]
+  },
+  {
+    "id": "ADAPTED-TOOLSFPGA-FPGA-0002",
+    "contentVersion": 1,
+    "topicId": "14",
+    "subtopicId": "bram",
+    "type": "numeric",
+    "title": "BRAM 拼接：总位数够不代表形状够",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/en-US/ug573-ultrascale-memory-resources/Block-RAM-Summary",
+      "note": "参考公开教学/技术资料中的BRAM深度宽度配置方向，独立构造题面、参数与解析，非公司原题。已核对页面和知识范围，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路工具与FPGA第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "absoluteTolerance": 0,
+    "promptMd": "要实现3072个地址、每地址24 bit的同步存储器。仅允许使用配置固定为1024×18 bit的独立RAM块，采用规则矩形拼接：同一bank的块共享相同10 bit局部地址、按固定数据位片扩宽；不同bank覆盖互不重叠的连续1024个逻辑地址。每个逻辑访问一次完成，不允许跨拍读取、数据压缩或跨字打包。允许组合bank译码/读输出选择，忽略其成本和时序。\n\n求满足题定拼接方式的最少RAM块数。这里不允许改用同一器件的其他BRAM宽深配置。",
+    "expectedValue": 6,
+    "explanationMd": "**答案：6块，深度方向3个bank，每个bank宽度方向2块。**\n\n一个bank最多1024个地址，因此3072地址需要 `ceil(3072/1024)=3` 个bank。每块只有18 bit，而一字要24 bit，所以每个bank需要 `ceil(24/18)=2` 块：第一块存18位，第二块使用其中6位，其余可不用。\n\n总数 `3×2=6`。可用逻辑地址的高位选bank，低10位访问bank内对应地址，并选择正确的读数据。\n\n仅按位容量算 `3072×24/(1024×18)=4` 块，只得到理想打包下界，忽略了题定宽度、深度与一次访问规则。六块利用率为 `73728/110592=2/3`。\n\n实际器件可能提供其他纵横比、不同端口模式或综合优化；本题固定1024×18及矩形拼接，不能把这个6推广成所有FPGA实现的最优值。",
+    "commonMistakes": [
+      "只除总bit数得到4块，没有满足每个bank的24 bit数据宽度。",
+      "把1024×18中的18当成字节宽度。",
+      "擅自改用题目排除的其他RAM配置或多周期访问。"
+    ]
+  }
+]

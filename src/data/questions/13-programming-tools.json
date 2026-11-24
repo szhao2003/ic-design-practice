@@ -1,0 +1,97 @@
+[
+  {
+    "id": "ADAPTED-TOOLSFPGA-TOOLS-0001",
+    "contentVersion": 1,
+    "topicId": "13",
+    "subtopicId": "file-processing",
+    "type": "short_answer",
+    "title": "Python：统计混合单位的时序日志",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.python.org/3.10/library/re.html",
+      "note": "参考公开教学/技术资料中的正则fullmatch与文本记录处理方向，独立构造题面、参数与解析，非公司原题。已核对页面和知识范围，不继承公司或届别归因。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "电路工具与FPGA第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 15,
+    "reviewStatus": "verified",
+    "promptMd": "编写 Python 3 函数 summarize_slack(lines)，lines 是逐行字符串迭代器，不要求一次性读完整文件。每行 strip() 后：空行或以 # 开头的行忽略；其余必须完整匹配 `path=<非空无空白标识> slack=<普通十进制数> <ns或ps>`，字段之间恰好一个空格。十进制可带+/-号，可写整数、1.、.5；不允许科学计数法、NaN、Inf或额外字段。\n\n返回字典：violations 为所有严格负slack记录数；worst_path 是最负记录的路径，相同ns值时保留最先出现者；worst_ns 使用 Decimal 保存归一为ns的数值；invalid 为非法行数。若无负记录，worst_path和worst_ns均为None。不同路径或重复路径逐行计数，不去重。\n\n例如输入：\n```text\n# report\npath=p0 slack=-0.12 ns\npath=p1 slack=-80 ps\npath=p2 slack=0 ns\nbroken line\n```\n应有2条违例，最差p0为Decimal(\"-0.12\") ns，非法1行。给完整函数，说明如何避免只匹配半行、漏换单位和负零误判。网页仍为人工自评，不执行用户代码。",
+    "referenceAnswerMd": "使用fullmatch检验整条记录，以Decimal做精确比较；ps通过十进制指数归一到ns，避免单位相同值被二进制浮点误差打破平局。\n\n```python\nimport re\nfrom decimal import Decimal\n\n\nLINE = re.compile(\n    r\"path=(\\S+) slack=([+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)) (ns|ps)\"\n)\n\n\ndef summarize_slack(lines):\n    \"\"\"Summarize complete records; keep the first path on exact decimal ties.\"\"\"\n    violations = 0\n    invalid = 0\n    worst_path = None\n    worst_ns = None\n\n    for raw in lines:\n        line = raw.strip()\n        if not line or line.startswith(\"#\"):\n            continue\n        match = LINE.fullmatch(line)\n        if match is None:\n            invalid += 1\n            continue\n\n        path, number, unit = match.groups()\n        # Append an exponent instead of converting through binary float.\n        # Decimal construction is exact, including the ps -> ns scale change.\n        slack_ns = Decimal(number + (\"e-3\" if unit == \"ps\" else \"\"))\n        if slack_ns < 0:\n            violations += 1\n            if worst_ns is None or slack_ns < worst_ns:\n                worst_path = path\n                worst_ns = slack_ns\n\n    return {\n        \"violations\": violations,\n        \"worst_path\": worst_path,\n        \"worst_ns\": worst_ns,\n        \"invalid\": invalid,\n    }\n```",
+    "explanationMd": "**样例返回 violations=2、worst_path=\"p0\"、worst_ns=Decimal(\"-0.12\")、invalid=1。**\n\n正则将路径、数值和单位分组；fullmatch要求从开头到结尾都合法，因此尾随垃圾不会悄悄通过。先strip再识别空行/注释，这两类不增加invalid。\n\n1 ps=0.001 ns。把ps数值的十进制字符串附加e-3后构造Decimal，和ns值用相同尺度精确比较。`-100 ps`与`-0.1 ns`相等，后者不会覆盖先出现的路径。这里只接受普通十进制输入；内部用于单位换算的指数不改变输入格式要求。\n\n只在slack_ns<0时累计，0和-0都不算违例。更新最差记录也用严格小于，保留平局首条。重复路径仍代表独立记录，不能改成按路径去重。\n\n处理N行只遍历一次，除正则/单行解析外仅保留固定数量状态；无需把整份日志载入列表。若业务需要行号、错误原因或按路径去重，应另行定义契约，不能私自改变本题统计口径。",
+    "rubric": [
+      "空白/注释忽略，非法格式累计invalid，必须完整匹配。",
+      "同时支持ns/ps并统一到ns；使用Decimal比较相同数值。",
+      "严格负值才计数，0与-0不计。",
+      "平局保留首条，无负值时两个worst字段为None。",
+      "单次遍历迭代器，重复路径逐条计数，返回四个规定字段。"
+    ],
+    "commonMistakes": [
+      "用search或非完整match，只识别了行前半段，尾随垃圾仍被当成合法数据。",
+      "直接比较-80 ps和-0.12 ns的裸数值。",
+      "以<=更新最差记录，后来的同值路径覆盖首条。"
+    ]
+  },
+  {
+    "id": "ADAPTED-TOOLSFPGA-TOOLS-0002",
+    "contentVersion": 1,
+    "topicId": "13",
+    "subtopicId": "bitwise",
+    "type": "single_choice",
+    "title": "C：替换寄存器位域而不破坏其他位",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf",
+      "note": "参考公开教学/技术资料中的无符号位运算与整数常量宏方向，独立构造题面、参数与解析，非公司原题。已核对页面和知识范围，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路工具与FPGA第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "promptMd": "假设实现提供 uint32_t，v=UINT32_C(0x12345678)。要把位[7:4]替换为0xA，其他28位保持不变；以下哪个表达式正确？位0是最低位，忽略volatile与硬件读改写副作用，只分析普通无符号变量。",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "(v & ~UINT32_C(0xF0)) | UINT32_C(0xA0)"
+      },
+      {
+        "id": "B",
+        "textMd": "v | UINT32_C(0xA0)"
+      },
+      {
+        "id": "C",
+        "textMd": "v & UINT32_C(0xF0)"
+      },
+      {
+        "id": "D",
+        "textMd": "v ^ UINT32_C(0xA0)"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "explanationMd": "**答案：A，结果0x123456A8。先清目标位，再写新字段。**\n\nmask=0xF0覆盖位7到4。`v & ~mask`把原字段0x7清为0，保留字段以外的位；新字段0xA左移4位得到0xA0，OR进去。\n\n| 表达式 | 本例结果 | 问题/作用 |\n|---|---|---|\n| A | 0x123456A8 | 正确替换字段 |\n| B | 0x123456F8 | 旧7 OR 新A = F，旧1位清不掉 |\n| C | 0x00000070 | 只提取旧字段，破坏其他位 |\n| D | 0x123456D8 | 旧7 XOR A = D，是翻转而非替换 |\n\n本题使用明确宽度及常量宏，避免把有符号负值、移位溢出等问题混入。真实MMIO寄存器若有W1C、只读或读副作用，不能据此无条件执行读改写。",
+    "optionExplanations": {
+      "A": "先用反掩码清位7:4，再OR入已对齐的0xA0；其余位不会被清除或置位。",
+      "B": "OR只能设置1，无法清掉旧字段中的1。本例0111 OR 1010=1111，不是1010。",
+      "C": "mask与v相与只保留旧字段，既没写入A，又清掉了字段之外的位。",
+      "D": "XOR是按掩码翻转；旧字段7 XOR A = D，除非特殊原值碰巧成立，否则不是赋值替换。"
+    },
+    "commonMistakes": [
+      "只OR新值，忘记先清掉原字段。",
+      "将mask本身与v相与，误把提取当成替换。",
+      "把普通变量位运算结论直接推广到任意具有副作用的MMIO寄存器。"
+    ]
+  }
+]

@@ -1,0 +1,92 @@
+[
+  {
+    "id": "ADAPTED-TOOLSFPGA-CMOS-0001",
+    "contentVersion": 1,
+    "topicId": "11",
+    "subtopicId": "mos-gates",
+    "type": "multiple_choice",
+    "title": "静态 CMOS NAND 的上下拉网络",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c3/c3s1/",
+      "note": "参考公开教学/技术资料中的CMOS开关模型和互补网络方向，独立构造题面、参数与解析，非公司原题。已核对页面和知识范围，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路工具与FPGA第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "promptMd": "用两个 PMOS、两个 NMOS 实现二输入静态互补 CMOS NAND：Y=~(A&B)。每个输入各控制一个 PMOS 和一个 NMOS；PMOS 在输入0时导通，NMOS 在输入1时导通。忽略泄漏、阈值损失、传播延迟和切换过程，只分析稳定二值输入的理想开关模型。哪些说法正确？",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "两个 PMOS 必须串联，才能在 A=0、B=1 时把输出拉高。"
+      },
+      {
+        "id": "B",
+        "textMd": "两个 PMOS 并联，任一输入为0就能提供上拉路径。"
+      },
+      {
+        "id": "C",
+        "textMd": "两个 NMOS 串联，只有 A=B=1 才形成完整下拉路径。"
+      },
+      {
+        "id": "D",
+        "textMd": "在题定稳定输入理想模型下，每种输入都会形成从 VDD 到 GND 的直流通路。"
+      }
+    ],
+    "correctOptionIds": [
+      "B",
+      "C"
+    ],
+    "explanationMd": "**答案：B、C。上拉实现“至少一个0”，下拉实现“两个都是1”。**\n\n| A | B | 上拉 PMOS 网络 | 下拉 NMOS 网络 | Y |\n|---:|---:|---|---|---:|\n| 0 | 0 | 两支均导通 | 串联链断开 | 1 |\n| 0 | 1 | A支导通 | A管关闭，链断开 | 1 |\n| 1 | 0 | B支导通 | B管关闭，链断开 | 1 |\n| 1 | 1 | 两支均关闭 | 串联链完整导通 | 0 |\n\nPMOS 并联让任一路输入低时都能上拉；NMOS 串联让两路输入高时才下拉。二者对偶，得到 NAND 的四行真值表。\n\n题定理想稳定状态下，不会同时存在完整上下拉路径。实际器件仍有泄漏，切换期间也可能有短路电流，不能把理想结论说成实际芯片零功耗。",
+    "optionExplanations": {
+      "A": "A=0、B=1 时只有A控制的PMOS导通，若串联就被B管切断，输出无法按NAND要求拉高。",
+      "B": "并联只需一个PMOS导通，恰好覆盖00、01、10三个需要输出1的输入。",
+      "C": "NMOS串联要求两管都导通，只有11满足，恰好是NAND唯一输出0的输入。",
+      "D": "表中完整上拉与完整下拉不会同时出现；该理想稳定模型没有VDD到GND的直接通路，但实际泄漏/切换电流未包含在内。"
+    },
+    "commonMistakes": [
+      "把NAND的下拉串联和NOR的下拉并联混淆。",
+      "只看某一个晶体管导通，就误认为整个串联支路已导通。",
+      "将理想稳定开关模型的无直通推广成真实器件完全无静态功耗。"
+    ]
+  },
+  {
+    "id": "ADAPTED-TOOLSFPGA-CMOS-0002",
+    "contentVersion": 1,
+    "topicId": "11",
+    "subtopicId": "fanout-delay",
+    "type": "numeric",
+    "title": "RC 延迟预算下最多能接几个负载？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://circuits.mit.edu/F26/psets/04/rc_tutorial",
+      "note": "参考公开教学/技术资料中的一阶RC阶跃响应方向，独立构造题面、参数与解析，非公司原题。已核对页面和知识范围，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路工具与FPGA第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "absoluteTolerance": 0,
+    "promptMd": "将驱动器上拉等效为 R=2 kΩ。固定内部电容10 fF、连线电容5 fF，每接一个相同接收端增加5 fF；负载数 n 为非负整数。初态输出为0，输入理想阶跃到 VDD，使用单极点模型 Vout(t)=VDD·(1−exp(−t/(R·Ctotal)))，不考虑其他效应。\n\n要求输出上升到 VDD/2 的时间 t50 不超过70 ps，最多能连接多少个接收端？填**总负载数 n**，不是在某个已有数量上还能增加多少。1 kΩ=10³Ω，1 fF=10⁻¹⁵F。",
+    "expectedValue": 7,
+    "explanationMd": "**答案：最多7个负载。**\n\n将 Vout/VDD=1/2 代入阶跃式，得到 exp(−t50/RC)=1/2，所以 `t50=ln(2)·R·Ctotal`。总电容为 `(10+5+5n) fF`。\n\n以ps计算，`2 kΩ×1 fF=2 ps`，于是：\n\n`t50=ln(2)×2×(15+5n) ps≤70 ps`，\n\n`n≤(70/(2 ln2)−15)/5≈7.099`。n必须向下取整，所以最大为7。\n\n| 负载数 | Ctotal | t50 | 结果 |\n|---:|---:|---:|---|\n| 7 | 50 fF | 约69.315 ps | 通过 |\n| 8 | 55 fF | 约76.246 ps | 超过预算 |\n\nR·C 是时间常数，并非50%传播时间；这里还需乘 ln2。实际门延迟依赖输入slew、非线性电阻、布局与PVT，本题只验证指定RC模型。",
+    "commonMistakes": [
+      "漏掉固定内部或连线电容，只统计负载电容。",
+      "把RC时间常数直接当成t50，漏乘ln2。",
+      "对7.099四舍五入或向上取整，违反不能超过预算的条件。"
+    ]
+  }
+]

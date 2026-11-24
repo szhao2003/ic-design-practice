@@ -23,3 +23,5 @@ RTL 需要完整、可综合、带功能注释的 SystemVerilog 模块，2 空�
 公式：转换为标准单位后，`abs(actual - expected) <= max(absoluteTolerance, relativeTolerance * abs(expected))`。单位缺省只在题目显式提供唯一 `defaultUnit` 时允许。标准 `unit` 在 `acceptedUnits` 中倍率为 1。
 
 自评题仅保存作答和人工掌握反馈，不声明自动判定代码功能正确。新题必须自行可答，不能只包含“考 CDC/FIFO”等考点摘要。
+
+Python参考代码放在 `examples/python/`，用独立测试验证样例和边界；网页fenced code与实际文件必须一致，`npm run test:python`严格运行。本机Python与CI版本分别记录，网页仍人工自评，不执行用户代码。

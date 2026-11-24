@@ -1,0 +1,76 @@
+[
+  {
+    "id": "ADAPTED-TOOLSFPGA-PROB-0001",
+    "contentVersion": 1,
+    "topicId": "15",
+    "subtopicId": "probability",
+    "type": "numeric",
+    "title": "独立误码：四位中恰有一位翻转",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.probabilitycourse.com/chapter2/2_1_3_unordered_without_replacement.php",
+      "note": "参考公开教学/技术资料中的独立Bernoulli试验与二项计数方向，独立构造题面、参数与解析，非公司原题。已核对页面和知识范围，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路工具与FPGA第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "absoluteTolerance": 0.0001,
+    "unit": "%",
+    "defaultUnit": "%",
+    "acceptedUnits": {
+      "%": 1
+    },
+    "promptMd": "一个4 bit数据字，每位在一次传输中以概率0.1翻转，以概率0.9不变，各位翻转事件相互独立。求这个字**恰有一位翻转**的概率，按百分数填写，例如概率0.25应填25。只讨论这个抽象误码模型，不涉及检测码或重传。",
+    "expectedValue": 29.16,
+    "explanationMd": "**答案：29.16%。**\n\n先固定翻转位置，例如只有bit0翻转，其概率是 `0.1×0.9³`。这样的事件共有4种，分别是bit0、bit1、bit2、bit3翻转，且它们互斥。\n\n所以 `P(恰好1位)=C(4,1)×0.1×0.9³=4×0.1×0.729=0.2916`。转成百分数是29.16。\n\n“至少一位”是另一个事件，其概率为 `1−0.9⁴=0.3439`，还包括两位、三位、四位同时翻转。不能把它当作本题答案。单纯4×0.1也没要求另外三位不翻转，会多计。\n\n乘法来自题定独立性；真实链路若有相关突发错误，不能直接套这个模型。",
+    "commonMistakes": [
+      "算成1−0.9⁴，混淆恰好一位与至少一位。",
+      "只写0.1×0.9³，漏乘四种可能位置。",
+      "填0.2916而非题目要求的百分数29.16。"
+    ]
+  },
+  {
+    "id": "ADAPTED-TOOLSFPGA-PROB-0002",
+    "contentVersion": 1,
+    "topicId": "15",
+    "subtopicId": "probability",
+    "type": "numeric",
+    "title": "不放回抽检：至少抽到一个坏件",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.probabilitycourse.com/chapter2/2_1_3_unordered_without_replacement.php",
+      "note": "参考公开教学/技术资料中的不放回抽样与组合样本空间方向，独立构造题面、参数与解析，非公司原题。已核对页面和知识范围，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路工具与FPGA第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "absoluteTolerance": 0.001,
+    "unit": "%",
+    "defaultUnit": "%",
+    "acceptedUnits": {
+      "%": 1
+    },
+    "promptMd": "一批10个有编号的器件中恰有2个坏件、8个好件。等概率、不放回抽取3个不同器件；所有三元子集等可能。求至少抽到一个坏件的概率，按百分数填写，可保留三位小数。不考虑测试误判。",
+    "expectedValue": 53.333333333333336,
+    "explanationMd": "**答案：约53.333%，精确概率为8/15。**\n\n直接数“一个坏”与“两个坏”也可以，但取补集更短：至少一个坏=1−全是好件。\n\n总样本数 `C(10,3)=120`；全好样本数 `C(8,3)=56`。所以 `P=1−56/120=64/120=8/15`，乘100后约53.333%。\n\n顺序法可独立核对：全好概率 `(8/10)×(7/9)×(6/8)=7/15`，补集也是8/15。每次都改变分子分母，反映不放回造成的条件概率变化。\n\n`1−0.8³`是把三次抽取当成独立、每次好件比例不变的有放回模型；它得到48.8%，不适用于本题。",
+    "commonMistakes": [
+      "把不放回当作独立重复抽样，三次都乘0.8。",
+      "只计算恰好一个坏件，遗漏可能同时抽到两个坏件。",
+      "计算出8/15后忘记转成百分数。"
+    ]
+  }
+]
