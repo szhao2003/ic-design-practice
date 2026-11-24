@@ -94,5 +94,100 @@
       "将高透明和低透明锁存器的相位选反。",
       "把理想数字无毛刺推演当成物理时钟实现已经签核。"
     ]
+  },
+  {
+    "id": "ADAPTED-SYSTEM-POWER-0001",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "clock-power-gating",
+    "title": "休眠盈亏平衡：低功率不等于低能量",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://people.ee.duke.edu/~sorin/papers/islped09_power-gating.pdf",
+      "note": "参考公开教学/技术资料的相关考点；题设、参数、选项和推导独立构造，非公司原题。已访问链接并核对主题，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "系统与实现第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "模块保持空闲但不断电时功率为10 mW，进入休眠后稳态功率为2 mW。一次进入并退出休眠的总额外能量为24 nJ，已经包括保存/恢复状态和电源切换的成本。题定比较模型为 E_keep=10 mW×T，E_sleep=24 nJ+2 mW×T；T为同一个空闲窗口，切换时间相对T忽略，且唤醒延迟已满足系统要求。\n\n求两方案能量相等的T，单位μs。注意问的是相等边界，不是严格省能量时长的最小整数。",
+    "explanationMd": "**答案：3 μs；只有T>3 μs时休眠才严格省能量。**\n\n先扣除休眠期间仍消耗的功率，净节省为10−2=8 mW。令24 nJ=8 mW×T，得到T=3 μs，因为1 mW×1 μs=1 nJ。\n\n| 空闲时间 | 保持空闲能量 | 休眠总能量 | 结论 |\n|---:|---:|---:|---|\n| 2 μs | 20 nJ | 28 nJ | 休眠更耗能 |\n| 3 μs | 30 nJ | 30 nJ | 相等 |\n| 4 μs | 40 nJ | 32 nJ | 休眠省能 |\n\n额外24 nJ每次切换都要支付，不能因稳态功率更低就忽略。这里只按给定线性能量模型比较；真实策略还要考虑预测误差、唤醒延迟和电源恢复时序。",
+    "commonMistakes": [
+      "将24 nJ直接除以10 mW，漏掉休眠的2 mW。",
+      "把3 μs处的能量相等说成已经严格省能。",
+      "对已包含在24 nJ里的切换能量再次加账。"
+    ],
+    "type": "numeric",
+    "expectedValue": 3,
+    "absoluteTolerance": 0,
+    "unit": "μs",
+    "defaultUnit": "μs",
+    "acceptedUnits": {
+      "μs": 1
+    }
+  },
+  {
+    "id": "ADAPTED-SYSTEM-POWER-0002",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "clock-power-gating",
+    "title": "Retention保住状态，为什么还需要Isolation？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://documentation-service.arm.com/static/63f3499c9567172d4e2aadd6?token=",
+      "note": "参考公开教学/技术资料的相关考点；题设、参数、选项和推导独立构造，非公司原题。已访问链接并核对主题，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "系统与实现第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "可关断域P输出valid到始终供电域A。P的部分寄存器有retention，但其输出组合逻辑和缓冲器随P断电；隔离单元位于始终供电侧，启用时将valid钳为安全值0。已知P的所有事务已排空，保存状态完成，且恢复后会提供明确的output_ready。\n\n本题不要求某个库的具体握手序列。以下哪些判断正确？二值功能RTL没有电源失效模型。",
+    "explanationMd": "**答案：A、C。Retention与isolation解决不同问题。**\n\nRetention负责保存指定寄存器的信息；它不保证断电后的组合输出和缓冲器还能驱动有效电平。Isolation把跨域输出维持在接收侧可接受的值，避免关断或恢复期间的无效电平被当作事务。\n\n本题valid的安全值明确为0；其他接口必须另行选择安全钳位，不能一律套用。恢复期间也要继续隔离，直到电源、状态与输出逻辑按设计契约有效。普通二值RTL没有模拟电源失效，测试通过不能替代电源感知验证。",
+    "commonMistakes": [
+      "把retention误当作输出电平始终有效。",
+      "在电源刚打开就取消隔离，未等待输出恢复。",
+      "把普通RTL测试通过当作断电行为已经验证。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "断电前应在输出可能失效前使隔离生效；恢复时应保持隔离直至output_ready。"
+      },
+      {
+        "id": "B",
+        "textMd": "只要寄存器有retention，即使其输出缓冲器断电也无需isolation。"
+      },
+      {
+        "id": "C",
+        "textMd": "未建模电源失效的普通RTL仿真通过，不能证明关断期间跨域输出安全。"
+      },
+      {
+        "id": "D",
+        "textMd": "valid的安全钳位应固定为1，这样A域始终能继续接收事务。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "隔离覆盖失效窗口，output_ready是本题明确给出的恢复契约。",
+      "B": "保存状态不代表断电缓冲器仍能输出可靠电平。",
+      "C": "二值功能RTL不能凭空产生电源失效行为，需要相应电源意图和验证。",
+      "D": "题设安全值为0；钳1可能使接收侧误收事务。"
+    }
   }
 ]

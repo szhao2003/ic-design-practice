@@ -62,5 +62,74 @@
       "每条指令乘五级，忽略流水重叠。",
       "把分支恢复周期与冲刷掉的指令数重复计费。"
     ]
+  },
+  {
+    "id": "ADAPTED-SYSTEM-ARCH-0001",
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "cache",
+    "title": "Write-back cache：缺失次数与写回流量分开算",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.cs.cornell.edu/courses/cs3410/2024fa/notes/caches.html",
+      "note": "参考公开教学/技术资料的相关考点；题设、参数、选项和推导独立构造，非公司原题。已访问链接并核对主题，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "系统与实现第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "初始为空的直接映射cache，容量32 B，两个line，每line16 B；index=floor(字节地址/16) mod 2。采用write-back、write-allocate。每次miss从下一级读入完整16 B；替换dirty有效line时先向下一级写回完整16 B，clean或invalid不写回。每次CPU访问为同一line内的4 B数据。\n\n依序执行 W 0x00、R 0x20、R 0x00、W 0x10、R 0x30、W 0x20。W仅修改cache；无预取、无一致性流量，最后不flush。求整个序列与下一级传输的数据总字节数，读入和写回都计，不计地址/控制。",
+    "explanationMd": "**答案：128 B，即96 B读入+32 B写回。**\n\n| 访问 | index | 结果 | 被替换line | 读入/写回(B) |\n|---|---:|---|---|---|\n| W 00 | 0 | miss | invalid | 16 / 0 |\n| R 20 | 0 | miss | 00 dirty | 16 / 16 |\n| R 00 | 0 | miss | 20 clean | 16 / 0 |\n| W 10 | 1 | miss | invalid | 16 / 0 |\n| R 30 | 1 | miss | 10 dirty | 16 / 16 |\n| W 20 | 0 | miss | 00 clean | 16 / 0 |\n\n6次miss各读入16 B，合计96 B；两次dirty eviction各写回16 B，合计32 B。W 20之后该line为dirty，但最后不flush，所以不增加末尾写回。\n\nCPU请求4 B不代表下一级只传4 B；本题按line分配和写回。write-allocate决定write miss先装入，write-back决定修改先留在cache，两条规则不可混用成write-through。",
+    "commonMistakes": [
+      "按6×4 B计算，忽略line传输粒度。",
+      "每次W都立即写下一级，错套write-through。",
+      "额外写回最后仍留在cache中的dirty line。"
+    ],
+    "type": "numeric",
+    "expectedValue": 128,
+    "absoluteTolerance": 0,
+    "unit": "B",
+    "defaultUnit": "B",
+    "acceptedUnits": {
+      "B": 1
+    }
+  },
+  {
+    "id": "ADAPTED-SYSTEM-ARCH-0002",
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "amdahl",
+    "title": "Amdahl加上搬运开销：局部三倍快能快多少？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://cvw.cac.cornell.edu/parallel/efficiency/amdahls-law",
+      "note": "参考公开教学/技术资料的相关考点；题设、参数、选项和推导独立构造，非公司原题。已访问链接并核对主题，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "系统与实现第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "同一固定任务原耗时100 ms，其中75 ms属于可加速部分，剩余25 ms不可加速。新硬件让可加速部分耗时变为原来的1/3，但每个任务额外增加10 ms不可重叠的数据搬运开销。该开销不包含在原100 ms内，也不能被加速。其余条件不变。\n\n求整体加速比T_old/T_new，填写倍数，至少保留三位小数。",
+    "explanationMd": "**答案：约1.667倍。**\n\n| 部分 | 新耗时 |\n|---|---:|\n| 可加速部分 | 75/3=25 ms |\n| 不可加速部分 | 25 ms |\n| 新增搬运 | 10 ms |\n| 总计 | 60 ms |\n\n整体加速比为100/60=5/3≈1.666667。归一化形式为1/[0.25+0.75/3+0.10]。这里的0.10相对原任务总时间，而不是新执行时间的10%。\n\n如果忽略新开销会算出2倍；3倍只是局部的速度变化。即使把75 ms部分缩为0，本题仍有35 ms，整体加速比也不会超过100/35≈2.857倍。固定任务、不可重叠开销等前提改变后，应重新建模。",
+    "commonMistakes": [
+      "直接把局部3倍当作整体3倍。",
+      "计算2倍，漏掉新增10 ms搬运。",
+      "将10 ms误作加速后时间的10%。"
+    ],
+    "type": "numeric",
+    "expectedValue": 1.6666666666666667,
+    "absoluteTolerance": 0.001
   }
 ]

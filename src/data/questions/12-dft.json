@@ -92,5 +92,96 @@
       "以为把输入全清零最容易测试 stuck-at-0，实际需要正常节点为 1。",
       "把单节点 stuck-at 结果推广到所有物理故障模型。"
     ]
+  },
+  {
+    "id": "ADAPTED-SYSTEM-DFT-0001",
+    "contentVersion": 1,
+    "topicId": "12",
+    "subtopicId": "scan",
+    "title": "四条并行scan链：装载与卸载重叠后的测试周期",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.eecs.umich.edu/courses/eecs627/testability.html",
+      "note": "参考公开教学/技术资料的相关考点；题设、参数、选项和推导独立构造，非公司原题。已访问链接并核对主题，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "系统与实现第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "73个scan FF可自由分到4条非空链，长度为正整数，目标最小化最长链L。四条链同时shift，每次完整装载或卸载统一占L个shift时钟；较短链所需填充位忽略。测试仪可在shift同一沿同时送入下一pattern并读出上一response。\n\n共20个pattern，每个pattern装载后恰需1个capture时钟；不计复位、切换及其他开销。先用L拍装载第1个pattern，之后capture并卸载；除最后一次外，卸载同时装入下一pattern，最后response也必须完整读出。求最少总时钟数。",
+    "explanationMd": "**答案：419拍，最优最长链L=19。**\n\n73个FF分到4链，最长链至少ceil(73/4)=19；取19、18、18、18即可达到，不需要把所有链强行补成19个真实FF。\n\n| 阶段 | 周期 |\n|---|---:|\n| 初始装载pattern1 | 19 |\n| 20次capture | 20 |\n| 前19次卸载并装下个pattern | 19×19=361 |\n| 最后response卸载 | 19 |\n| 合计 | 419 |\n\n总式为L+P×(1+L)=19+20×20。重叠省去的是额外独立的中间装载，不能省掉首次装载和最后卸载。链平衡只给出题定测试时间下界；真实scan还受时钟域、物理连接、锁定单元和压缩架构限制。",
+    "commonMistakes": [
+      "用73/4后向下取整为18，无法放下全部FF。",
+      "每个pattern的load和unload完全分开计，漏掉重叠。",
+      "未读出最后response就结束，少算L拍。"
+    ],
+    "type": "numeric",
+    "expectedValue": 419,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-SYSTEM-DFT-0002",
+    "contentVersion": 1,
+    "topicId": "12",
+    "subtopicId": "mbist-lbist",
+    "title": "XOR响应压缩：相同签名能证明无错吗？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.eecs.harvard.edu/~michaelm/postscripts/itc2004.pdf",
+      "note": "参考公开教学/技术资料的相关考点；题设、参数、选项和推导独立构造，非公司原题。已访问链接并核对主题，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "系统与实现第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "一个简化无状态空间压缩器，把本拍四个已知二值response bit压成s=q3 XOR q2 XOR q1 XOR q0。正常response是1010。错误仅用正常response与实际response逐位异或得到的4 bit error mask描述；不含X、不含跨拍MISR。只比较本拍压缩位。哪些说法正确？",
+    "explanationMd": "**答案：A、B、D。**\n\n正常1010有两个1，签名为0。利用XOR线性性：s_actual XOR s_good=parity(error_mask)，因此只有奇数个翻转使签名改变；非零偶数翻转被压成0，发生aliasing。\n\n例如1001与1010相差0011，两位翻转，两个签名都是0。任意一位翻转都是奇数，都会改变本拍签名。\n\n| error mask中1的数目 | 个数 | 签名能检测？ |\n|---:|---:|---|\n| 1 | 4 | 能 |\n| 2 | 6 | 不能 |\n| 3 | 4 | 能 |\n| 4 | 1 | 不能 |\n\n15种非零mask中7种alias；这不是物理故障漏检概率，因为题目未给mask分布。结论只针对本题单拍四输入parity，不能推广为所有压缩网络或MISR的固定漏检率。",
+    "commonMistakes": [
+      "将签名相同当成完整response相同。",
+      "把所有非零错误都当作parity可检测。",
+      "把枚举mask占比直接称为真实故障概率。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "实际response=1001时与正常签名相同，存在aliasing。"
+      },
+      {
+        "id": "B",
+        "textMd": "任何恰好一位翻转都会改变本拍签名。"
+      },
+      {
+        "id": "C",
+        "textMd": "只要本拍签名与正常相同，就能证明四个response bit全部正确。"
+      },
+      {
+        "id": "D",
+        "textMd": "在本题模型中，任意非零偶数位翻转都会与正常签名相同。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "B",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "1001和1010都含两个1；两位差异被单bit XOR压掉。",
+      "B": "单一翻转让XOR结果取反，不论正常向量是什么。",
+      "C": "压缩是多对一，偶数位差异可能保留相同签名。",
+      "D": "error mask的parity为0，故实际签名等于正常签名。"
+    }
   }
 ]

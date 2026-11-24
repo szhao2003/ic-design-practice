@@ -87,5 +87,94 @@
       "把1024×18中的18当成字节宽度。",
       "擅自改用题目排除的其他RAM配置或多周期访问。"
     ]
+  },
+  {
+    "id": "ADAPTED-SYSTEM-FPGA-0001",
+    "contentVersion": 1,
+    "topicId": "14",
+    "subtopicId": "mmcm-pll",
+    "title": "MMCM配置：输出频率对了，VCO也一定合法吗？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/api/khub/documents/1kFbRqzm2fhwGy~cLQG2yA/content",
+      "note": "参考公开教学/技术资料的相关考点；题设、参数、选项和推导独立构造，非公司原题。已访问链接并核对主题，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "系统与实现第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "题定理想MMCM模型：输入100 MHz，fVCO=100×M/D，fOUT=fVCO/O；要求输出恰为80 MHz，同时VCO必须在闭区间600…1200 MHz。下列候选的M/D/O均已通过其他参数范围检查；忽略相位、抖动、PFD及布局限制，只核对此两条频率条件。哪一组合法？本题区间为练习条件，不代表某个实际型号的数据手册。",
+    "explanationMd": "**答案：A，VCO=800 MHz，输出80 MHz。**\n\n| 选项 | (M,D,O) | VCO(MHz) | OUT(MHz) | 结论 |\n|---|---|---:|---:|---|\n| A | 24,3,10 | 800 | 80 | 两项都满足 |\n| B | 12,3,5 | 400 | 80 | VCO低于600 |\n| C | 24,3,8 | 800 | 100 | 输出不是80 |\n| D | 40,2,25 | 2000 | 80 | VCO高于1200 |\n\n只验证输入到输出的总倍频比M/(D×O)=0.8不够；B和D虽然输出正确，却违反内部VCO工作区间。真实器件还需核对输入/PFD、各分频器、抖动、反馈和速度等级，应使用相应器件手册与Clocking Wizard。",
+    "commonMistakes": [
+      "只检查80 MHz输出而跳过内部VCO。",
+      "把D和O交换，VCO计算用错分母。",
+      "把练习区间当作所有MMCM器件的通用规格。"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "M=24，D=3，O=10"
+      },
+      {
+        "id": "B",
+        "textMd": "M=12，D=3，O=5"
+      },
+      {
+        "id": "C",
+        "textMd": "M=24，D=3，O=8"
+      },
+      {
+        "id": "D",
+        "textMd": "M=40，D=2，O=25"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "100×24/3=800，在区间内；800/10=80。",
+      "B": "VCO为400，尽管输出80正确，仍违反下限。",
+      "C": "VCO为800合法，但输出800/8=100。",
+      "D": "VCO为2000，尽管除以25后80，仍违反上限。"
+    }
+  },
+  {
+    "id": "ADAPTED-SYSTEM-FPGA-0002",
+    "contentVersion": 1,
+    "topicId": "14",
+    "subtopicId": "dsp",
+    "title": "16项signed乘加：为什么19 bit还差一个值？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/api/khub/documents/gu4oRPFEh_Pm2uaAlfY6Kg/content",
+      "note": "参考公开教学/技术资料的相关考点；题设、参数、选项和推导独立构造，非公司原题。已访问链接并核对主题，不继承公司或届别归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "系统与实现第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "计算S=Σ(a_i×b_i)，i=0…15。每个a_i、b_i均为独立的8 bit二进制补码有符号整数，可取−128…127的任意值。乘法和求和均按精确整数进行，初始和为0，不截位、不饱和。要让最终和及依次累加的所有中间和都绝不溢出，最少需要多少bit的补码signed累加器？只求数学位宽，不求DSP块数或时钟频率。",
+    "explanationMd": "**答案：20 bit。**\n\n单个乘积最大值来自(−128)×(−128)=16384，最小值为(−128)×127=−16256；这里补码负端点的绝对值比正端点大1，最大正乘积不是127²。\n\n16项分别可取各自极值，因此S范围为[−260096，262144]。19 bit signed范围是[−262144，262143]：虽然负端够用，正端恰好少1，不能容纳16×16384=262144。20 bit范围[−524288，524287]包含全部结果。\n\n前k项和处于[−16256k，16384k]，0≤k≤16，仍落在20 bit范围内，所以中间和也安全。RTL还须让操作数的signed属性、乘积及加法表达式在正确宽度上运算；先截断再存入20 bit寄存器不能恢复丢掉的高位。本题没有声称任何具体DSP映射或综合结果。",
+    "commonMistakes": [
+      "用127×127作为最大乘积，漏掉−128×−128。",
+      "认为19 bit最大正值是262144，而实际是262143。",
+      "只把目标寄存器加宽，却允许表达式先截断。"
+    ],
+    "type": "numeric",
+    "expectedValue": 20,
+    "absoluteTolerance": 0
   }
 ]

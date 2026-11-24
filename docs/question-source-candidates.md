@@ -77,3 +77,20 @@ Python参考代码实际运行、其他独立模型与未执行的物理实现�
 - ADAPTED-CORE-DV-0004：dist范围权重：:/和:=的分母不同
 
 公开来源链接、使用范围及独立验证见 [本批审核](CONTENT_BATCH_08_CORE.md)。
+
+## 系统与实现第二批实际使用（2026-11-23）
+
+下列链接本次实际访问，仅提炼技术方向；条件和参数独立构造。
+
+| ID | 方向 | URL |
+|---|---|---|
+| ADAPTED-SYSTEM-POWER-0001 | 休眠盈亏平衡：低功率不等于低能量 | [公开资料](https://people.ee.duke.edu/~sorin/papers/islped09_power-gating.pdf) |
+| ADAPTED-SYSTEM-POWER-0002 | Retention保住状态，为什么还需要Isolation？ | [公开资料](https://documentation-service.arm.com/static/63f3499c9567172d4e2aadd6?token=) |
+| ADAPTED-SYSTEM-ARCH-0001 | Write-back cache：缺失次数与写回流量分开算 | [公开资料](https://www.cs.cornell.edu/courses/cs3410/2024fa/notes/caches.html) |
+| ADAPTED-SYSTEM-ARCH-0002 | Amdahl加上搬运开销：局部三倍快能快多少？ | [公开资料](https://cvw.cac.cornell.edu/parallel/efficiency/amdahls-law) |
+| ADAPTED-SYSTEM-DFT-0001 | 四条并行scan链：装载与卸载重叠后的测试周期 | [公开资料](https://www.eecs.umich.edu/courses/eecs627/testability.html) |
+| ADAPTED-SYSTEM-DFT-0002 | XOR响应压缩：相同签名能证明无错吗？ | [公开资料](https://www.eecs.harvard.edu/~michaelm/postscripts/itc2004.pdf) |
+| ADAPTED-SYSTEM-FPGA-0001 | MMCM配置：输出频率对了，VCO也一定合法吗？ | [公开资料](https://docs.amd.com/api/khub/documents/1kFbRqzm2fhwGy~cLQG2yA/content) |
+| ADAPTED-SYSTEM-FPGA-0002 | 16项signed乘加：为什么19 bit还差一个值？ | [公开资料](https://docs.amd.com/api/khub/documents/gu4oRPFEh_Pm2uaAlfY6Kg/content) |
+
+未采用：UNM旧bist1课件重定向到主页，无法核对正文。逐题支持范围与去重见 [本批审核](CONTENT_BATCH_09_SYSTEM.md)。
