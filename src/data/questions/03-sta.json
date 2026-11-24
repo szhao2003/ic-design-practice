@@ -733,5 +733,114 @@
       "ps": 0.001
     },
     "absoluteTolerance": 0.001
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-STA-0001",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "skew-jitter",
+    "title": "同源边沿到达表：jitter与skew怎样分开看",
+    "promptMd": "名义时钟周期10ns。三次对应逻辑边沿在源/目的时钟引脚的实际到达时间分别为：源0.10、10.25、20.05ns，目的0.40、10.55、20.35ns。对应边沿关系已明确，忽略测量误差。计算每对对应边沿的capture-minus-launch skew，以及源端相邻周期；解释目的比源晚是否能单独证明存在周期抖动。",
+    "explanationMd": "**三次skew均+0.30ns；源端两个周期为10.15ns、9.80ns。** Skew比较不同端点的对应边沿到达差；这里空间到达差固定。源端周期相对名义10ns分别偏+0.15ns和−0.20ns，体现同一端点的时间变化。\n\n目的比源固定晚0.30ns本身只说明skew，不能据此断言周期在变化；本题周期变化要通过相邻到达时刻相减得到。表格只有有限样本，不能推导长期RMS jitter或峰峰统计。真实setup/hold分析还要明确相关边沿和共同成分，不能把所有抖动简单当互不相关再重复计入uncertainty。",
+    "commonMistakes": [
+      "把固定端点差当周期jitter。",
+      "用三个样本推长期RMS统计。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q56 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "short_answer",
+    "referenceAnswerMd": "**三次skew均+0.30ns；源端两个周期为10.15ns、9.80ns。** Skew比较不同端点的对应边沿到达差；这里空间到达差固定。源端周期相对名义10ns分别偏+0.15ns和−0.20ns，体现同一端点的时间变化。\n\n目的比源固定晚0.30ns本身只说明skew，不能据此断言周期在变化；本题周期变化要通过相邻到达时刻相减得到。表格只有有限样本，不能推导长期RMS jitter或峰峰统计。真实setup/hold分析还要明确相关边沿和共同成分，不能把所有抖动简单当互不相关再重复计入uncertainty。",
+    "rubric": [
+      "skew均0.30。",
+      "周期10.15/9.80。",
+      "不从有限样本推长期统计。"
+    ]
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-STA-0002",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "setup-hold",
+    "title": "实际捕获沿提前：setup裕量按哪个边沿算",
+    "promptMd": "单周期路径的源发射沿实际到达0.20ns，下一目的捕获沿实际到达9.90ns；这些已是本次分析的实际边沿，不再额外加skew或jitter。Tcq_max=0.40ns，组合最大延迟8.70ns，setup=0.30ns，另有明确额外setup margin=0.10ns。求setup slack（ns，容差0.001ns）。",
+    "explanationMd": "**setup slack=+0.20ns。** 数据最晚到达=0.20+0.40+8.70=9.30ns；要求到达不晚于9.90−0.30−0.10=9.50ns，所以slack=9.50−9.30=0.20ns。\n\n实际捕获沿9.90已经包含题定边沿变化，不能先按名义10ns算、又单独重复扣一次捕获提前。额外0.10 margin则明确不包含于该边沿，需要保留。正slack只表明这条题定最大延迟检查通过，不替代最小延迟hold检查。",
+    "commonMistakes": [
+      "重复扣已经体现在边沿中的变化。",
+      "把setup加到允许到达时刻上。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q56/Q58 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "numeric",
+    "expectedValue": 0.2,
+    "absoluteTolerance": 0.001,
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    }
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-STA-0003",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "setup-hold",
+    "title": "正capture skew下的hold最小组合延迟",
+    "promptMd": "源与目的同一逻辑沿的到达分别为0.10ns、0.60ns。源Tcq_min=0.12ns，目的hold=0.15ns，另有额外hold margin=0.05ns，无其他不确定度。求满足此同沿hold检查的最小组合延迟（ns，容差0.001ns）。",
+    "explanationMd": "**组合最小延迟至少0.58ns。** 新数据最早到达=0.10+0.12+Dmin；旧数据至少保持到0.60+0.15+0.05=0.80ns，因此Dmin>=0.80−0.22=0.58ns。\n\ncapture比launch晚0.50ns提高了hold要求，而不是给最短路径更多安全余量。hold看同沿附近的新数据是否过早到达，不使用下一个完整时钟周期，也不能通过降低频率自动修复这个固定边沿关系。边沿已给定，不再次添加0.50ns skew。",
+    "commonMistakes": [
+      "hold也加一个完整周期。",
+      "认为降频必然修复固定同沿hold。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q56/Q58 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "numeric",
+    "expectedValue": 0.58,
+    "absoluteTolerance": 0.001,
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    }
   }
 ]

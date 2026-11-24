@@ -7,7 +7,7 @@ import {ReferenceAnswer} from '../src/components/QuestionContent';
 const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-SAMPLING-${id}`)!;
 describe('采样复位与状态机',()=>{
  it('6道新增共168，独立改编不声明公司原题',()=>{
-  expect(questions.filter(q=>!q.id.startsWith('ADAPTED-CODEC-'))).toHaveLength(168);
+  expect(questions.filter(q=>!/^ADAPTED-(CODEC|BUSTIMING)-/.test(q.id))).toHaveLength(168);
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-SAMPLING-'));
   expect(batch).toHaveLength(6);
   for(const q of batch){expect(q.contentVersion).toBe(1);expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.company).toBeUndefined();expect(q.tags).toContain('采样复位与状态机');}
@@ -62,7 +62,7 @@ describe('采样复位与状态机',()=>{
  it('覆盖只提升六个已重构题号，缺条件项仍保持显式状态',()=>{
   const audit=JSON.parse(readFileSync('docs/source-collection-coverage.json','utf8'));
   for(const n of [4,5,9,12,16,80])expect(['covered','rewritten']).toContain(audit.entries[n-1].status);
-  expect(audit.entries.filter((r:{status:string})=>['covered','rewritten'].includes(r.status))).toHaveLength(91);
+  expect(audit.entries.filter((r:{status:string})=>['covered','rewritten'].includes(r.status))).toHaveLength(99);
   expect(audit.entries[26].status).toBe('needs_conditions');
   const count=(status:string)=>audit.entries.filter((r:{status:string})=>r.status===status).length;
   const summary=`${count('covered')+count('rewritten')}个题号已有对应/修正任务（${count('covered')}+${count('rewritten')}），${count('partial')}部分覆盖，${count('needs_conditions')}需补条件，${count('deferred')}暂缓`;

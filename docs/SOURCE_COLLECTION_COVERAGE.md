@@ -1,6 +1,6 @@
 # 公开汇编132题号覆盖对照
 
-核对日期2026-11-24；对应本地174题。按实际考查任务对照，不按公司名或专题名认定覆盖。91个题号已有对应/修正任务（77+14），18部分覆盖，11需补条件，12暂缓。同一现有题可以承载多个重复考点，因此这些数量不是新增题数，也不是独立公司考察频次。
+核对日期2026-11-24；对应本地186题。按实际考查任务对照，不按公司名或专题名认定覆盖。99个题号已有对应/修正任务（84+15），17部分覆盖，10需补条件，6暂缓。同一现有题可以承载多个重复考点，因此这些数量不是新增题数，也不是独立公司考察频次。
 
 covered和rewritten均为考点重构，不是逐字原题；partial不计完整覆盖。机器可读来源及引用见 [JSON表](source-collection-coverage.json)。
 
@@ -61,7 +61,7 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q53 | 已有对应任务 | ADAPTED-COLLECTION-STA-0001、ADAPTED-COLLECTION-STA-0002 | 合并为明确发射/捕获时钟到达、min/max及偏斜方向的计算，不沿用不明符号。 |
 | Q54 | 已有对应任务 | ADAPTED-COLLECTION-STA-0001、ADAPTED-COLLECTION-STA-0002 | 合并为明确发射/捕获时钟到达、min/max及偏斜方向的计算，不沿用不明符号。 |
 | Q55 | 已有对应任务 | ORIGINAL-STA-0005、ADAPTED-ADVANCED-STA-0001、ADAPTED-FOCUSED-PPA-CORNER-0001 | 修复方向、双边时序预算及代价已覆盖，缺失选项不伪装重建原题。 |
-| Q56 | 部分覆盖 | ORIGINAL-STA-0008、ORIGINAL-STA-0002 | 计算覆盖部分效果，但jitter/skew概念对照尚无独立任务。 |
+| Q56 | 已有对应任务 | ADAPTED-BUSTIMING-STA-0001、ADAPTED-BUSTIMING-STA-0002、ADAPTED-BUSTIMING-STA-0003 | 对应边沿skew与同端周期变化分开计算，不重复加入已体现的时钟变化。 |
 | Q57 | 已有对应任务 | ADAPTED-COLLECTION-STA-0001、ADAPTED-COLLECTION-STA-0002 | 合并为明确发射/捕获时钟到达、min/max及偏斜方向的计算，不沿用不明符号。 |
 | Q58 | 已有对应任务 | ADAPTED-COLLECTION-STA-0003 | 补功能证据，避免按模式名随意屏蔽路径。 |
 | Q59 | 已有对应任务 | ORIGINAL-STA-0006 | 已有多周期与hold检查思路。 |
@@ -101,16 +101,16 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q93 | 需补条件 | ADAPTED-ESP-FIFO-0001、ADAPTED-ADVANCED-FIFO-0001 | 已有独立完整到达/服务模型；原题周期窗口、相位、读起点或位宽不足/答案有争议，未逐题继承数字。 |
 | Q94 | 已有对应任务 | ORIGINAL-APB-0001、ADAPTED-FOCUSED-APB-STATE-0001 | 已有等待波形，新增背靠背与SETUP不能跳过。 |
 | Q95 | 已有对应任务 | ORIGINAL-APB-0001、ADAPTED-FOCUSED-APB-STATE-0001 | 已有等待波形，新增背靠背与SETUP不能跳过。 |
-| Q96 | 暂缓 | — | APB版本信号增量尚无完整独立题，已有PSTRB题只覆盖部分。 |
+| Q96 | 已有对应任务 | ADAPTED-BUSTIMING-APB-0001 | 补APB2/3/4信号增量与可选能力边界。 |
 | Q97 | 部分覆盖 | ADAPTED-RK26-AHB-0001 | 已有AHB-Lite流水重叠时序，不声称完整AHB多主仲裁也已覆盖。 |
 | Q98 | 部分覆盖 | ADAPTED-FOCUSED-AXI-VERSION-0001 | 已练AXI burst，但AHB/APB对比需另外明确版本。 |
 | Q99 | 暂缓 | — | RETRY/SPLIT、BUSY/IDLE及两周期错误响应需明确AHB版本，不能套到AHB-Lite全部情形。 |
-| Q100 | 部分覆盖 | ADAPTED-RK26-AHB-0001 | 已有AHB-Lite流水重叠时序，不声称完整AHB多主仲裁也已覆盖。 |
-| Q101 | 暂缓 | — | RETRY/SPLIT、BUSY/IDLE及两周期错误响应需明确AHB版本，不能套到AHB-Lite全部情形。 |
-| Q102 | 暂缓 | — | RETRY/SPLIT、BUSY/IDLE及两周期错误响应需明确AHB版本，不能套到AHB-Lite全部情形。 |
+| Q100 | 已有对应任务 | ADAPTED-BUSTIMING-AHB-0003 | 完整等待/流水重叠接受沿与数据归属推演。 |
+| Q101 | 部分覆盖 | ADAPTED-BUSTIMING-AHB-0002 | 补IDLE/BUSY自身零等待OKAY；等待期间HTRANS所有例外尚未逐一覆盖。 |
+| Q102 | 已有对应任务 | ADAPTED-BUSTIMING-AHB-0001 | 明确AHB-Lite v1.0两种响应及ERROR两拍，取消后继地址。 |
 | Q103 | 已有对应任务 | ADAPTED-FOCUSED-AXI-VERSION-0001 | 明确AXI4去掉WID及写数据交织。 |
-| Q104 | 暂缓 | — | 独立读响应为何合入R通道、完整响应码语义尚未作为专门任务。 |
-| Q105 | 暂缓 | — | 独立读响应为何合入R通道、完整响应码语义尚未作为专门任务。 |
+| Q104 | 已有对应任务 | ADAPTED-BUSTIMING-AXI-0002、ADAPTED-BUSTIMING-AXI-0003 | 补读响应随R逐beat返回及错误burst继续完成。 |
+| Q105 | 已有对应任务 | ADAPTED-BUSTIMING-AXI-0001、ADAPTED-BUSTIMING-AXI-0002 | 固定传统2bit AXI4响应，区分独占/普通及错误粒度。 |
 | Q106 | 已有对应任务 | ADAPTED-FOCUSED-AXI-VERSION-0001、ADAPTED-FOCUSED-AXI-WRAP-0001 | burst类型、长度/大小和限制明确。 |
 | Q107 | 已有对应任务 | ADAPTED-FOCUSED-AXI-VERSION-0001、ADAPTED-FOCUSED-AXI-WRAP-0001 | burst类型、长度/大小和限制明确。 |
 | Q108 | 已修正改编 | ADAPTED-FOCUSED-AXI-WRAP-0001 | 纠正“首地址必须按整个burst大小对齐”；仅需beat对齐，区域下界另算。 |
@@ -120,8 +120,8 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q112 | 已有对应任务 | ADAPTED-CORE-AXI-0002 | 同ID与跨ID返回顺序具体任务已有。 |
 | Q113 | 已有对应任务 | ADAPTED-FOCUSED-AXI-VERSION-0001、ADAPTED-CORE-AXI-0002、ADAPTED-BOUNDARY-AXI-0001、ADAPTED-BOUNDARY-AXI-0002 | 补完整按ID队列追踪的读beat交织、背压末拍计数、完成顺序及AXI3/4读写交织区别；不把跨ID许可推广到同ID。 |
 | Q114 | 暂缓 | — | AXI五通道跨域的完整设计未覆盖；不能用数据逐位打两拍替代。 |
-| Q115 | 暂缓 | — | 总线对比可作后续简答，需约束版本与场景。 |
-| Q116 | 需补条件 | — | 协议名本身不保证速度，需固定时钟/等待/突发与开销再比较。 |
+| Q115 | 已有对应任务 | ADAPTED-BUSTIMING-APB-0001、ADAPTED-BUSTIMING-AXI-0003、ADAPTED-BUSTIMING-AHB-0003、ADAPTED-BUSTIMING-BUS-0001 | 分版本解释组织差异，并按固定模型计算吞吐，不作无条件速度排序。 |
+| Q116 | 已修正改编 | ADAPTED-BUSTIMING-BUS-0001 | 补同频同宽零等待条件比较，拒绝按协议名固定排序。 |
 | Q117 | 需补条件 | — | 缺少原选项，只能另行构造有完整条件的比较题。 |
 | Q118 | 已有对应任务 | ADAPTED-INTEGRATION-AXIL-0001、ADAPTED-INTEGRATION-AXIL-0002 | 完整AXI4-Lite两寄存器从设备、独立AW/W缓存、strobe、错误地址、B/R背压与读快照；受限吞吐契约明确，独立TB。 |
 | Q119 | 已有对应任务 | ADAPTED-ADVANCED-AXI-0001 | 写地址/数据独立到达与响应依赖已有逐沿任务。 |
@@ -139,4 +139,4 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q131 | 部分覆盖 | ADAPTED-TOOLSFPGA-CMOS-0001、ORIGINAL-STA-0001 | 基础语义与时序已覆盖，来源题组的Maxpooling RTL仍未实现。 |
 | Q132 | 部分覆盖 | ADAPTED-FOCUSED-MEM-CAP-0001、ADAPTED-EXTENSION-TOOLS-0001、ADAPTED-CODEC-PARITY-0001、ADAPTED-CODEC-MEM-0002 | 偶校验生成/奇偶错误掩码、容量及片组译码已补；大小端目前主要为Python字节解释，未重建完整内存读写任务组，仍保留部分覆盖。 |
 
-本轮提升Q22/Q24/Q128；Q132仍保留部分覆盖。后续可评估APB版本区别（Q96）、AXI响应码（Q104/105）、明确版本的AHB错误响应（Q101/102），仍按常见任务价值筛选，不追求全部题号变绿。
+下一批优先转回DV与实现基础：SVA复位/背压、scoreboard错误传播、覆盖盲区、DFT故障传播；先查公开任务并去重。完整AXI CDC桥、任意动态分频等大任务仍单独保留。

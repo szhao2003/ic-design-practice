@@ -8,7 +8,7 @@ const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-CODEC-${id}`)!;
 const weight=(value:number)=>value.toString(2).replaceAll('0','').length;
 describe('编码分频与存储接口',()=>{
  it('新增6题共174，来源与旧题界限清楚',()=>{
-  expect(questions).toHaveLength(174);
+  expect(questions.filter(q=>!q.id.startsWith('ADAPTED-BUSTIMING-'))).toHaveLength(174);
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-CODEC-'));
   expect(batch).toHaveLength(6);
   for(const q of batch){expect(q.contentVersion).toBe(1);expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.company).toBeUndefined();expect(q.tags).toContain('编码分频与存储接口');}
@@ -79,6 +79,6 @@ describe('编码分频与存储接口',()=>{
   const audit=JSON.parse(readFileSync('docs/source-collection-coverage.json','utf8'));
   for(const n of [22,24,128])expect(['covered','rewritten']).toContain(audit.entries[n-1].status);
   expect(audit.entries[131].status).toBe('partial');
-  expect(audit.entries.filter((r:{status:string})=>['covered','rewritten'].includes(r.status))).toHaveLength(91);
+  expect(audit.entries.filter((r:{status:string})=>['covered','rewritten'].includes(r.status))).toHaveLength(99);
  });
 });

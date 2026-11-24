@@ -460,12 +460,13 @@
     },
     {
       "number": 56,
-      "status": "partial",
+      "status": "covered",
       "localIds": [
-        "ORIGINAL-STA-0008",
-        "ORIGINAL-STA-0002"
+        "ADAPTED-BUSTIMING-STA-0001",
+        "ADAPTED-BUSTIMING-STA-0002",
+        "ADAPTED-BUSTIMING-STA-0003"
       ],
-      "note": "计算覆盖部分效果，但jitter/skew概念对照尚无独立任务。"
+      "note": "对应边沿skew与同端周期变化分开计算，不重复加入已体现的时钟变化。"
     },
     {
       "number": 57,
@@ -807,9 +808,11 @@
     },
     {
       "number": 96,
-      "status": "deferred",
-      "localIds": [],
-      "note": "APB版本信号增量尚无完整独立题，已有PSTRB题只覆盖部分。"
+      "status": "covered",
+      "localIds": [
+        "ADAPTED-BUSTIMING-APB-0001"
+      ],
+      "note": "补APB2/3/4信号增量与可选能力边界。"
     },
     {
       "number": 97,
@@ -835,23 +838,27 @@
     },
     {
       "number": 100,
-      "status": "partial",
+      "status": "covered",
       "localIds": [
-        "ADAPTED-RK26-AHB-0001"
+        "ADAPTED-BUSTIMING-AHB-0003"
       ],
-      "note": "已有AHB-Lite流水重叠时序，不声称完整AHB多主仲裁也已覆盖。"
+      "note": "完整等待/流水重叠接受沿与数据归属推演。"
     },
     {
       "number": 101,
-      "status": "deferred",
-      "localIds": [],
-      "note": "RETRY/SPLIT、BUSY/IDLE及两周期错误响应需明确AHB版本，不能套到AHB-Lite全部情形。"
+      "status": "partial",
+      "localIds": [
+        "ADAPTED-BUSTIMING-AHB-0002"
+      ],
+      "note": "补IDLE/BUSY自身零等待OKAY；等待期间HTRANS所有例外尚未逐一覆盖。"
     },
     {
       "number": 102,
-      "status": "deferred",
-      "localIds": [],
-      "note": "RETRY/SPLIT、BUSY/IDLE及两周期错误响应需明确AHB版本，不能套到AHB-Lite全部情形。"
+      "status": "covered",
+      "localIds": [
+        "ADAPTED-BUSTIMING-AHB-0001"
+      ],
+      "note": "明确AHB-Lite v1.0两种响应及ERROR两拍，取消后继地址。"
     },
     {
       "number": 103,
@@ -863,15 +870,21 @@
     },
     {
       "number": 104,
-      "status": "deferred",
-      "localIds": [],
-      "note": "独立读响应为何合入R通道、完整响应码语义尚未作为专门任务。"
+      "status": "covered",
+      "localIds": [
+        "ADAPTED-BUSTIMING-AXI-0002",
+        "ADAPTED-BUSTIMING-AXI-0003"
+      ],
+      "note": "补读响应随R逐beat返回及错误burst继续完成。"
     },
     {
       "number": 105,
-      "status": "deferred",
-      "localIds": [],
-      "note": "独立读响应为何合入R通道、完整响应码语义尚未作为专门任务。"
+      "status": "covered",
+      "localIds": [
+        "ADAPTED-BUSTIMING-AXI-0001",
+        "ADAPTED-BUSTIMING-AXI-0002"
+      ],
+      "note": "固定传统2bit AXI4响应，区分独占/普通及错误粒度。"
     },
     {
       "number": 106,
@@ -952,15 +965,22 @@
     },
     {
       "number": 115,
-      "status": "deferred",
-      "localIds": [],
-      "note": "总线对比可作后续简答，需约束版本与场景。"
+      "status": "covered",
+      "localIds": [
+        "ADAPTED-BUSTIMING-APB-0001",
+        "ADAPTED-BUSTIMING-AXI-0003",
+        "ADAPTED-BUSTIMING-AHB-0003",
+        "ADAPTED-BUSTIMING-BUS-0001"
+      ],
+      "note": "分版本解释组织差异，并按固定模型计算吞吐，不作无条件速度排序。"
     },
     {
       "number": 116,
-      "status": "needs_conditions",
-      "localIds": [],
-      "note": "协议名本身不保证速度，需固定时钟/等待/突发与开销再比较。"
+      "status": "rewritten",
+      "localIds": [
+        "ADAPTED-BUSTIMING-BUS-0001"
+      ],
+      "note": "补同频同宽零等待条件比较，拒绝按协议名固定排序。"
     },
     {
       "number": 117,

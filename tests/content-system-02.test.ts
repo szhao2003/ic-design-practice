@@ -6,7 +6,7 @@ const correct=(id:string,raw:number)=>expect(gradeAnswer(get(id),{raw:String(raw
 describe('系统与实现第二批：边界与独立模型',()=>{
  it('8题、四个专题各2题，来源性质和内部版本明确',()=>{
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-SYSTEM-'));
-  expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(EXTENSION|CORE3|MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC)-/.test(q.id))).toHaveLength(114);
+  expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(EXTENSION|CORE3|MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC|BUSTIMING)-/.test(q.id))).toHaveLength(114);
   for(const topic of ['08','10','12','14'])expect(batch.filter(q=>q.topicId===topic)).toHaveLength(2);
   for(const q of batch)expect(q).toMatchObject({contentVersion:1,reviewStatus:'verified',source:{kind:'practice_collection',evidenceGrade:'C',questionFidelity:'topic_only_reconstruction',sourceClaimVerification:'checked'}});
  });

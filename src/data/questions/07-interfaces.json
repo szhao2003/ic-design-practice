@@ -965,5 +965,387 @@
       "C": "正确。同ID的事务按请求顺序返回，C不能超越未完成的A。",
       "D": "错误。AXI4没有AXI3式WID，不能跨写事务交织数据；读交织许可不能推广到写通道。"
     }
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-APB-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "apb",
+    "title": "APB2/3/4：新增信号对应哪项能力",
+    "promptMd": "只比较APB2、APB3和APB4的协议能力，不涉及APB5。以下哪些版本与信号对应关系正确？允许按规范处理可选信号，不断言每个实际外设都必须实现所有可选端口。",
+    "explanationMd": "**答案A、C。** APB3在APB2基础上加入等待和错误报告能力，分别由PREADY和PSLVERR支持；APB4再加入PSTRB和PPROT，支持稀疏写入及保护属性。\n\nPSTRB按byte选择写入通道，不把APB变成burst或多笔outstanding总线。版本新增的是接口能力，实际组件可按规范进行可选信号适配；例如不报告错误的外设可以由桥端按规范把错误输入置低。应查具体接口而非只看版本名称。",
+    "commonMistakes": [
+      "把PSTRB当burst控制。",
+      "把版本支持某能力等同所有外设都强制引出该端口。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q96 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "APB3加入PREADY/PSLVERR，支持等待及错误报告。"
+      },
+      {
+        "id": "B",
+        "textMd": "APB2已经具有PSTRB/PPROT。"
+      },
+      {
+        "id": "C",
+        "textMd": "APB4加入PSTRB/PPROT，支持byte写及保护属性。"
+      },
+      {
+        "id": "D",
+        "textMd": "APB4的PSTRB使APB自动支持多笔outstanding。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确，分别对应等待结束及错误报告。",
+      "B": "错误，这两组增量属于APB4。",
+      "C": "正确，PSTRB是byte lane使能，PPROT承载保护属性。",
+      "D": "错误，byte写掩码不改变APB的非流水传输组织。"
+    }
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-APB-0002",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "apb",
+    "title": "APB错误只在完成沿判定：等待中拉高PSLVERR算失败吗",
+    "promptMd": "APB3读传输，E0…E3为上升沿沿前值，地址/方向保持。本题slave在等待期间也可能驱动PSLVERR，不要求未完成时错误值有意义。\n\n|沿|PSEL|PENABLE|PREADY|PSLVERR|\n|---|---:|---:|---:|---:|\n|E0|1|0|1|0|\n|E1|1|1|0|1|\n|E2|1|1|0|0|\n|E3|1|1|1|1|\n\n指出完成沿和最终状态，能否在E1结束？错误响应能否自动保证外设完全没有副作用？",
+    "explanationMd": "**E3完成并报告错误；E1不能结束。** APB完成条件是PSEL&&PENABLE&&PREADY，错误在完成传输的有效窗口判断。E0是SETUP，不能仅因PREADY=1算完成；E1/E2为ACCESS等待，尚未结束。\n\nE3三条件都为1且PSLVERR=1，才得到本次失败结果。等待中的PSLVERR不能被提前当成完成事件。错误也不构成通用回滚保证，外设寄存器或设备动作是否已发生必须看设备定义，不能由总线错误位推断原子性。",
+    "commonMistakes": [
+      "看到错误位就提前完成。",
+      "认为失败自动回滚所有副作用。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q94/Q95/Q96 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**E3完成并报告错误；E1不能结束。** APB完成条件是PSEL&&PENABLE&&PREADY，错误在完成传输的有效窗口判断。E0是SETUP，不能仅因PREADY=1算完成；E1/E2为ACCESS等待，尚未结束。\n\nE3三条件都为1且PSLVERR=1，才得到本次失败结果。等待中的PSLVERR不能被提前当成完成事件。错误也不构成通用回滚保证，外设寄存器或设备动作是否已发生必须看设备定义，不能由总线错误位推断原子性。",
+    "rubric": [
+      "完成条件和E3正确。",
+      "区分SETUP和等待。",
+      "错误不等于回滚保证。"
+    ]
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-AXI-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "title": "AXI4响应码：普通成功、独占结果和地址译码错误",
+    "promptMd": "限定传统AXI4完整接口、2bit BRESP/RRESP，非AXI5扩展响应。以下哪些判断正确？",
+    "explanationMd": "**答案A、D。** 00为OKAY，01为EXOKAY，10为SLVERR，11为DECERR。普通访问成功通常用OKAY；EXOKAY用于独占成功的相关响应，不能当所有成功的另一种任意编码。\n\nOKAY也可能表示独占失败或目标不支持独占，因此仅见OKAY不足以证明独占写成功。SLVERR表示访问到从设备后遇到错误，DECERR通常用于地址无法路由到有效目标。响应编码要连同事务类型解释，不把普通访问、独占和译码三种情况混成一个成功/失败位。",
+    "commonMistakes": [
+      "把OKAY一律视为独占成功。",
+      "把SLVERR和DECERR编码互换。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q105 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "00/01/10/11分别为OKAY/EXOKAY/SLVERR/DECERR。"
+      },
+      {
+        "id": "B",
+        "textMd": "任何成功的普通访问都应返回EXOKAY。"
+      },
+      {
+        "id": "C",
+        "textMd": "独占访问收到OKAY就一定独占成功。"
+      },
+      {
+        "id": "D",
+        "textMd": "DECERR通常用于地址无法译码到有效从设备。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "正确，本题固定2bit AXI4响应编码。",
+      "B": "错误，EXOKAY用于独占成功，普通成功用OKAY。",
+      "C": "错误，OKAY可以代表独占失败或不支持独占。",
+      "D": "正确，通常由互连或默认错误目标报告译码错误。"
+    }
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-AXI-0002",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "title": "AXI4读burst中途报错：后面的beat还要返回吗",
+    "promptMd": "AXI4普通读，ARLEN=3，共4beat，地址已接受。所有行RVALID=1，RID固定；E1和E2是同一个被背压beat，payload含RRESP稳定。\n\n|沿|数据标记|RRESP|RLAST|RREADY|\n|---|---|---|---:|---:|\n|E0|D0|OKAY|0|1|\n|E1|D1|SLVERR|0|0|\n|E2|D1|SLVERR|0|1|\n|E3|D2|OKAY|0|1|\n|E4|D3|OKAY|1|1|\n\n列接受beat数及完成沿。中途SLVERR能否提前终止这次burst？D1能否作为正常有效数据使用？",
+    "explanationMd": "**四个beat在E0/E2/E3/E4接受，E4结束；E1没有握手。** 本题传统AXI4要求返回请求的全部beat，错误不能直接缩短burst。错误响应可按beat不同，因此D1报SLVERR不要求其他beat也同样报错。\n\nE1背压时D1和RRESP/RLAST必须保持到E2；只有末拍握手才释放整个事务。D1对应错误响应，不能作为正常成功读出的值消费；上层必须记录并处理错误。传输完成与所有数据成功是两个不同判断。",
+    "commonMistakes": [
+      "中途报错就少返后续beat。",
+      "将E1和E2当两个不同beat。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q104/Q105 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**四个beat在E0/E2/E3/E4接受，E4结束；E1没有握手。** 本题传统AXI4要求返回请求的全部beat，错误不能直接缩短burst。错误响应可按beat不同，因此D1报SLVERR不要求其他beat也同样报错。\n\nE1背压时D1和RRESP/RLAST必须保持到E2；只有末拍握手才释放整个事务。D1对应错误响应，不能作为正常成功读出的值消费；上层必须记录并处理错误。传输完成与所有数据成功是两个不同判断。",
+    "rubric": [
+      "4beat和E4完成。",
+      "错误不取消剩余传输。",
+      "等待payload稳定，错误数据不能视为成功值。"
+    ]
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-AXI-0003",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "title": "为什么AXI有B通道，却没有独立的读响应通道",
+    "promptMd": "传统AXI4五通道中，读返回是否没有错误信息？解释RRESP/RLAST与BRESP的组织，并说明一次4beat普通写burst通常返回几次B响应。无需设计跨域桥或讨论ACE一致性扩展。",
+    "explanationMd": "**读响应已经随读数据在R通道返回；写响应由B通道独立返回。** 每个读beat带有RDATA、RRESP等，末拍由RLAST标记，所以无需再增加一个只承载读状态的通道。没有独立读状态通道不代表没有读错误报告。\n\n写数据W通道由主机发往从设备，B通道用于反方向返回整个写事务的结果。一次4beat写burst通常只有一次B响应，而不是每个W beat各来一次。读可逐beat报告不同RRESP，不能照搬写侧的一次响应粒度。",
+    "commonMistakes": [
+      "把无独立读响应通道理解成读没有错误码。",
+      "四个W beat错误算成四次B。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q104 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "short_answer",
+    "referenceAnswerMd": "**读响应已经随读数据在R通道返回；写响应由B通道独立返回。** 每个读beat带有RDATA、RRESP等，末拍由RLAST标记，所以无需再增加一个只承载读状态的通道。没有独立读状态通道不代表没有读错误报告。\n\n写数据W通道由主机发往从设备，B通道用于反方向返回整个写事务的结果。一次4beat写burst通常只有一次B响应，而不是每个W beat各来一次。读可逐beat报告不同RRESP，不能照搬写侧的一次响应粒度。",
+    "rubric": [
+      "R通道已有RRESP。",
+      "一次写burst一个B。",
+      "读逐beat与写整事务粒度不同。"
+    ]
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-AHB-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "ahb",
+    "title": "AHB-Lite两拍ERROR：哪一沿才真正结束",
+    "promptMd": "限定AMBA3 AHB-Lite v1.0，HRESP只有OKAY=0/ERROR=1，不含RETRY/SPLIT。A已经进入数据阶段，表中为沿前响应；下一地址B尚未被接受。主机选择取消B，在E2前改HTRANS为IDLE。\n\n|沿|HREADY|HRESP|地址阶段HTRANS|\n|---|---:|---:|---|\n|E0|0|0|NONSEQ(B)|\n|E1|0|1|NONSEQ(B)|\n|E2|1|1|IDLE|\n\nA何时结束？E0是否已是ERROR第一拍？B是否会被当有效传输接受？解释两拍ERROR用途。",
+    "explanationMd": "**A在E2以ERROR结束，B没有被当有效传输接受。** E0是普通OKAY等待，不属于两拍ERROR。E1为ERROR第一拍，HREADY=0；E2仍保持ERROR而HREADY=1，才结束数据阶段。\n\nAHB流水地址与数据阶段重叠，错误开始时下一地址可能已经摆上总线。额外一拍给主机机会取消该后续访问，本题明确选择把它变成IDLE，所以E2不会接受有效B传输。不能看到E1错误位就说A已完成，也不能把总线上出现过B地址当作已接受。",
+    "commonMistakes": [
+      "把E0普通等待当ERROR第一拍。",
+      "HRESP=1便提前完成。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q102 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**A在E2以ERROR结束，B没有被当有效传输接受。** E0是普通OKAY等待，不属于两拍ERROR。E1为ERROR第一拍，HREADY=0；E2仍保持ERROR而HREADY=1，才结束数据阶段。\n\nAHB流水地址与数据阶段重叠，错误开始时下一地址可能已经摆上总线。额外一拍给主机机会取消该后续访问，本题明确选择把它变成IDLE，所以E2不会接受有效B传输。不能看到E1错误位就说A已完成，也不能把总线上出现过B地址当作已接受。",
+    "rubric": [
+      "E2完成ERROR。",
+      "E0不是ERROR。",
+      "IDLE取消B，说明流水取消窗口。"
+    ]
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-AHB-0002",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "ahb",
+    "title": "AHB-Lite的IDLE和BUSY：不是数据beat",
+    "promptMd": "限定AMBA3 AHB-Lite v1.0，讨论IDLE/BUSY本身的协议响应，不把前一个数据阶段等待混入该传输。哪些正确？",
+    "explanationMd": "**答案A、C。** IDLE表示没有有效数据传输；BUSY用于burst中暂时不能继续下一个数据传输的间隙，不能算一个有效数据beat。对IDLE和BUSY本身，从设备应忽略且提供零等待OKAY响应。\n\n当前总线可能因前一有效传输而HREADY为低，这不等于BUSY自己要求等待。判断应分清地址阶段类型与当前正在完成的数据阶段，不能把同周期不同流水阶段的信号合并成一个事件。本题为AHB-Lite，不含完整AHB的RETRY/SPLIT。",
+    "commonMistakes": [
+      "把BUSY计入burst数据数量。",
+      "把前一数据阶段等待归因于BUSY自身。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q101 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "IDLE不要求有效数据传输。"
+      },
+      {
+        "id": "B",
+        "textMd": "BUSY应作为一个有效数据beat计数。"
+      },
+      {
+        "id": "C",
+        "textMd": "对IDLE/BUSY本身，从设备应零等待OKAY并忽略。"
+      },
+      {
+        "id": "D",
+        "textMd": "AHB-Lite的HRESP有OKAY/ERROR/RETRY/SPLIT四种值。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确，IDLE没有有效数据动作。",
+      "B": "错误，BUSY是间隙而非有效数据beat。",
+      "C": "正确，须区分它自身与前一数据阶段的等待。",
+      "D": "错误，本题AHB-Lite只有OKAY/ERROR两种响应。"
+    }
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-AHB-0003",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "ahb",
+    "title": "AHB-Lite等待会同时阻塞下一地址接受",
+    "promptMd": "单从设备AHB-Lite，HSEL始终1，地址与数据阶段重叠。E0沿前HREADY=1、HADDR=A、HTRANS=NONSEQ，接受A地址。E1/E2沿前HREADY=0，地址阶段保持B/NONSEQ，当前A数据阶段等待；E3沿前HREADY=1且HRESP=OKAY，地址仍为B/NONSEQ。E4沿前HREADY=1、HRESP=OKAY、HTRANS=IDLE。无其他请求。列A/B地址接受沿和数据完成沿，B地址出现三次是否代表三笔请求？",
+    "explanationMd": "**A地址E0接受、数据E3完成；B地址E3接受、数据E4完成。** E1/E2虽然总线上已经显示B地址，但HREADY=0，下一地址阶段不能据此被重复接受。它们是同一笔待接受B，而非三次请求。\n\nE3既结束A的数据阶段，又接受B的地址阶段，正是流水重叠。E4的IDLE表示没有新的有效地址，并不取消已经进入数据阶段的B。要分别记录当前数据所有者与下一地址，不能把E4的IDLE误认为B没完成或没有响应对象。",
+    "commonMistakes": [
+      "把保持的B地址按每拍重复接受。",
+      "用当前HTRANS=IDLE抹去前一数据阶段的B。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q100 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**A地址E0接受、数据E3完成；B地址E3接受、数据E4完成。** E1/E2虽然总线上已经显示B地址，但HREADY=0，下一地址阶段不能据此被重复接受。它们是同一笔待接受B，而非三次请求。\n\nE3既结束A的数据阶段，又接受B的地址阶段，正是流水重叠。E4的IDLE表示没有新的有效地址，并不取消已经进入数据阶段的B。要分别记录当前数据所有者与下一地址，不能把E4的IDLE误认为B没完成或没有响应对象。",
+    "rubric": [
+      "A E0/E3，B E3/E4。",
+      "HREADY低不重复接受。",
+      "E4 IDLE不取消当前B数据阶段。"
+    ]
+  },
+  {
+    "id": "ADAPTED-BUSTIMING-BUS-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "bandwidth",
+    "title": "固定条件比较APB和流水总线：协议名称不保证吞吐",
+    "promptMd": "只按题定模型比较稳态payload吞吐，均32bit数据、100MHz、无等待且无限连续访问，不计启动收尾：模型P每笔必须1拍SETUP+1拍ACCESS且不能重叠；模型L地址/数据可重叠，稳态每拍完成一个32bit数据。没有其他开销。求L吞吐除以P吞吐的倍数。不要把该结果推广成任何频率/等待条件下的固定协议速度排序。",
+    "explanationMd": "**倍数为2。** P每2周期搬4byte，吞吐100MHz×4/2=200MB/s；L每周期搬4byte，为400MB/s，两者相除为2。这里MB/s用十进制字节率，倍数与单位换算无关。\n\n结果由相同频率、位宽、零等待及流水重叠假设决定。若L更低频、更多等待或访问设备不同，排序可以变化。APB4具有byte strobe也不会自动消除SETUP周期；总线名只能提示组织方式，不能替代给定条件的吞吐计算。",
+    "commonMistakes": [
+      "把32bit当32byte。",
+      "把题定2倍外推成所有配置固定2倍。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "总线响应与时钟时序",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q115/Q116/Q117 的方向；条件、数据与解析独立重构，非公司原题，不继承公司归因。"
+    },
+    "type": "numeric",
+    "expectedValue": 2,
+    "absoluteTolerance": 0.001,
+    "unit": "倍",
+    "defaultUnit": "倍",
+    "acceptedUnits": {
+      "倍": 1
+    }
   }
 ]
