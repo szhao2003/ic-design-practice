@@ -183,5 +183,128 @@
       "C": "压缩是多对一，偶数位差异可能保留相同签名。",
       "D": "error mask的parity为0，故实际签名等于正常签名。"
     }
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-DFT-0001",
+    "contentVersion": 1,
+    "topicId": "12",
+    "subtopicId": "atpg",
+    "title": "MUX选择端stuck-at-0：哪些输入真正可观测",
+    "promptMd": "二值组合电路y=sel?a:b，仅sel这条线存在stuck-at-0故障，a/b无故障。可观察y，所有8组(a,b,sel)等概率且可施加。求能使好电路与故障电路y不同的输入组合数。无需考虑时序或其他故障。",
+    "explanationMd": "**共有2组：(a,b,sel)=(1,0,1)和(0,1,1)。** 故障固定使MUX选择b，要激活选择端故障需令好电路sel=1；但仅激活还不够，还要让a与b不同才能把差异传播到输出。\n\nsel=0时好坏都选b，无差异；sel=1且a=b时虽然选择路径不同，输出仍相同，故障被功能值掩蔽。满足sel=1并且a!=b有两组。这里是指定单故障模型的检测集合，不是物理缺陷的全部模型；某个输入检测失败也不能推断不存在其他故障。",
+    "commonMistakes": [
+      "只要sel=1就算检测成功。",
+      "没有比较好坏电路的可观察输出。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://static.sw.cdn.siemens.com/siemens-disw-assets/public/2Mrc4InNtzAz03iI5LJgHF/en-US/Tessent-reversible-chain-diagnosis-WP.pdf",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "numeric",
+    "expectedValue": 2,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-DFT-0002",
+    "contentVersion": 1,
+    "topicId": "12",
+    "subtopicId": "scan",
+    "title": "静态scan通过，能证明at-speed没有问题吗",
+    "promptMd": "芯片某批静态stuck-at测试通过，但功能速度下仍失败；scan shift较慢，capture可按测试方案使用更快时钟。以下哪些结论合理？不假定任意两拍激励就覆盖所有时序缺陷。",
+    "explanationMd": "**答案A、C。** 静态stuck-at模型和转换/路径相关延迟模型关注不同失效机制，前者通过不能自动排除后者。慢速移位可装载/卸载状态，却不等于已经以功能速度验证launch到capture的数据传播。\n\n诊断应结合失败模式、发射/捕获时钟、链路完整性以及测试约束。若扫描链本身有问题，功能捕获后的错误也可能只是卸载失真；因此不能只看最终错位就定位组合逻辑。采用某种at-speed方案后仍要检查覆盖和模式前提，不能把模式名称当全缺陷证明。",
+    "commonMistakes": [
+      "把慢shift通过当作功能速度时序通过。",
+      "看到scan输出错就唯一定位组合路径。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blogs.sw.siemens.com/tessent/2017/02/14/best-practice-in-scan-pattern-ordering-for-test-and-diagnosis/",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "静态stuck-at通过仍可能存在延迟类问题。"
+      },
+      {
+        "id": "B",
+        "textMd": "shift频率足够低就能证明所有功能路径满足最高工作频率。"
+      },
+      {
+        "id": "C",
+        "textMd": "应区分shift链完整性与launch/capture检查。"
+      },
+      {
+        "id": "D",
+        "textMd": "任何scan输出不符都只能由组合逻辑缺陷造成。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确，不同故障模型覆盖不同失效。",
+      "B": "错误，慢速shift不检验全部功能路径的高速传播。",
+      "C": "正确，两类阶段及其时钟条件需分别分析。",
+      "D": "错误，链故障、捕获或时序等也可能造成相同表象。"
+    }
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-DFT-0003",
+    "contentVersion": 1,
+    "topicId": "12",
+    "subtopicId": "scan",
+    "title": "扫描链内部强制1：沿前SO与故障传播延迟",
+    "promptMd": "三位链q[2:0]初始000，每个shift沿好电路执行q<={q[1:0],SI}，SO=q[2]并在沿前采样。故障模型为每次shift更新后强制q[1]=1，其他位照旧值移位；初始状态仍为000。六个shift沿SI均0，无capture和复位。列六次沿前SO以及前两沿后故障状态。能否由这一个模式断言已唯一定位所有真实缺陷？",
+    "explanationMd": "**沿前SO为0、0、1、1、1、1；前两沿后状态为010、110。** 第一个沿移位后q1被强制1，但q2仍取旧q1=0，所以本次沿前SO仍0。第二个沿q2取到旧q1=1，沿后变110；直到第三个沿前才从SO看到1。\n\n好电路在全0输入下保持000，故障效果经链路推进后被观察。不能把沿后q2=1计作同一个沿前输出，也不能忽略题定故障仅在shift更新后生效的初始条件。这一模式支持题定故障行为，不足以唯一诊断真实芯片所有可能缺陷；其他故障、时序问题或模型偏差可能产生相似日志。",
+    "commonMistakes": [
+      "把沿后新q2当本沿SO。",
+      "让故障在初始时刻就修改q1，改变明确初态。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://static.sw.cdn.siemens.com/siemens-disw-assets/public/2Mrc4InNtzAz03iI5LJgHF/en-US/Tessent-reversible-chain-diagnosis-WP.pdf",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**沿前SO为0、0、1、1、1、1；前两沿后状态为010、110。** 第一个沿移位后q1被强制1，但q2仍取旧q1=0，所以本次沿前SO仍0。第二个沿q2取到旧q1=1，沿后变110；直到第三个沿前才从SO看到1。\n\n好电路在全0输入下保持000，故障效果经链路推进后被观察。不能把沿后q2=1计作同一个沿前输出，也不能忽略题定故障仅在shift更新后生效的初始条件。这一模式支持题定故障行为，不足以唯一诊断真实芯片所有可能缺陷；其他故障、时序问题或模型偏差可能产生相似日志。",
+    "rubric": [
+      "SO 001111正确。",
+      "010/110状态及传播延迟正确。",
+      "不由单模式唯一诊断真实缺陷。"
+    ]
   }
 ]

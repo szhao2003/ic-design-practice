@@ -242,5 +242,227 @@
       "只算x=2的权重2，没有除以所有合法值的总权重。",
       "把目标概率解释成任意小样本中必须精确满足的出现次数。"
     ]
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-DV-0001",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "sva",
+    "title": "背压解除那一沿也要保持数据：逐沿检查非重叠蕴含",
+    "promptMd": "单时钟二值模型，无复位变化。下面性质在每个上升沿采样，$stable比较相邻两个采样值；所有行均是采样值。\n\n```systemverilog\nassert property (@(posedge clk)\n  (valid && !ready) |=> (valid && $stable(data)));\n```\n\n|沿|valid|ready|data|\n|---|---:|---:|---|\n|E0|1|0|0x12|\n|E1|1|0|0x12|\n|E2|1|1|0x13|\n|E3|0|1|0x00|\n\n只判断E0、E1、E2启动的尝试：何时通过或失败？E2已经握手，能否更换成0x13？该性质是否单独保证ready最终变1？",
+    "explanationMd": "**E0尝试在E1通过，E1尝试在E2失败；E2前件为假，没有新的非空检查义务。** |=>使本沿前件成立后，在下一采样沿检查后件。E0→E1中valid保持1且数据不变，满足；E1→E2虽ready已经为1，但待接受数据应仍为0x12，实际改成0x13，违反保持要求。\n\n握手沿也属于这笔尚待接受数据必须保持的边界，不能只检查ready=0的各行。E3可以清valid或换无效数据，因为E2没有启动新的等待义务。本题性质是安全性检查：持续不ready时逐拍检查保持，但没有规定何时必须ready，不能据此证明进展或无死锁。复位如何禁用性质需要另外约定，这里明确排除复位变化。",
+    "commonMistakes": [
+      "把|=>当同沿检查。",
+      "握手沿允许临时偷换payload。",
+      "把保持检查当作最终一定响应的证明。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://documentation-service.arm.com/static/64256e84314e245d086bc88f",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**E0尝试在E1通过，E1尝试在E2失败；E2前件为假，没有新的非空检查义务。** |=>使本沿前件成立后，在下一采样沿检查后件。E0→E1中valid保持1且数据不变，满足；E1→E2虽ready已经为1，但待接受数据应仍为0x12，实际改成0x13，违反保持要求。\n\n握手沿也属于这笔尚待接受数据必须保持的边界，不能只检查ready=0的各行。E3可以清valid或换无效数据，因为E2没有启动新的等待义务。本题性质是安全性检查：持续不ready时逐拍检查保持，但没有规定何时必须ready，不能据此证明进展或无死锁。复位如何禁用性质需要另外约定，这里明确排除复位变化。",
+    "rubric": [
+      "E0/E1尝试的检查沿与结果正确。",
+      "E2无新非空义务。",
+      "区分保持安全性和最终响应。"
+    ]
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-DV-0002",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "sva",
+    "title": "稳定不代表已知：背压断言还缺哪些X检查",
+    "promptMd": "四态仿真中，接口要求正常业务时valid和ready必须为0/1，valid=1时data不得含X/Z。已有背压保持检查，但没有独立的未知值检查。哪些判断正确？不讨论复位期间的允许未知状态。",
+    "explanationMd": "**答案A、C。** $stable只比较采样间是否变化，不表示值已知；同一个含X的向量连续出现可以保持稳定。因此控制位是否已知和有效数据是否已知应分别检查，例如对控制拼接用!$isunknown，对valid有效时的数据另做检查。\n\n一个保持性质也不能自动覆盖所有控制未知情形，尤其前件本身依赖控制信号时，不能把没有启动有效义务当作协议正常。另一方面，valid=0时data是否可为X由接口契约决定；本题明确只要求有效数据已知，不能擅自把所有空闲周期都要求成同一数据值。",
+    "commonMistakes": [
+      "把$stable(data)等同无X/Z。",
+      "用断言无失败代替控制信号有效性检查。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://documentation-service.arm.com/static/64256e84314e245d086bc88f",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "控制valid/ready已知性应单独检查。"
+      },
+      {
+        "id": "B",
+        "textMd": "只要data一直是同一个X向量，$stable就能证明它是有效二值数据。"
+      },
+      {
+        "id": "C",
+        "textMd": "valid=1时需要按本题契约检查data不含X/Z。"
+      },
+      {
+        "id": "D",
+        "textMd": "valid=0时data任何变化都必定违反本题接口要求。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确。控制未知可能影响前件和握手解释，不能靠保持性质兜底。",
+      "B": "错误。稳定只说明没有采样变化，不能证明已知。",
+      "C": "正确。有效数据的已知性是独立要求。",
+      "D": "错误。本题没有要求空闲payload固定，不能任意扩大检查。"
+    }
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-DV-0003",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "scoreboard",
+    "title": "坏响应也要出队：避免一次错误引发后续假失配",
+    "promptMd": "一个已结束的单beat响应记录，全部请求先登记。每个ID有FIFO期望队列，跨ID可乱序。请求依次为(1,10)、(1,20)、(2,30)。响应依次为(1,99)、(2,30)、(1,20)、(1,20)。规则：有待响应请求时，响应即消费该ID队首，即使payload错误；无该ID待办则记unexpected且不消费别的ID。结束时剩余请求记missing。列错误顺序与最终队列，解释坏payload为什么不能留在队首。",
+    "explanationMd": "**错误依次为mismatch(ID1,期望10,实际99)、unexpected(ID1,20)，最终所有队列为空，没有missing。** 第一个坏响应消费ID1的10；第二个正确消费ID2的30；第三个消费ID1的20；第四个已无待办，因此是多余/重复响应。\n\n若第一个响应错了就不出队，第三个正确的20会被拿去与旧10比较，引发第二次假失配，最后还可能错误报告missing。检查器必须区分事务生命周期与payload正确性。这里按ID及顺序匹配，不能根据数据碰巧相等来挑选队中任意元素；也不能唯一证明unexpected的物理根因必定是重复，可能还有其他产生机制。",
+    "commonMistakes": [
+      "坏payload不出队导致级联误报。",
+      "跨ID收到响应就消费任意全局队首。",
+      "凭相同数据值猜事务归属。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.python.org/3/library/collections.html#collections.deque",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**错误依次为mismatch(ID1,期望10,实际99)、unexpected(ID1,20)，最终所有队列为空，没有missing。** 第一个坏响应消费ID1的10；第二个正确消费ID2的30；第三个消费ID1的20；第四个已无待办，因此是多余/重复响应。\n\n若第一个响应错了就不出队，第三个正确的20会被拿去与旧10比较，引发第二次假失配，最后还可能错误报告missing。检查器必须区分事务生命周期与payload正确性。这里按ID及顺序匹配，不能根据数据碰巧相等来挑选队中任意元素；也不能唯一证明unexpected的物理根因必定是重复，可能还有其他产生机制。",
+    "rubric": [
+      "两项错误及顺序正确。",
+      "坏响应消费旧10，结束无missing。",
+      "unexpected不消费其他ID。"
+    ]
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-DV-0004",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "coverage",
+    "title": "iff关掉采样，会把未命中的bin从分母删掉吗",
+    "promptMd": "一个coverpoint显式且仅有4个等权普通bin，分别覆盖mode=0、1、2、3，无自动/default/ignore/illegal bin，at_least=1。整个coverpoint用iff(enable)过滤采样。依次采样(enable,mode)为(1,0)、(1,1)、(0,2)、(0,3)、(0,0)。求该coverpoint覆盖率百分数；不涉及group加权或工具舍入。",
+    "explanationMd": "**覆盖率50%。** 4个普通bin在构造时均已存在，分母为4；iff只允许enable=1的样本更新命中，所以只有mode0和mode1两个bin覆盖。后三次采样被过滤，不能填充mode2/3，也不会让它们从分母消失。\n\n按题定等权与至少一次命中，覆盖率为2/4×100=50。若设计功能上某模式不适用，应在模型构造/排除规则中明确处理，而不是把enable永久拉低来“消掉”未覆盖项。覆盖率低可能是激励不足或模型不适用，需要分析，不能只修改采样条件追求数字。",
+    "commonMistakes": [
+      "把iff看成动态删除bin。",
+      "enable=0的值仍记成有效命中。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://verificationacademy.com/forums/t/why-ignore-bins-is-not-considering-iff-condition/29741",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "numeric",
+    "expectedValue": 50,
+    "absoluteTolerance": 0,
+    "unit": "%",
+    "defaultUnit": "%",
+    "acceptedUnits": {
+      "%": 1
+    }
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-DV-0005",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "coverage",
+    "title": "ignore_bins和illegal_bins：排除目标与报错规则不同",
+    "promptMd": "验证计划中，模式A为当前配置不适用但允许出现的状态，模式B被接口规格明确禁止。讨论SystemVerilog功能覆盖建模，哪些判断合理？不以覆盖率作为功能正确性证明。",
+    "explanationMd": "**答案A、C。** 不适用但合法的取值可用ignore_bins排除覆盖目标；明确非法的取值可用illegal_bins表示命中时报错的意图。二者不能仅因为都不当作普通覆盖目标就互换。\n\n错误报告的具体严重性、停止策略及选项要结合工具配置，不能认为写下illegal_bins就完成所有协议检查。覆盖模型只表达所选观察点，时间关系、事务一致性和功能结果通常仍需要assertion、scoreboard或参考模型。删除未命中的合法目标只会掩盖验证缺口。",
+    "commonMistakes": [
+      "用illegal_bins处理允许出现的不适用模式。",
+      "靠删除目标让覆盖率变高就宣称更充分。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://verificationacademy.com/forums/t/illegal-bin-hit-the-bin-counter-for-bin-x-is-1/36323",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "A可在有依据时作为ignore_bins排除覆盖目标。"
+      },
+      {
+        "id": "B",
+        "textMd": "B放进ignore_bins就等同完成非法行为报错检查。"
+      },
+      {
+        "id": "C",
+        "textMd": "B可用illegal_bins表达命中时报错意图，仍应核对工具策略。"
+      },
+      {
+        "id": "D",
+        "textMd": "覆盖率100%能替代scoreboard结果比较。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确，A合法但当前覆盖目标不适用，需记录排除依据。",
+      "B": "错误，忽略不代表报错，可能悄悄放过非法行为。",
+      "C": "正确，报错意图和工具实际处理需一致。",
+      "D": "错误，命中覆盖目标不证明功能结果正确。"
+    }
   }
 ]

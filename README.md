@@ -2,7 +2,7 @@
 
 面向数字 IC、ASIC RTL、DV 与 FPGA 的专题练习工具，中文界面。
 
-当前为 **1.15.0：总线响应与时钟时序**。已有 15 个专题及子专题、186 道完整题（原创 44、公开资料考点改编 142，其中笔经考点 7、教学/练习资料考点 135）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
+当前为 **1.16.0：验证诊断与低功耗**。已有 15 个专题及子专题、198 道完整题（原创 44、公开资料考点改编 154，其中笔经考点 7、教学/练习资料考点 147）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
 
 学习进度及统计口径见 [学习进度阶段说明](docs/SECTION_07_PROGRESS.md)，模拟考试见 [第五阶段说明](docs/SECTION_05_VERIFICATION.md)。新增第二批见 [继续扩充与中性来源显示](docs/CONTENT_BATCH_04_COLLECTION.md)。第一批题与来源审核见 [资料考点扩充（第一批）](docs/CONTENT_BATCH_03_YHCHUB.md)，首版功能及回归范围见 [V1 验收](docs/V1_ACCEPTANCE.md)。
 
@@ -35,7 +35,7 @@ npm run build
 npm run preview
 ```
 
-`validate:questions` 检查数据结构、分类引用、逐项解析、来源字段及 ID 唯一性，允许开发阶段空题库。`npm run validate:questions -- --release` 额外检查正式 V1 的题量与题型最低数量，当前 186 题满足该内容门槛；CI 同样执行 --release，内容门槛不能替代技术审核或浏览器验收。结构校验不能替代技术内容审核。
+`validate:questions` 检查数据结构、分类引用、逐项解析、来源字段及 ID 唯一性，允许开发阶段空题库。`npm run validate:questions -- --release` 额外检查正式 V1 的题量与题型最低数量，当前 198 题满足该内容门槛；CI 同样执行 --release，内容门槛不能替代技术审核或浏览器验收。结构校验不能替代技术内容审核。
 
 ## 项目结构
 
@@ -124,3 +124,5 @@ Cache小补充新增2题：两路LRU替换、多级AMAT局部/全局miss率。�
 新增6题：Gray双向转换RTL、可暂停偶分频RTL及波形、明确控制/电源的SRAM引脚计数、32bit片组地址译码、偶校验检错边界。搜索“编码分频与存储接口”，见 [本批审核](docs/CONTENT_BATCH_17_CODEC.md)。
 
 新增12道总线响应与时钟时序任务，覆盖APB版本/错误、AXI响应与读错误burst、AHB-Lite等待/ERROR、jitter/skew及固定模型吞吐。搜索“总线响应与时钟时序”，见 [本批审核](docs/CONTENT_BATCH_18_BUSTIMING.md)。
+
+新增12道DV/DFT/低功耗教学资料改编，含背压保持、X检查、错误响应出队、覆盖率过滤、故障传播、事务排空及隔离确认。搜索“验证诊断与低功耗”，见 [本批审核](docs/CONTENT_BATCH_19_VERIFYPOWER.md)。

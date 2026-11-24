@@ -6,7 +6,7 @@ const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-ADVANCED-${id}`)!;
 describe('进阶考点第一批：独立计算与状态模型',()=>{
   it('八道新题有来源，旧题仍在；不在公开标签中带出版社名',()=>{
     const batch=questions.filter(q=>q.id.startsWith('ADAPTED-ADVANCED-'));
-    expect(batch).toHaveLength(8); expect(questions.filter(q=>!/^ADAPTED-(FOUNDATION|TOOLSFPGA|CORE|SYSTEM|EXTENSION|CORE3|MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC|BUSTIMING)-/.test(q.id))).toHaveLength(82);
+    expect(batch).toHaveLength(8); expect(questions.filter(q=>!/^ADAPTED-(FOUNDATION|TOOLSFPGA|CORE|SYSTEM|EXTENSION|CORE3|MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC|BUSTIMING|VERIFYPOWER)-/.test(q.id))).toHaveLength(82);
     for(const q of batch){
       expect(q.contentVersion).toBe(1);
       expect(q.source).toMatchObject({kind:'practice_collection',evidenceGrade:'C',questionFidelity:'topic_only_reconstruction',sourceClaimVerification:'checked'});

@@ -283,5 +283,164 @@
       "说明模型、激励、corner与约束前提。",
       "不把GLS或LEC等同物理时序/CDC签核。"
     ]
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-POWER-0001",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "clock-power-gating",
+    "title": "关电前的控制顺序：按ack推进，而非只看请求",
+    "promptMd": "抽象可关电域D接到常开域。题定关电契约：先停止新请求并等待pending=0，再请求save并等待save_done；随后请求隔离并等待iso_ack=1，最后才能发power_off。隔离控制及ack来自常开域。本题不指定厂商电源轨或retention单元细节。E0停止接收；E2 pending首次为0；E3 save_req；E5 save_done；E6 iso_req；E8 iso_ack。所有事件按沿采样，控制命令最早在满足前提后的下一沿发出。求最早power_off沿，并说明E6直接断电是否满足契约。",
+    "explanationMd": "**最早E9发power_off；E6直接断电不满足契约。** pending=0只证明旧事务已清，save_done才证明本题保存步骤结束；发出iso_req也不等于隔离已经生效。E8观察到iso_ack后，按本题下一沿发命令规则，E9才允许断电。\n\n常开接收端不能在D输出已失效时仍观察未隔离信号。题定ack链用于确认步骤完成，不应将请求与实际完成合并。这个顺序是本题抽象接口合同，实际芯片还要查电源、时钟、复位、保存和隔离控制要求，不能用固定几个沿替代器件规定。",
+    "commonMistakes": [
+      "iso_req等同iso_ack。",
+      "pending清空就绕过save和isolation直接断电。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/en-US/ug1085-zynq-ultrascale-trm/Isolation-Request?contentId=qRmS8dOJd39Nv2Fk4ZOXnw",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**最早E9发power_off；E6直接断电不满足契约。** pending=0只证明旧事务已清，save_done才证明本题保存步骤结束；发出iso_req也不等于隔离已经生效。E8观察到iso_ack后，按本题下一沿发命令规则，E9才允许断电。\n\n常开接收端不能在D输出已失效时仍观察未隔离信号。题定ack链用于确认步骤完成，不应将请求与实际完成合并。这个顺序是本题抽象接口合同，实际芯片还要查电源、时钟、复位、保存和隔离控制要求，不能用固定几个沿替代器件规定。",
+    "rubric": [
+      "E9及下一沿规则正确。",
+      "E6隔离尚未确认。",
+      "按题定协议而非推广厂商通用序列。"
+    ]
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-POWER-0002",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "clock-power-gating",
+    "title": "停止接单不等于已空闲：计算最早关电沿",
+    "promptMd": "抽象域在E0沿前有3笔pending，E0又接受2笔；E1起shutdown有效，禁止新接受。E1/E2/E3/E4分别完成1/1/2/1笔，每笔完成即终结，不重试，数量均为沿上事件。pending首次归零后的下一沿发save_req；发save_req后一沿save_done可被采到；再下一沿iso_ack可被采到；再下一沿才允许power_off。求最早power_off的沿编号整数，例如E9填9。无需考虑真实电源延时。",
+    "explanationMd": "**答案8，即E8。** E0沿后pending=5；E1至E4沿后依次为4、3、1、0。不能在shutdown刚发出的E1就把已有请求当作消失，也不能漏算E0同沿已接受的两笔。\n\n按明确的一沿一步合同：E5发save_req，E6采到save_done，E7采到iso_ack，E8才发power_off。这里所有完成都终结事务，因此不增加重试负担；若系统允许错误重试或还有在途返回，必须重新定义pending含义和排空条件，不能直接沿用这个计数。",
+    "commonMistakes": [
+      "漏记E0新接受两笔。",
+      "完成量2的一沿只减1。",
+      "把命令和下一沿ack压成同一沿。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/en-US/ug1085-zynq-ultrascale-trm/Isolation-Request?contentId=qRmS8dOJd39Nv2Fk4ZOXnw",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "numeric",
+    "expectedValue": 8,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-POWER-0003",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "clock-power-gating",
+    "title": "隔离钳位0也可能伪造事件：先看有效极性",
+    "promptMd": "常开接收端有两个来自掉电域的输入：active_high_valid为1时消费数据；active_low_irq_n为0时认为有中断。掉电时两输入都必须被隔离到不会触发动作的静态值，无其他握手机制。哪些判断正确？",
+    "explanationMd": "**答案A、C。** 无效值取决于接收语义：高有效valid应钳0，低有效irq_n应钳1。把所有跨域输出统一钳0会让常开域误认为中断一直有效，隔离单元并不自动知道哪种逻辑状态安全。\n\n选择钳位值时需要检查信号极性、接收者的组合与时序行为、复位及唤醒协议。隔离保护输出边界，不能自动保存掉电域内部状态；retention和重建状态仍需单独安排。题定只分析静态有效性，未假定钳位切换本身满足所有异步事件与同步条件。",
+    "commonMistakes": [
+      "所有信号一律钳0。",
+      "把隔离等同内部状态保存。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/en-US/ug1085-zynq-ultrascale-trm/Isolation-Request?contentId=qRmS8dOJd39Nv2Fk4ZOXnw",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "active_high_valid钳0可避免误消费。"
+      },
+      {
+        "id": "B",
+        "textMd": "active_low_irq_n钳0可确保没有中断。"
+      },
+      {
+        "id": "C",
+        "textMd": "active_low_irq_n钳1才是本题不触发中断的值。"
+      },
+      {
+        "id": "D",
+        "textMd": "只要隔离生效，掉电域全部寄存器自然被保留。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确，高有效握手以0表示无效。",
+      "B": "错误，0反而表示中断有效。",
+      "C": "正确，低有效信号以1表示无效。",
+      "D": "错误，isolation不承担全部内部状态保存。"
+    }
+  },
+  {
+    "id": "ADAPTED-VERIFYPOWER-POWER-0004",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "clock-power-gating",
+    "title": "只保留配置寄存器，能从中断位置继续处理包吗",
+    "promptMd": "抽象模块仅cfg寄存器使用retention，关电前cfg=0x3C；counter=0x5A、FIFO指针和FIFO数据均不保留。上电合同要求非保留状态复位为0，保留cfg正确恢复后才解除隔离。没有外部事务重放或包恢复协议。解释上电后cfg/counter值，并判断能否仅凭cfg恢复就继续关电前处理到一半的数据包。提出允许关电前必须补足的条件。",
+    "explanationMd": "**恢复后cfg=0x3C、counter=0；不能仅凭cfg恢复就接着处理旧半包。** 保留范围只覆盖配置，数据、指针和进度已经丢失；配置相同不表示事务生命周期、缓冲内容和已产生副作用都仍存在。\n\n在本题没有恢复协议的条件下，应在关电前排空或明确中止并完成上层协调，确保无需要续处理的半包。若另行设计checkpoint/replay，就必须同时定义数据、指针、进度和外部副作用的恢复或去重，而不只保留一个配置字。解除隔离也必须等题定恢复/复位完成，不能把power_good当所有内部状态已可用。",
+    "commonMistakes": [
+      "保住cfg就默认保住FIFO及处理进度。",
+      "重放半包却不处理已发生的外部副作用。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "验证诊断与低功耗",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/en-US/ug1085-zynq-ultrascale-trm/Isolation-Request?contentId=qRmS8dOJd39Nv2Fk4ZOXnw",
+      "note": "参考公开技术/教学资料中的相关规则；本题时序、故障、接口与解答独立构造，非招聘原题。来源支持技术方向，不证明考察频率。"
+    },
+    "type": "short_answer",
+    "referenceAnswerMd": "**恢复后cfg=0x3C、counter=0；不能仅凭cfg恢复就接着处理旧半包。** 保留范围只覆盖配置，数据、指针和进度已经丢失；配置相同不表示事务生命周期、缓冲内容和已产生副作用都仍存在。\n\n在本题没有恢复协议的条件下，应在关电前排空或明确中止并完成上层协调，确保无需要续处理的半包。若另行设计checkpoint/replay，就必须同时定义数据、指针、进度和外部副作用的恢复或去重，而不只保留一个配置字。解除隔离也必须等题定恢复/复位完成，不能把power_good当所有内部状态已可用。",
+    "rubric": [
+      "cfg3C/counter0正确。",
+      "丢失数据/指针/进度，不支持直接续包。",
+      "排空或协调中止，恢复协议需完整设计。"
+    ]
   }
 ]

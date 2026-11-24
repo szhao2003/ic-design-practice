@@ -146,3 +146,5 @@ N1570/GNU位移手册本次超时未采用；UW PDF无可读正文，使用同�
 2026-11-24：补Q22参数化双向Gray及Q24完整偶分频；Q128补明确抽象封装与片组地址拆分；Q132补偶校验但仍保留部分覆盖。汇编已重新访问，技术方向核对设计作者Gray公式、AMD时钟/归约运算和Infineon异步SRAM引脚说明，未假冒真实器件引脚数。见 [审核](CONTENT_BATCH_17_CODEC.md)。
 
 2026-11-24：总线响应与时钟时序新增12题，明确传统AXI4 2bit响应、AMBA3 AHB-Lite v1.0及APB2/3/4范围；新增等待/错误逐沿任务及实际边沿预算，旧174题不改。技术依据与下一批安排见 [批次审核](CONTENT_BATCH_18_BUSTIMING.md)。
+
+2026-11-24：验证诊断与低功耗新增12题，资料为Arm握手、Verification Academy覆盖规则、Python deque、Siemens测试诊断及AMD隔离说明。不是新核验的公司笔试，不用技术文档证明常考频次；关电按明确抽象合同。见 [本批审核](CONTENT_BATCH_19_VERIFYPOWER.md)。
