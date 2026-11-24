@@ -528,5 +528,42 @@
       "在第一级后立即分支驱动功能逻辑。",
       "把额外逻辑的功能正确等同于同步可靠性不变。"
     ]
+  },
+  {
+    "id": "ADAPTED-ADVANCED-CDC-0001",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "handshake",
+    "type": "waveform_analysis",
+    "title": "四相握手：请求保持多拍会收几次？",
+    "difficulty": "medium",
+    "tags": [
+      "进阶练习第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开资料 Q73、Q76 已出现的知识方向，独立构造条件、接口和解析，非原题；已核对页面及相应主题，不核实或继承公司、届别和原卷归因。"
+    },
+    "promptMd": "一个四相 req/ack 跨域通道，最多一笔在途。源端先锁存并稳定保持 16 bit payload=0x3A5C，再置 req=1；ack 经源域同步链后才可被源端使用。宽 payload 不逐位同步，已证明数据在目的捕获前后满足稳定窗口及物理路径约束。\n\n目的域只使用同步后的 req_sync，状态规则为：\n- IDLE：看到 req_sync=1 时捕获一次 payload、令 ack=1，转 WAIT_LOW。\n- WAIT_LOW：req_sync=1 时不再捕获；看到 req_sync=0 时令 ack=0，返回 IDLE。\n\n复位结束，D0 前状态 IDLE、ack=0；D0…D5 各沿采到 req_sync 依次为 0、1、1、1、0、0。状态和 ack 均在该沿 NBA 后更新。\n\n列出每沿是否捕获、沿后状态及 ack；说明捕获总次数，以及源端是否能在刚看到 ack=1 时立即发起下一笔请求。只推演理想数字行为，不预测同步链的固定物理延迟。",
+    "referenceAnswerMd": "**仅捕获一次，在 D1 捕获 0x3A5C。**\n\n| 目的沿 | 沿前状态 | req_sync | 本沿捕获 | 沿后状态 | 沿后 ack |\n|---|---|---:|---|---|---:|\n| D0 | IDLE | 0 | 否 | IDLE | 0 |\n| D1 | IDLE | 1 | 是 | WAIT_LOW | 1 |\n| D2 | WAIT_LOW | 1 | 否 | WAIT_LOW | 1 |\n| D3 | WAIT_LOW | 1 | 否 | WAIT_LOW | 1 |\n| D4 | WAIT_LOW | 0 | 否 | IDLE | 0 |\n| D5 | IDLE | 0 | 否 | IDLE | 0 |\n\n源端看到同步回来的 ack=1 后撤销 req，但仍需等同步回来的 ack=0，确认四相流程回到空闲，才发起下一次 req↑。",
+    "explanationMd": "**请求电平持续不等于每拍都有新事务。**\n\nWAIT_LOW 保存的是“这一轮请求已经消费过”的状态。因此 D2、D3 即使 req_sync 仍高，也不再次读取 payload。只有 D4 看到请求撤下，目的状态机才允许未来的另一轮请求。\n\n四相流程是 req↑→ack↑→req↓→ack↓，两个方向的箭头都经过各自同步链。源端刚看到 ack↑，只说明本笔已接收，还没说明目的端已回到能区分新请求的空闲状态；若不完成低电平返回，下一笔可能被当成同一个保持请求。\n\npayload 必须满足题定稳定窗口；仅把 req 加同步器不能替代宽数据的实际延迟约束。这里的逐沿表是理想状态机分析，不代表两级寄存器能绝对消除亚稳态。",
+    "rubric": [
+      "D1 仅捕获一次，D2/D3 不重复接收。",
+      "D1…D3 ack=1，D4 沿后 ack=0，返回 IDLE。",
+      "区分目的本地 ack 与源端同步后的 ack。",
+      "下一次 req↑ 必须等 req/ack 都返回低，不能省略返回空闲过程。"
+    ],
+    "commonMistakes": [
+      "只用 if(req_sync) 每拍锁存，导致保持三拍的请求被接收三次。",
+      "在源端看到 ack=1 后马上再次拉高 req，没有等待 ack 返回 0。",
+      "将控制同步延迟当成宽 payload 自动满足物理稳定窗口的证明。"
+    ]
   }
 ]

@@ -253,5 +253,42 @@
       "kB/s": 1000
     },
     "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-ADVANCED-AXI-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "type": "waveform_analysis",
+    "title": "AXI4-Lite：W 先到，AW 后到，B 何时能返回？",
+    "difficulty": "medium",
+    "tags": [
+      "进阶练习第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开资料 Q118、Q119 已出现的知识方向，独立构造条件、接口和解析，非原题；已核对页面及相应主题，不核实或继承公司、届别和原卷归因。"
+    },
+    "promptMd": "一个 AXI4-Lite 单笔写通道，已结束复位，无其他事务；从机可独立缓存一笔地址和一笔数据。信号表为 E0…E4 上升沿采样值，VALID&&READY 在沿上完成对应通道传输。\n\n| 沿 | AWVALID | AWREADY | WVALID | WREADY | BVALID | BREADY |\n|---|---:|---:|---:|---:|---:|---:|\n| E0 | 1 | 0 | 1 | 1 | 0 | 0 |\n| E1 | 1 | 0 | 0 | 1 | 0 | 0 |\n| E2 | 1 | 1 | 0 | 1 | 0 | 0 |\n| E3 | 0 | 1 | 0 | 1 | 1 | 0 |\n| E4 | 0 | 1 | 0 | 1 | 1 | 1 |\n\nAWADDR=0x40 在 AW 等待期间不变；W 是一个完整有效写数据 beat，无需 WLAST（AXI4-Lite 无此信号）；BRESP=OKAY 且在等待期间稳定。限定本实现把两个通道都已握手后的响应登记到 BVALID，不额外插入等待。\n\n分别指出 W、AW、B 的握手沿；W 比 AW 先握手是否允许？最早何时可以让 BVALID 为高？为什么 E3 尚未完成写响应？区分沿上采样与沿后更新。",
+    "referenceAnswerMd": "**W 在 E0，AW 在 E2，B 在 E4 握手。允许 W 先于 AW。**\n\n| 沿 | 本沿接受 | 沿后已具备的事务信息 |\n|---|---|---|\n| E0 | W 数据 | 数据已缓存，地址未收到 |\n| E1 | 无 | 继续等地址，保持 AWADDR/VALID |\n| E2 | AW 地址 | 两部分都齐备，可在 E2 后登记 BVALID=1 |\n| E3 | 无 B 握手 | BVALID=1 但 BREADY=0，保持 BVALID/BRESP |\n| E4 | B 响应 | 响应完成，此后可以撤 BVALID |\n\nE2 沿采样时 BVALID 仍为 0；E2 的地址握手使响应条件齐备，登记的新 BVALID 在 E2 后为 1，并在 E3 第一次被采样。",
+    "explanationMd": "**地址、数据和响应是三个分别握手的通道。**\n\n从机能缓存数据，因此 E0 的 W 握手不要求 AW 同沿成功。主机在 E1 后可以撤下已经消费的 WVALID，但 AWVALID 及地址仍需保持直到 E2。不能因为 W 已经到达，就提前当成完整写事务返回响应。\n\n本实现只有在地址与数据都被接收后才登记 BVALID，所以最早 E2 后变高；并非 E2 沿采样到 BVALID=1。E3 虽然响应已准备好，但 BREADY=0，仍不能说响应完成；BVALID 与 BRESP 必须稳定到 E4 握手。\n\nAXI4 完整版有 burst/WLAST 等额外依赖，本题特指 AXI4-Lite 单 beat，不把两个版本的信号混在一起。这里规定无额外响应等待，不代表所有合规从机都必须采用同样延迟。",
+    "rubric": [
+      "W/AW/B 分别为 E0/E2/E4，不强制地址和数据同沿到达。",
+      "响应依赖地址与数据均已接受，不只依赖 W。",
+      "区分 E2 沿采样的旧 BVALID 与 E2 后登记的新值。",
+      "E3 无 B 握手，响应 valid/内容保持直到 E4。"
+    ],
+    "commonMistakes": [
+      "认为地址必须先于数据，否则 W 握手非法。",
+      "只看到 BVALID=1 就认为 E3 已完成响应。",
+      "把 E2 后登记 BVALID 误写成 E2 沿已经接受 B。"
+    ]
   }
 ]

@@ -27,7 +27,7 @@ jobs:
       - run: npm run test
       - name: Install HDL simulator
         run: sudo apt-get update && sudo apt-get install -y iverilog
-      - name: Simulate all seven published reference modules
+      - name: Simulate all published reference modules
         run: npm run test:rtl
       - run: npm run build
       - name: Upload validated site

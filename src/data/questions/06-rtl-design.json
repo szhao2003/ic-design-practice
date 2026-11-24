@@ -519,5 +519,81 @@
       "忽略“自主、无外部状态”的下界前提。",
       "把输出序列长度直接当作触发器位数。"
     ]
+  },
+  {
+    "id": "ADAPTED-ADVANCED-RTL-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "adder-pipeline",
+    "type": "rtl_coding",
+    "title": "带背压的一级弹性缓冲",
+    "difficulty": "hard",
+    "tags": [
+      "进阶练习第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 15,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.cnblogs.com/yinhuachen/p/17325796.html",
+      "note": "参考公开资料 握手流水线笔记：valid/data 保持与空位接收 已出现的知识方向，独立构造条件、接口和解析，非原题；已核对页面及相应主题，不核实或继承公司、届别和原卷归因。"
+    },
+    "promptMd": "设计 elastic_buffer8：clk、同步低有效 rst_n；输入侧 in_valid/in_ready/in_data[7:0]，输出侧 out_valid/out_ready/out_data[7:0]，只含 0/1 且满足本域采样时序。\n\n容量恰好一个字，不允许组合数据旁路：E0 接收的输入，最早在 E1 沿被下游消费。每沿以沿前 valid&&ready 判断传输。\n\n要求：空槽即使下游不 ready 也可接收一笔；满且下游未接收时保持 out_valid 和 out_data；满且本沿输出被消费时允许同沿接收新字替换；输出被消费但无新输入时清 valid；无效时数据可保持。复位沿清 out_valid/out_data，rst_n=0 时 in_ready=0，不接受输入。源端须保持未握手的 valid/data。\n\n给出完整 RTL，说明无停顿吞吐率、复位如何丢弃在途数据，以及为何不能把 in_ready 直接等同 out_ready。本题为通用单时钟握手缓冲，不宣称切断 AXI 接口的组合 ready 路径。",
+    "referenceAnswerMd": "用 out_valid 同时表示唯一槽位是否被占用。只有槽位为空或旧输出本沿将被消费时，才能更新该槽位。\n\n```systemverilog\nmodule elastic_buffer8 (\n  input  logic       clk,\n  input  logic       rst_n,  // Synchronous active-low reset\n  input  logic       in_valid,\n  output logic       in_ready,\n  input  logic [7:0] in_data,\n  output logic       out_valid,\n  input  logic       out_ready,\n  output logic [7:0] out_data\n);\n  // Empty storage can fill even if the consumer is stalled.\n  // A full slot can be replaced on the SAME edge that consumes its old word.\n  assign in_ready = rst_n && (!out_valid || out_ready);\n\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin\n      out_valid <= 1'b0;\n      out_data  <= 8'd0;\n    end else if (in_ready) begin\n      out_valid <= in_valid;\n      if (in_valid) begin\n        out_data <= in_data;\n      end\n      // If only the old output was consumed, clear valid and keep stale data.\n    end\n    // Full + !out_ready: hold BOTH payload and valid until accepted.\n  end\nendmodule\n```",
+    "explanationMd": "**核心条件：in_ready = rst_n && (!out_valid || out_ready)。**\n\n| 沿前槽位 | out_ready | in_ready（非复位） | 本沿动作 |\n|---|---:|---:|---|\n| 空 | 0/1 | 1 | 可接收；无输入则仍空 |\n| 满 | 0 | 0 | valid/data 全保持 |\n| 满 | 1 | 1 | 先消费旧字；有输入则替换，无输入则清 valid |\n\n更新条件为 in_ready，而非仅 in_valid。若满且堵塞，哪怕输入 valid 高也不得覆盖旧字。若旧字被消费且输入 valid 低，必须清掉 out_valid，防止重复消费。\n\nE0 沿接收 A，NBA 后 A 才出现在输出，因此不可能在 E0 同沿消费新 A，最早是 E1；持续 ready/valid 时，从 E1 起每拍可出一笔并接下一笔。\n\n复位优先清槽，会丢弃尚未消费的数据，系统必须把复位视作事务取消边界。这里 out_ready 到 in_ready 有组合路径，适用于题定内部弹性级；若要满足特定 AXI 接口的无组合输入输出路径约束，需要另设计 register slice/skid buffer，不能只给 ready 盲目打一拍。",
+    "rubric": [
+      "容量一字，无组合数据旁路。",
+      "空槽能在 out_ready=0 时接受一笔；满且堵塞同时保持 valid 和 payload。",
+      "同沿消费旧字并接新字，无新字则清 valid。",
+      "同步复位清 valid/data，复位低时不输入握手。",
+      "持续有效吞吐每拍一笔，区分接收沿与最早消费沿。"
+    ],
+    "commonMistakes": [
+      "in_ready 直接接 out_ready，使空槽在下游暂停时也无法接收。",
+      "每拍 out_valid<=in_valid，导致堵塞时旧事务消失或被覆盖。",
+      "将 ready 延迟一拍却未增加接收容量，造成多接一笔溢出。"
+    ]
+  },
+  {
+    "id": "ADAPTED-ADVANCED-RTL-0002",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "arbiter",
+    "type": "rtl_coding",
+    "title": "只在实际服务后轮转的四路仲裁器",
+    "difficulty": "hard",
+    "tags": [
+      "进阶练习第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 15,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://ee.ac.cn/index.php/archives/587.html",
+      "note": "参考公开资料 公开 RTL 练习第6题的 Round Robin 方向；不继承其 lock 接口 已出现的知识方向，独立构造条件、接口和解析，非原题；已核对页面及相应主题，不核实或继承公司、届别和原卷归因。"
+    },
+    "promptMd": "编写 round_robin4，接口 clk、同步低有效 rst_n、req[3:0]、accept、grant[3:0]、valid。复位后扫描起点为 0。组合逻辑从起点按 0→1→2→3→0 的循环顺序扫描，选择第一个请求，grant 为 one-hot；无请求 grant=0、valid=0。\n\n仅在非复位上升沿 accept&&valid 时，表示本候选真正获得一次服务，将下一扫描起点移到获胜索引后一位；否则起点保持。req 可以逐周期变化；不要求在未 accept 时锁定旧候选，grant 只是当前请求集合的组合选择，不是需保持 payload 的总线 valid 通道。\n\n给完整 RTL；列出 req=1111 持续有效且连续 accept 的前五次获胜者；说明只看到 valid 就轮转会有什么问题，以及公平性保证要依赖什么条件。输入仅含 0/1，复位期间不计服务。",
+    "referenceAnswerMd": "用两位 next_start 记住下一次从谁开始找；组合优先链按循环距离选择，请求为空和未实际 accept 都不消耗轮次。\n\n```systemverilog\nmodule round_robin4 (\n  input  logic       clk,\n  input  logic       rst_n,   // Synchronous active-low reset\n  input  logic [3:0] req,\n  input  logic       accept,  // Candidate is consumed on this edge\n  output logic [3:0] grant,\n  output logic       valid\n);\n  logic [1:0] next_start;\n  logic [1:0] selected;\n  logic       found;\n  integer     offset, index;\n\n  always_comb begin\n    grant    = 4'b0000;\n    selected = 2'd0;\n    found    = 1'b0;\n    // Search cyclically, starting just after the last accepted winner.\n    for (offset = 0; offset < 4; offset = offset + 1) begin\n      index = (int'(next_start) + offset) % 4;\n      if (!found && req[index]) begin\n        grant[index] = 1'b1;\n        selected = index[1:0];\n        found = 1'b1;\n      end\n    end\n    valid = found;\n  end\n\n  always_ff @(posedge clk) begin\n    if (!rst_n) begin\n      next_start <= 2'd0;\n    end else if (accept && valid) begin\n      next_start <= selected + 2'd1; // Two bits wrap 3 -> 0\n    end\n    // Stalls and empty requests consume no service turn.\n  end\nendmodule\n```",
+    "explanationMd": "**持续全请求时，前五次实际服务获胜索引为 0、1、2、3、0。**\n\n组合搜索按 (next_start+offset) mod 4，offset 从 0 到 3。found 只允许第一个命中置位，默认 grant=0 防止锁存。服务后 next_start=winner+1，两位自然在 3 后回到 0。\n\n| 情况 | 是否更新起点 | 原因 |\n|---|---|---|\n| valid=1、accept=1 | 是，移到获胜者后面 | 已消费一次服务 |\n| valid=1、accept=0 | 否 | 只是候选，尚未服务 |\n| valid=0 | 否 | 没有可服务请求 |\n\n若只看 valid 就推进，后级暂停时会空转服务顺序，让某一路在真正恢复时被跳过。公平性以**成功服务次数**衡量：请求持续保持、下游持续给出 accept 时，任一路至多等其余三路各服务一次；如果 accept 永远为 0，无法保证实际时间内获服务。\n\n题目允许 req 变化改变当前候选，因此起点保持不等于 grant 锁定；需要事务锁定时还须定义新的接口与状态。本实现没有原资料里的 lock 功能，不是对原题的忠实转述。",
+    "rubric": [
+      "扫描顺序正确，grant 只授权当前 req 中一路；空请求全零。",
+      "同步复位将起点设 0。",
+      "仅 accept&&valid 才移动起点，空闲/停顿不移动。",
+      "winner=3 后起点回 0，所有起点与请求组合可用。",
+      "说明公平性依赖持续请求和持续服务机会，而非无条件固定周期响应。"
+    ],
+    "commonMistakes": [
+      "将起点每拍加一，而不是移到本次实际获胜者之后。",
+      "valid=1 但 accept=0 时仍推进，消耗了没有发生的服务。",
+      "把公平性解释成后级永远不接收时也必须完成服务。"
+    ]
   }
 ]

@@ -18,3 +18,15 @@
 | https://onefly.top/zero2Leetcode/05_interview/coding/huawei-2027/ | 华为 2027，索引归类 | **面试**整理 | RTL 面试方向 | RTL，06 | 未用；永不标成线上笔试原题 |
 
 新条目追加模板：URL｜访问日期/状态｜页面发布日期｜公司/届别/岗位证据｜笔试/面试/汇编｜原帖实际条件与任务（简述）｜题型/topic/subtopic｜现有题去重｜独立求解方式｜技术待确认点｜使用 ID 或拒绝原因。后续新增先走 [完整流程](QUESTION_SOURCING_WORKFLOW.md)。
+
+## 进阶第一批实际使用记录（2026-11-23）
+
+本次新增 8 道，台账原先“新增0”指教学升级基线。公开汇编对应方向及两份新增教学资料均实际打开；具体条件、波形与 RTL 独立构造。
+
+| URL | 本次核对方向 | 使用 ID |
+|---|---|---|
+| https://www.yhchub.com/数字前端数字IC笔试真题与解析.html | Q43/Q49–55、Q73/Q76、Q83/Q85/Q86、Q88/Q91/Q92、Q118/Q119 | ADAPTED-ADVANCED-STA-0001/0002、CDC-0001、FIFO-0001/0002、AXI-0001 |
+| https://www.cnblogs.com/yinhuachen/p/17325796.html | 握手流水线的 valid/data 保持与空位利用 | ADAPTED-ADVANCED-RTL-0001 |
+| https://ee.ac.cn/index.php/archives/587.html | 第6题 Round Robin；不继承 lock 或公司归因 | ADAPTED-ADVANCED-RTL-0002 |
+
+另打开瑞芯微原帖核对候选方向，本批没有新增引用该帖的题；既有题来源字段未改变。技术正确性与去重见 [审核](CONTENT_BATCH_05_ADVANCED.md)。

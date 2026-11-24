@@ -351,5 +351,96 @@
       "把 Gray 最低位直接当作二进制最低位。",
       "误用归约 OR 代替异或。"
     ]
+  },
+  {
+    "id": "ADAPTED-ADVANCED-FIFO-0001",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "fifo-depth",
+    "type": "numeric",
+    "title": "读侧暂停期间的离散 FIFO 峰值",
+    "difficulty": "medium",
+    "tags": [
+      "进阶练习第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开资料 Q88、Q91、Q92 已出现的知识方向，独立构造条件、接口和解析，非原题；已核对页面及相应主题，不核实或继承公司、届别和原卷归因。"
+    },
+    "absoluteTolerance": 0,
+    "promptMd": "初始为空的理想队列，写端连续写 16 个数据，写时刻为 0、10、20、…、150 ns。读端只在 30、50、70 ns 读取，之后暂停；在 150 ns 恢复，此后每 20 ns 读取一次直到队列清空，非空时必读。\n\n同一时刻同时读写按净占用变化计算。忽略指针跨域延迟、控制保守性、安全余量及容量必须为 2 的幂等硬件限制。问容纳整个过程、不溢出的**理论最小深度**，单位“个数据”，填写整数。",
+    "expectedValue": 12,
+    "explanationMd": "**答案：12 个数据。**\n\n深度取所有离散事件后占用的最大值，不取平均带宽差。占用等于累计写入数减累计成功读数，读暂停期间只增不减。\n\n| 时刻（ns） | 累计写 | 累计读 | 事件后占用 |\n|---|---:|---:|---:|\n| 0 | 1 | 0 | 1 |\n| 30（读写同时） | 4 | 1 | 3 |\n| 50（读写同时） | 6 | 2 | 4 |\n| 70（读写同时） | 8 | 3 | 5 |\n| 140 | 15 | 3 | 12 |\n| 150（恢复读且最后一次写） | 16 | 4 | 12 |\n| 170 | 16 | 5 | 11 |\n\n70 ns 后直到 140 ns 没有读，峰值升到 12；150 ns 读写净变化为零，仍为 12。写入结束后只有读取，故不可能再增长。\n\n若把暂停的读时钟沿也计成成功读，会低估深度；若在 150 ns 先加写再减读并把中间 13 算峰值，则违反题设的同刻净变化。实际 FIFO 是否支持边界同刻读写及是否需取 16，属于本题排除的实现条件。",
+    "commonMistakes": [
+      "忽略读暂停，仍按每 20 ns 一次连续累计读取。",
+      "在 150 ns 先写后读，给题目未定义的中间占用额外加一。",
+      "未区分理论最小 12 与常见硬件取 2 的幂深度 16。"
+    ]
+  },
+  {
+    "id": "ADAPTED-ADVANCED-FIFO-0002",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "full-empty",
+    "type": "multiple_choice",
+    "title": "异步 FIFO：next Gray 满标志与同步延迟",
+    "difficulty": "hard",
+    "tags": [
+      "进阶练习第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开资料 Q83、Q85、Q86 已出现的知识方向，独立构造条件、接口和解析，非原题；已核对页面及相应主题，不核实或继承公司、届别和原卷归因。"
+    },
+    "promptMd": "采用标准二进制反射 Gray 指针的深度 8 异步 FIFO，地址 3 bit、指针 4 bit（含环绕），g=b XOR (b>>1)。本写沿前：wbin=4'd6，寄存 full=0；同步到写域的读指针 rgray_sync=4'b1000，对应 rbin=15，并在本沿保持稳定。\n\n本沿 winc=1，采用 waccept=winc&&!full；先求 wbin_next=wbin+waccept，再计算 wgray_next，并用它更新 full。满比较规则为：读 Gray 的最高两位取反、低两位不变，再与 wgray_next 比较。假设系统由合法状态运行且已满足标准 Gray CDC 实现约束。哪些说法正确？",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "本沿接受写入，wbin_next=7、wgray_next=0100。"
+      },
+      {
+        "id": "B",
+        "textMd": "只需将 rgray_sync 最高一位取反得到 0000，即可判断此次满。"
+      },
+      {
+        "id": "C",
+        "textMd": "最高两位取反的比较目标为 0100，故本沿后 full=1。"
+      },
+      {
+        "id": "D",
+        "textMd": "以后读端已前进但新指针尚未同步到写端时，full 可能暂时保持 1，拒绝本可容纳的写入。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C",
+      "D"
+    ],
+    "explanationMd": "**答案：A、C、D。先判断本沿接受，再用 next 指针产生下一状态的满标志。**\n\n沿前 full=0，因此 waccept=1，wbin 从 6 推进到 7。`0111 XOR 0011=0100`，这是 next Gray。读指针 `rbin=15` 的 Gray 为 `1111 XOR 0111=1000`；取反最高两位得到 0100，恰与 next Gray 相等，所以沿后 full=1。\n\n也可用二进制距离独立核对：写前 `(6−15) mod 16=7`，接受一笔后 `(7−15) mod 16=8`，正好达到容量。此处二进制距离只是核对，硬件跨域使用的是注册 Gray 指针。\n\n如果真实读端后来已经读走数据，而写域仍持有旧读指针，写端可能多等几拍才解除 full；这在正确设计下是保守流控，会损失吞吐而非允许覆盖未读数据。它不表示任意错误 CDC 也一定安全。",
+    "optionExplanations": {
+      "A": "写许可来自沿前 full，值为 0，所以本沿接受；next binary=7，Gray=7 XOR 3=0100。",
+      "B": "反最高一位只得 0000，与标准的两位反相关系不同；本例会漏报实际已满的 next 状态。",
+      "C": "1000 的高两位 10 反为 01，低两位 00 保留，得到 0100，匹配 next Gray。",
+      "D": "读指针传回写域存在同步延迟，写端可能仍保守认为满；不能因此绕过 full 直接写 RAM。"
+    },
+    "commonMistakes": [
+      "用当前 Gray=0101 比较，而不是题目规定的 next Gray=0100。",
+      "把二进制环绕位比较规则照搬成只反 Gray 的一位。",
+      "认为真实读端已移动，写端就能在同一瞬间解除满。"
+    ]
   }
 ]

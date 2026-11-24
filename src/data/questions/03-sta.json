@@ -486,5 +486,101 @@
       "漏算 tCQ、setup 或连线延迟。",
       "把五级串联误当成并行取最大值。"
     ]
+  },
+  {
+    "id": "ADAPTED-ADVANCED-STA-0001",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "timing-fixes",
+    "type": "numeric",
+    "title": "插延迟修 hold：最多还能加多少？",
+    "difficulty": "hard",
+    "tags": [
+      "进阶练习第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开资料 Q43、Q52 已出现的知识方向，独立构造条件、接口和解析，非原题；已核对页面及相应主题，不核实或继承公司、届别和原卷归因。"
+    },
+    "absoluteTolerance": 0.001,
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    },
+    "promptMd": "单周期同源路径，周期 T=4.0 ns。以参考时刻为零，本周期 launch CK 在 0.20 ns、本周期 capture CK 在 0.50 ns 到达，下一 capture CK 为 4.50 ns。\n\n| 数据路径参数 | 最大延迟 | 最小延迟 |\n|---|---:|---:|\n| 发射 tCQ | 0.30 ns | 0.08 ns |\n| 组合逻辑 | 2.50 ns | 0.12 ns |\n| 数据连线 | 0.20 ns | 0.05 ns |\n\n接收 setup=0.25 ns、hold=0.12 ns。Setup uncertainty=0.15 ns，从 setup required 扣除；hold uncertainty=0.03 ns，加到 hold required。\n\n计划在数据路径加入理想延迟 δ≥0，它对最大、最小延迟都增加同样的 δ，且不改变其他参数。要求 setup 和 hold slack 均非负。求**允许的最大 δ**，单位 ns；在解析中也应能说明最小需要增加多少。忽略实际单元离散档位与重新优化。",
+    "expectedValue": 0.9,
+    "explanationMd": "**答案：最多 0.90 ns；可行区间为 0.20≤δ≤0.90 ns。**\n\n同一条路径要同时满足“不能太慢”和“不能太快”。tCQ,max/min 分别是发射 FF 最晚/最早的 Q 响应时间；setup 保护下一捕获沿前的稳定窗口，hold 保护本周期旧数据。\n\n| 检查 | 原 arrival | 原 required | 原 slack |\n|---|---|---|---|\n| Setup | 0.20+0.30+2.50+0.20=3.20 ns | 4.50−0.25−0.15=4.10 ns | required−arrival=+0.90 ns |\n| Hold | 0.20+0.08+0.12+0.05=0.45 ns | 0.50+0.12+0.03=0.65 ns | arrival−required=−0.20 ns |\n\n加延迟后，setup slack=`0.90−δ`，所以 δ≤0.90；hold slack=`−0.20+δ`，所以 δ≥0.20。两个不等式必须取交集。取最大 δ=0.90 时，setup 恰好零裕量、hold 为 +0.70 ns。\n\n这只是题设理想延迟的边界；实际 buffer 的 min/max 增量不相等，也通常需要保留裕量。不能把“修 hold 要加 0.20”当成本题问的最大允许值。",
+    "commonMistakes": [
+      "只修到 hold=0 就填 0.20 ns，忽略题目问的是最大允许延迟。",
+      "加数据延迟后只计算 hold，遗漏 setup 裕量会减少同样数值。",
+      "把 4.50 ns 再加一次周期，或用下一周期沿检查 hold。"
+    ]
+  },
+  {
+    "id": "ADAPTED-ADVANCED-STA-0002",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "timing-fixes",
+    "type": "multiple_choice",
+    "title": "比较 min/max 不同的 hold 修复方案",
+    "difficulty": "medium",
+    "tags": [
+      "进阶练习第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开资料 Q49–Q55 已出现的知识方向，独立构造条件、接口和解析，非原题；已核对页面及相应主题，不核实或继承公司、届别和原卷归因。"
+    },
+    "promptMd": "某固定实现的单周期路径初始 setup slack=+0.35 ns、hold slack=−0.12 ns。四个选项是**各自独立**施加的方案，其他条件不变，不发生重新综合或布线。\n\n增加数据路径最大延迟会减少 setup slack；增加最小延迟会增加 hold slack。将 capture 时钟的本周期与下一周期到达时刻一起提前 Δ，会使 setup slack 减少 Δ、hold slack 增加 Δ。\n\n以下哪些方案施加后能使两种 slack 都非负？",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "加入 buffer Q：数据路径 min 增加 0.10 ns，max 增加 0.20 ns。"
+      },
+      {
+        "id": "B",
+        "textMd": "加入 buffer P：数据路径 min 增加 0.15 ns，max 增加 0.30 ns。"
+      },
+      {
+        "id": "C",
+        "textMd": "加入 buffer R：数据路径 min 增加 0.20 ns，max 增加 0.45 ns。"
+      },
+      {
+        "id": "D",
+        "textMd": "不改数据路径，把 capture 时钟所有相关沿提前 0.15 ns。"
+      }
+    ],
+    "correctOptionIds": [
+      "B",
+      "D"
+    ],
+    "explanationMd": "**答案：B、D。修复要同时看两个 corner 的增量。**\n\n| 独立方案 | 新 setup slack（ns） | 新 hold slack（ns） | 是否均通过 |\n|---|---:|---:|---|\n| A：Q | 0.35−0.20=0.15 | −0.12+0.10=−0.02 | 否 |\n| B：P | 0.35−0.30=0.05 | −0.12+0.15=0.03 | 是 |\n| C：R | 0.35−0.45=−0.10 | −0.12+0.20=0.08 | 否 |\n| D：capture 提前 | 0.35−0.15=0.20 | −0.12+0.15=0.03 | 是 |\n\nQ 太弱，R 又吃掉过多 setup 预算；P 的两个增量落在可行范围。capture 提前让下一沿更早、数据可用时间减少，却让本周期旧数据的保持截止也更早。工程上动 capture 时钟还会影响其他路径，本题明确只检查这一条且参数固定。",
+    "optionExplanations": {
+      "A": "Q 的 min 只增加 0.10 ns，补不满 0.12 ns 的 hold 缺口，仍有 −0.02 ns。",
+      "B": "P 用 0.30 ns 的 max 增量留下 +0.05 ns setup，并以 0.15 ns min 增量得到 +0.03 ns hold，两项均非负。",
+      "C": "R 虽把 hold 修成 +0.08 ns，但 max 增量超过原 setup 的 0.35 ns 预算，造成 −0.10 ns setup。",
+      "D": "capture 提前 0.15 ns 后 setup 仍有 +0.20 ns，hold 增加到 +0.03 ns；这不表示所有其他路径也获益。"
+    },
+    "commonMistakes": [
+      "把一个 buffer 的 max 延迟误当成 hold 检查应使用的 min 延迟。",
+      "只比较修复后的 hold，漏掉新引入的 setup 违例。",
+      "默认 capture 时钟提前能同时改善 setup 与 hold。"
+    ]
   }
 ]

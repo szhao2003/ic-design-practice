@@ -7,8 +7,9 @@ import { manual } from './fixtures';
 
 describe('教学内容发布保护', () => {
   it('74 题均完成版本升级，四份关键时序图有解释采样语义的文字', () => {
-    expect(questions).toHaveLength(74);
-    expect(questions.every(q => q.contentVersion >= 2)).toBe(true);
+    const baseline = questions.filter(q=>!q.id.startsWith('ADAPTED-ADVANCED-'));
+    expect(baseline).toHaveLength(74);
+    expect(baseline.every(q => q.contentVersion >= 2)).toBe(true);
     expect(inspectTeachingContent(questions).errors).toEqual([]);
     for (const id of ['ADAPTED-INNO26-CDC-0001','ADAPTED-RK26-AHB-0001','ORIGINAL-APB-0001','ORIGINAL-RTL-0005']) {
       const q = questions.find(q=>q.id===id)!;
