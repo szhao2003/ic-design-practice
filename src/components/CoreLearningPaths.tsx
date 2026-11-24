@@ -28,7 +28,7 @@ export function CoreLearningPaths() {
   return <section className="core-paths" aria-labelledby="core-paths-heading">
     <div className="section-heading"><div><p className="eyebrow">GUIDED PRACTICE</p><h2 id="core-paths-heading">核心专题练习路径</h2></div><span className="badge">5 条路径 · 45 道精选题</span></div>
     <p className="muted">从现有题库精选，每条9题，按先修关系排列。可以每次练3题，也可以一次练完整条路径；各阶段均可直接进入。</p>
-    <p className="muted">FIFO、RTL和总线另有可选的2题起步练习，先熟悉规则再进入9题路径。</p>
+    <p className="muted">五个核心专题各有可选的2题起步练习，先熟悉规则再进入9题路径。</p>
     <p className="muted">“独立练过”统计已独立提交或自评的题目，不代表全部答对。提前查看解析不会增加此计数；阶段名称不改变原题难度。</p>
     {error && <div className="error-banner" role="alert">{error}</div>}
     {coreLearningPaths.map(path => {

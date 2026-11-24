@@ -42,6 +42,8 @@ export const coreLearningPaths: CoreLearningPath[] = [
 ];
 
 export const coreWarmups: Record<string, LearningPathStage> = {
+  sta: { id: 'warmup', name: '起步练习', goal: '先读懂setup报告，再把setup与hold的通过条件分开判断。', questionIds: ['ADAPTED-TIMINGSTART-STA-0001', 'ADAPTED-TIMINGSTART-STA-0002'] },
+  cdc: { id: 'warmup', name: '起步练习', goal: '先确认同步链的时钟归属，再明确事件握手的背压前提。', questionIds: ['ADAPTED-TIMINGSTART-CDC-0001', 'ADAPTED-TIMINGSTART-CDC-0002'] },
   fifo: { id: 'warmup', name: '起步练习', goal: '先分清请求与成功接受，再沿接受顺序找队头。', questionIds: ['ADAPTED-STARTER-FIFO-0001', 'ADAPTED-STARTER-FIFO-0002'] },
   rtl: { id: 'warmup', name: '起步练习', goal: '先推演使能关闭时的保持，再定位单周期脉冲被拉长的原因。', questionIds: ['ADAPTED-STARTER-RTL-0001', 'ADAPTED-STARTER-RTL-0002'] },
   bus: { id: 'warmup', name: '起步练习', goal: '按沿统计AXI握手，再区分APB的准备阶段与访问阶段。', questionIds: ['ADAPTED-STARTER-BUS-0001', 'ADAPTED-STARTER-BUS-0002'] },

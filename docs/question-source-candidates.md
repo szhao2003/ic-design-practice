@@ -156,3 +156,7 @@ ADAPTED-ARCHTOOLS-10题已独立构造并核对，公开资料入口与任务差
 ## 2026-11-24 已完成：核心起步任务
 
 6道ADAPTED-STARTER-题围绕FIFO接受、RTL使能/脉冲、AXI/APB握手作教学拆解，保留原综合题。来源只支持技术方向，任务映射见[批次21](CONTENT_BATCH_21_STARTER.md)。后续对照现有内容筛选STA/CDC起步辨析，不按换数字增加题数。
+
+## 2026-11-24 已完成：STA/CDC起步任务
+
+4题ADAPTED-TIMINGSTART-接入两条路径，至此五个核心专题均有独立的2题起步入口；详见[批次22](CONTENT_BATCH_22_TIMINGSTART.md)。技术资料仅支持规则，不提高招聘频率或汇编覆盖等级。下一轮检查综合题提示与评分点的分步引导。

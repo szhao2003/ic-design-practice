@@ -733,5 +733,120 @@
       "C": "错误。实现延迟、扇出和约束仍决定时序，复位类型不是通过证明。",
       "D": "错误。异步释放相对时钟需检查恢复/移除，不能把异步断言性质推广到释放。"
     }
+  },
+  {
+    "id": "ADAPTED-TIMINGSTART-CDC-0001",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "two-flop-synchronizer",
+    "title": "同步到哪个域：串联两级应该接哪一个时钟",
+    "promptMd": "源域寄存器输出一个保持足够长时间的单bit状态，要送入与源域异步的目的域。图中已有源寄存器不计入同步链；准备新增串联的s1、s2，目的功能逻辑只使用s2。希望采用标准目的域两级同步结构，哪种连接正确？不要求计算固定延迟或MTBF。",
+    "explanationMd": "**s1与s2都使用目的时钟，且只有s2输出进入目的功能逻辑。** 源寄存器可先把信号在源域注册，但它不等于目的域同步链的第一级。异步输入首先到目的域s1，再由同一目的时钟驱动的s2采样。\n\n若s1仍用源时钟，只新增一个目的域寄存器s2，最后的跨域边界仍只有一级目的采样；两级都放源域则根本没有完成送往目的域的同步。实际可靠性还受实现、解析时间与器件参数影响，两级结构不是亚稳态绝对消除器。",
+    "commonMistakes": [
+      "把已有源寄存器算成目的同步链一级。",
+      "认为只要串两个寄存器就与时钟归属无关。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "时序与CDC起步练习",
+      "核心起步练习",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 3,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/en-US/pg382-xpm-cdc-generator/XPM_CDC_SINGLE",
+      "note": "参考公开技术文档的规则，独立构造条件、选项和解析，用于综合题前的规则练习；非公司原题，不作为招聘考频证据。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "s1用源时钟，s2用目的时钟。"
+      },
+      {
+        "id": "B",
+        "textMd": "s1与s2都用源时钟。"
+      },
+      {
+        "id": "C",
+        "textMd": "s1用目的时钟，s2用源时钟。"
+      },
+      {
+        "id": "D",
+        "textMd": "s1与s2都用目的时钟。"
+      }
+    ],
+    "correctOptionIds": [
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "错误，新增目的域采样仍只有一级。",
+      "B": "错误，未建立目的域两级同步链。",
+      "C": "错误，最后一级还回到了源域。",
+      "D": "正确，同步链的两个寄存器都属于目的域。"
+    }
+  },
+  {
+    "id": "ADAPTED-TIMINGSTART-CDC-0002",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "handshake",
+    "title": "不能丢事件时：握手不是允许源端无限连发",
+    "promptMd": "要把源域离散事件送到异步目的域，源端允许被暂停且能遵守busy，每次最多一笔在途；两域时钟持续运行且目的端最终会服务。要求每个已接受事件恰好交付一次，暂不讨论复位中止。采用正确实现、控制信号经目的域同步链的四相req/ack握手，判断哪些说法正确？",
+    "explanationMd": "**答案A、C。** 源端只在通道空闲时接受新事件，把请求保持到确认，再完成req/ack返回低的握手，之后才接受下一事件。这样用背压避免把两个事件挤进同一在途槽位。\n\n两级同步一个任意短脉冲不能保证事件不丢；没有事件间隔约束的单纯toggle也可能在目的端观察前翻转两次而回到原值。握手能服务的速率有限，必须配合上游遵守busy；若上游不能暂停且可能长期快于服务速度，还要重新定义缓存或丢弃策略，本题并未授权无限无损吞吐。",
+    "commonMistakes": [
+      "只增加同步器就宣称任意事件流都不丢。",
+      "ack一升高就立即覆盖请求，未完成四相返回。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "时序与CDC起步练习",
+      "核心起步练习",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 3,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/en-US/pg382-xpm-cdc-generator/XPM_CDC_HANDSHAKE",
+      "note": "参考公开技术文档的规则，独立构造条件、选项和解析，用于综合题前的规则练习；非公司原题，不作为招聘考频证据。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "源端必须在忙时拒绝或延后接受下一事件，不能覆盖在途请求。"
+      },
+      {
+        "id": "B",
+        "textMd": "任意短脉冲直接过两级同步器，就能保证每个事件被捕获。"
+      },
+      {
+        "id": "C",
+        "textMd": "下一笔需等完整四相握手结束、通道回到可接收状态。"
+      },
+      {
+        "id": "D",
+        "textMd": "采用toggle后，即使无最小间隔且源端持续连发也绝不会丢事件。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确，无损单槽协议依赖上游背压约束。",
+      "B": "错误，脉冲可能完全落在目的采样沿之间。",
+      "C": "正确，确认及控制信号返回也是握手的一部分。",
+      "D": "错误，两次翻转可能在目的观察前抵消。"
+    }
   }
 ]

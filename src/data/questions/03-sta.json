@@ -842,5 +842,100 @@
       "ns": 1,
       "ps": 0.001
     }
+  },
+  {
+    "id": "ADAPTED-TIMINGSTART-STA-0001",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "setup-hold",
+    "title": "读setup报告：required和arrival已经包含延迟",
+    "promptMd": "一份setup（Max分析）报告已给出Data Required Time=6.00ns、Data Arrival Time=6.20ns。这两个数已经包含该路径相关的时钟、数据路径、setup和uncertainty处理，不再追加任何项。按slack=required−arrival计算此路径的setup slack，单位ns，保留正负号。",
+    "explanationMd": "**−0.20ns。** required=6.00ns是数据最迟允许到达的时刻，arrival=6.20ns是当前分析的实际到达时刻，晚了0.20ns，所以6.00−6.20=−0.20ns，setup检查不满足。\n\n这里不是让你从tCQ或组合延迟重新建预算。题面给出的两个报告字段已经把这些项计入，再减一次setup或uncertainty会重复扣除。也不能为了得到正数把减法反过来；hold的slack公式方向与setup不同，要先看分析类型。",
+    "commonMistakes": [
+      "把报告字段当成未扣setup的裸周期。",
+      "把arrival−required当setup slack。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "时序与CDC起步练习",
+      "核心起步练习",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 3,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/2024.2-English/ug906-vivado-design-analysis/Timing-Path-Summary-Header-Information",
+      "note": "参考公开技术文档的规则，独立构造条件、选项和解析，用于综合题前的规则练习；非公司原题，不作为招聘考频证据。"
+    },
+    "type": "numeric",
+    "expectedValue": -0.2,
+    "absoluteTolerance": 1e-06,
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    }
+  },
+  {
+    "id": "ADAPTED-TIMINGSTART-STA-0002",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "setup-hold",
+    "title": "setup为正不等于hold也通过",
+    "promptMd": "同一条寄存器路径在本次固定分析中报告setup slack=+0.12ns、hold slack=−0.04ns。按非负slack表示满足该项检查的规则，仅判断题面这两项结果，不推断其他路径或其他工况。哪项正确？",
+    "explanationMd": "**setup满足，hold不满足。** slack表达的是对应检查的剩余裕量：+0.12ns表示setup尚有余量，−0.04ns表示hold短缺0.04ns。两个检查独立，不能把它们相加成+0.08ns后宣称都通过。\n\n对同一路径也要分别看Max/setup与Min/hold分析。正setup只说明本题这项setup检查满足，不会覆盖或抵消hold违例；更不等于芯片所有路径和工况已经签核。题目只读报告，不要求猜工具会怎样重布线修复。",
+    "commonMistakes": [
+      "把setup余量拿来抵消hold违例。",
+      "一项通过被当作整条路径所有检查通过。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "时序与CDC起步练习",
+      "核心起步练习",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 3,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/2024.2-English/ug906-vivado-design-analysis/Timing-Path-Summary-Header-Information",
+      "note": "参考公开技术文档的规则，独立构造条件、选项和解析，用于综合题前的规则练习；非公司原题，不作为招聘考频证据。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "setup与hold都满足。"
+      },
+      {
+        "id": "B",
+        "textMd": "setup不满足，hold满足。"
+      },
+      {
+        "id": "C",
+        "textMd": "setup满足，hold不满足。"
+      },
+      {
+        "id": "D",
+        "textMd": "两者都不满足。"
+      }
+    ],
+    "correctOptionIds": [
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "错误，hold slack为负。",
+      "B": "错误，setup为正、hold为负。",
+      "C": "正确，两项slack分别判断。",
+      "D": "错误，setup slack为正。"
+    }
   }
 ]

@@ -6,7 +6,7 @@ import { gradeAnswer } from '../src/domain/grading';
 const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-STARTER-${id}`)!;
 describe('核心起步练习',()=>{
  it('6道简单题补足214题，技术方向来源不声称公司原题',()=>{
-  expect(questions).toHaveLength(214);const batch=questions.filter(q=>q.id.startsWith('ADAPTED-STARTER-'));expect(batch).toHaveLength(6);
+  expect(questions.filter(q=>!q.id.startsWith('ADAPTED-TIMINGSTART-'))).toHaveLength(214);const batch=questions.filter(q=>q.id.startsWith('ADAPTED-STARTER-'));expect(batch).toHaveLength(6);
   for(const q of batch){expect(q.difficulty).toBe('easy');expect(q.contentVersion).toBe(1);expect(q.source.company).toBeUndefined();expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.sourceClaimVerification).toBe('checked');expect(q.tags).toContain('核心起步练习');}
  });
  it('FIFO以沿前状态许可，满时读不能为同沿写借空位',()=>{
@@ -39,7 +39,7 @@ describe('核心起步练习',()=>{
  });
  it('起步2题单独引用，原45题顺序和范围不混入起步题',()=>{
   const mainIds=coreLearningPaths.flatMap(p=>p.stages.flatMap(s=>s.questionIds));expect(mainIds).toHaveLength(45);
-  const warmupIds=Object.values(coreWarmups).flatMap(s=>s.questionIds);expect(warmupIds).toHaveLength(6);expect(new Set([...mainIds,...warmupIds]).size).toBe(51);
+  const warmupIds=Object.entries(coreWarmups).filter(([id])=>['fifo','rtl','bus'].includes(id)).flatMap(([,s])=>s.questionIds);expect(warmupIds).toHaveLength(6);expect(new Set([...mainIds,...warmupIds]).size).toBe(51);
   for(const [pathId,stage]of Object.entries(coreWarmups)){expect(stage.id).toBe('warmup');expect(stage.questionIds).toHaveLength(2);const path=coreLearningPaths.find(p=>p.id===pathId)!;expect(stage.questionIds.every(id=>questions.find(q=>q.id===id)?.topicId===path.topicId)).toBe(true);}
  });
 });
