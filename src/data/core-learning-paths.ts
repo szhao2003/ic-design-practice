@@ -40,3 +40,9 @@ export const coreLearningPaths: CoreLearningPath[] = [
     { id: 'application', name: '综合应用', goal: '先推演寄存器快照，再实现AXI-Lite，最后分析完整AXI4读交织。', questionIds: ['ADAPTED-INTEGRATION-AXIL-0002', 'ADAPTED-INTEGRATION-AXIL-0001', 'ADAPTED-BOUNDARY-AXI-0001'] },
   ] },
 ];
+
+export const coreWarmups: Record<string, LearningPathStage> = {
+  fifo: { id: 'warmup', name: '起步练习', goal: '先分清请求与成功接受，再沿接受顺序找队头。', questionIds: ['ADAPTED-STARTER-FIFO-0001', 'ADAPTED-STARTER-FIFO-0002'] },
+  rtl: { id: 'warmup', name: '起步练习', goal: '先推演使能关闭时的保持，再定位单周期脉冲被拉长的原因。', questionIds: ['ADAPTED-STARTER-RTL-0001', 'ADAPTED-STARTER-RTL-0002'] },
+  bus: { id: 'warmup', name: '起步练习', goal: '按沿统计AXI握手，再区分APB的准备阶段与访问阶段。', questionIds: ['ADAPTED-STARTER-BUS-0001', 'ADAPTED-STARTER-BUS-0002'] },
+};

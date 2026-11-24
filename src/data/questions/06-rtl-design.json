@@ -1105,5 +1105,75 @@
       "E4至E8高相位4T，暂停可以拉长脉宽。",
       "不能将连续使能稳态指标外推到任意暂停。"
     ]
+  },
+  {
+    "id": "ADAPTED-STARTER-RTL-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "counter",
+    "title": "时序使能没有else：保持旧值还是清零",
+    "promptMd": "下面是完整模块。只讨论0/1和上升沿，输入均在沿前稳定；复位已完成且q=0。E1…E4的(en,d)依次为(1,9)、(0,3)、(0,5)、(1,6)，rst始终为0。写出每沿NBA更新后的q，并说明是否产生透明锁存器。\n\n```systemverilog\nmodule starter_enable4(input logic clk, rst, en,\n                       input logic [3:0] d, output logic [3:0] q);\n  always_ff @(posedge clk) begin\n    if (rst) q <= 4'd0;\n    else if (en) q <= d;\n  end\nendmodule\n```",
+    "explanationMd": "**q依次为9、9、9、6；不是透明锁存器。** E1使能为1，寄存器采入9；E2/E3没有执行对q的赋值，所以保持9；E4采入6。\n\n省略else在这个上升沿触发的时序块中表示寄存器保持，不能套用组合always块不完整赋值推断latch的结论。en=0也不是q=0，d在两个时钟沿之间改变更不会直接透传到q。复位优先于使能，只在上升沿采到rst=1才清零。",
+    "commonMistakes": [
+      "把时序保持与组合latch推断混淆。",
+      "认为en=0会清零。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "核心起步练习",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://hdlbits.01xz.net/wiki/Dff16e",
+      "note": "参考公开技术资料的相关规则，缩小任务范围并独立构造条件与解析，作为综合题前的起步练习；非公司原题，不证明招聘考频。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**q依次为9、9、9、6；不是透明锁存器。** E1使能为1，寄存器采入9；E2/E3没有执行对q的赋值，所以保持9；E4采入6。\n\n省略else在这个上升沿触发的时序块中表示寄存器保持，不能套用组合always块不完整赋值推断latch的结论。en=0也不是q=0，d在两个时钟沿之间改变更不会直接透传到q。复位优先于使能，只在上升沿采到rst=1才清零。",
+    "rubric": [
+      "逐沿q为9/9/9/6。",
+      "时序块未赋值时保持寄存器旧值。",
+      "区分沿触发触发器与透明锁存器。"
+    ]
+  },
+  {
+    "id": "ADAPTED-STARTER-RTL-0002",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "counter",
+    "title": "脉冲清除也被en挡住：tick为什么连续为1",
+    "promptMd": "下面完整模块的目标是每4次有效计数产生一个时钟周期宽的tick，但有一个使能相关错误。复位已完成，经先前三次en=1的沿后，E1前count=3、tick=0。E1/E2/E3的en依次为1、0、1，rst均为0。列每沿后的(count,tick)，指出错误并说明最小修复。\n\n```systemverilog\nmodule starter_tick_bug(input logic clk, rst, en,\n                        output logic [1:0] count, output logic tick);\n  always_ff @(posedge clk) begin\n    if (rst) begin count <= 2'd0; tick <= 1'b0; end\n    else if (en) begin\n      if (count == 2'd3) begin count <= 2'd0; tick <= 1'b1; end\n      else begin count <= count + 2'd1; tick <= 1'b0; end\n    end\n  end\nendmodule\n```",
+    "explanationMd": "**原代码沿后依次为(0,1)、(0,1)、(1,0)。** E1计数绕回并置tick；E2的en=0，整个分支跳过，count和tick都保持，所以tick不是一拍。E3恢复计数并清tick。\n\n修复时把tick默认清零放在非复位分支内、en判断外；计数更新仍放在en内。这样E2即使暂停计数，tick也清零，修复后的结果为(0,1)、(0,0)、(1,0)。不能靠给count也默认清零来修脉冲，那会破坏暂停保持的要求。",
+    "commonMistakes": [
+      "只在en=1时清tick，忽略暂停沿。",
+      "把count默认清零，误改使能保持功能。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "核心起步练习",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://hdlbits.01xz.net/wiki/Count10",
+      "note": "参考公开技术资料的相关规则，缩小任务范围并独立构造条件与解析，作为综合题前的起步练习；非公司原题，不证明招聘考频。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**原结果：(0,1)、(0,1)、(1,0)。** tick清零被en挡住，应将默认清零移到en外。修复后为(0,1)、(0,0)、(1,0)。\n\n```systemverilog\nmodule starter_tick_fixed(input logic clk, rst, en,\n                          output logic [1:0] count, output logic tick);\n  always_ff @(posedge clk) begin\n    if (rst) begin count <= 2'd0; tick <= 1'b0; end\n    else begin\n      tick <= 1'b0;\n      if (en) begin\n        if (count == 2'd3) begin count <= 2'd0; tick <= 1'b1; end\n        else count <= count + 2'd1;\n      end\n    end\n  end\nendmodule\n```\n\n默认清tick与终值置tick位于同一个时序进程，终值分支的赋值靠后；同一沿会保留该分支置1的结果。count不加默认清零，保持暂停时的旧值。",
+    "rubric": [
+      "原代码三沿count/tick正确。",
+      "指出en=0导致tick保持1。",
+      "清tick不受en控制，count仍只在en=1更新。"
+    ]
   }
 ]

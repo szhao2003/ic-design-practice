@@ -30,7 +30,7 @@
     "defaultUnit": "MB/s",
     "acceptedUnits": {
       "MB/s": 1,
-      "B/s": 0.000001
+      "B/s": 1e-06
     },
     "absoluteTolerance": 0.001,
     "explanationMd": "**答案：200 MB/s。**\n\n每沿只有 RVALID 与 RREADY 同时为 1 才传一个 beat。表中成功沿是 2、3、6、7，共 4 次；单独 READY=1 的第 4、8 沿不算传输。\n\n1. 每 beat 为 `32/8=4 B`，有效载荷 `4×4=16 B`。\n2. 100 MHz 周期 `1000/100=10 ns`，八个完整周期窗口为 `8×10=80 ns`。\n3. `16 B/(80×10^-9 s)=200,000,000 B/s=200 MB/s`，MB 按十进制定义。\n\n满速单通道为 `4 B×100 MHz=400 MB/s`，本窗口握手利用率 4/8，正好一半。不要用首末采样沿的七个间距替换题定八周期窗口，也不要加上题目排除的地址、DDR 或其他通道开销。",
@@ -1346,6 +1346,93 @@
     "defaultUnit": "倍",
     "acceptedUnits": {
       "倍": 1
+    }
+  },
+  {
+    "id": "ADAPTED-STARTER-BUS-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "title": "只在握手沿计数：同一数据可以连续传两次",
+    "promptMd": "AXI单一数据通道，E0…E3沿前(VALID,READY,DATA)为(1,0,0x2A)、(1,1,0x2A)、(1,1,0x2A)、(0,1,0x00)。发送端在E1/E2明确提供两笔不同beat，数值恰好相同；E0保持至E1符合背压规则。所有信号满足时序。共成功传了几个beat？",
+    "explanationMd": "**2个，发生在E1和E2。** 每个上升沿VALID&&READY才接受一笔。E0有VALID但被背压，E3有READY却无有效数据，均不计数。\n\n连续两个握手沿即使DATA位模式相同，也可以代表两笔内容相同的beat，不能靠DATA是否变化判定新的传输。VALID无需在两个连续beat之间拉低。本题只统计一个通道的beat，不将它等同于一个完整AXI事务。",
+    "commonMistakes": [
+      "数VALID为1的周期而不是握手沿。",
+      "相同DATA被错误去重成一笔。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "核心起步练习",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://documentation-service.arm.com/static/64256e84314e245d086bc88f",
+      "note": "参考公开技术资料的相关规则，缩小任务范围并独立构造条件与解析，作为综合题前的起步练习；非公司原题，不证明招聘考频。"
+    },
+    "type": "numeric",
+    "expectedValue": 2,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-STARTER-BUS-0002",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "apb",
+    "title": "PREADY常高：SETUP阶段能否提前完成APB写",
+    "promptMd": "一个合法APB3写传输。SETUP周期末的上升沿E0前PSEL=1、PENABLE=0、PREADY=1；下一ACCESS周期末E1前PSEL=PENABLE=PREADY=1，地址、方向、数据都保持稳定。仅这一笔传输，复位已完成。哪项判断正确？",
+    "explanationMd": "**E1完成，E0不能提前完成。** APB完成要求在ACCESS阶段且PSEL、PENABLE、PREADY同时有效；PREADY在SETUP为1不省略ACCESS。这里E0只完成SETUP到ACCESS的转换，E1才接受该传输。\n\nPREADY允许常高，表示访问阶段不必插入等待，并不意味着任意阶段都能接受事务。不能直接把APB的PSEL/PREADY当作AXI的VALID/READY而忽略PENABLE。",
+    "commonMistakes": [
+      "把PSEL&&PREADY当完整接受条件。",
+      "认为PREADY必须先低后高才能完成。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "核心起步练习",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://documentation-service.arm.com/static/64257f64314e245d086bc8b7",
+      "note": "参考公开技术资料的相关规则，缩小任务范围并独立构造条件与解析，作为综合题前的起步练习；非公司原题，不证明招聘考频。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "E1完成，SETUP不能提前接受。"
+      },
+      {
+        "id": "B",
+        "textMd": "E0已经完成，E1重复传一次。"
+      },
+      {
+        "id": "C",
+        "textMd": "E0和E1各完成一笔，共两笔。"
+      },
+      {
+        "id": "D",
+        "textMd": "PREADY没先拉低，所以永远无法完成。"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "正确，ACCESS且三信号同时有效才完成。",
+      "B": "错误，E0的PENABLE仍为0。",
+      "C": "错误，SETUP不接受数据。",
+      "D": "错误，PREADY可常高，无需低到高跳变。"
     }
   }
 ]

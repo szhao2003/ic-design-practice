@@ -843,5 +843,92 @@
       "C": "正确。先移除2bit字内byte偏移，再取13bit片内地址，剩6bit选组。",
       "D": "错误。2bit不足以选64组，而且它表示字内byte偏移，本题对齐访问时恒00。"
     }
+  },
+  {
+    "id": "ADAPTED-STARTER-FIFO-0001",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "full-empty",
+    "title": "先判断接受：满FIFO同沿读写能否都成功",
+    "promptMd": "同步FIFO容量4，沿前已有4个字。题定write_accept=wr_en&&!full、read_accept=rd_en&&!empty，两个判断都只看沿前状态，不使用前瞻或旁路。本沿wr_en=rd_en=1。哪些操作成功，沿后占用是多少？",
+    "explanationMd": "**仅读成功，沿后占用3。** 沿前full=1、empty=0，所以write_accept=0、read_accept=1；占用4+0−1=3。\n\nwr_en/rd_en是请求，不是成功操作数。同沿读走一个字不改变本沿已经用到的full判断，不能先减占用再重新许可本沿写入。支持满时同时读写的前瞻FIFO可以有另一种规则，但本题已经排除，不能凭习惯替换契约。",
+    "commonMistakes": [
+      "将使能请求直接当成功接受。",
+      "先读后写，擅自使用沿后空位。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "核心起步练习",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/en-US/pg327-emb-fifo-gen/Native-FIFO-Interface-Signals",
+      "note": "参考公开技术资料的相关规则，缩小任务范围并独立构造条件与解析，作为综合题前的起步练习；非公司原题，不证明招聘考频。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "仅读成功，占用3。"
+      },
+      {
+        "id": "B",
+        "textMd": "读写都成功，占用4。"
+      },
+      {
+        "id": "C",
+        "textMd": "仅读请求被拒绝，占用4。"
+      },
+      {
+        "id": "D",
+        "textMd": "读写都失败，占用4。"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "正确，读写分别用沿前空满判断。",
+      "B": "错误，这需要本题排除的前瞻写许可。",
+      "C": "错误，非空时读允许；满时写拒绝。",
+      "D": "错误，沿前非空允许读。"
+    }
+  },
+  {
+    "id": "ADAPTED-STARTER-FIFO-0002",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "fifo-read-mode",
+    "title": "顺序看队头：空FIFO拒绝的读不会消费新写入",
+    "promptMd": "FIFO初始为空，沿前分别计算write_accept=wr_en&&!full、read_accept=rd_en&&!empty，不前瞻、不旁路，容量4，复位已完成。E0同时请求写入十进制17与读出；E1只请求写入十进制29；E2只请求读出。没有其他操作。E2成功读出的数据是多少？",
+    "explanationMd": "**读出17。** E0沿前为空，读请求被拒绝，写17成功，队列变为[17]。E1写29后为[17,29]。E2沿前非空，成功读出最早接受的17，之后剩[29]。\n\n被拒绝的E0读请求不会排队等待，也不会提前消费同沿新写入；后续读请求须在后续沿重新提出。本题只问成功读取的数据顺序，不要求猜输出寄存器更新延迟或FWFT输出有效时刻。",
+    "commonMistakes": [
+      "以为E0的读消费了刚写入的17。",
+      "把FIFO误当后进先出。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "核心起步练习",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/en-US/pg327-emb-fifo-gen/Native-FIFO-Interface-Signals",
+      "note": "参考公开技术资料的相关规则，缩小任务范围并独立构造条件与解析，作为综合题前的起步练习；非公司原题，不证明招聘考频。"
+    },
+    "type": "numeric",
+    "expectedValue": 17,
+    "absoluteTolerance": 0
   }
 ]

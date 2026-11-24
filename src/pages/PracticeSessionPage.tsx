@@ -1,4 +1,4 @@
-import { coreLearningPaths } from '../data/core-learning-paths';
+import { coreLearningPaths, coreWarmups } from '../data/core-learning-paths';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useLearning } from '../storage/LearningContext';
@@ -14,7 +14,7 @@ export function PracticeSessionPage() {
   useEffect(() => { window.scrollTo(0, 0); }, [id, session?.currentIndex, session?.status]);
   if (!session) return <section className="panel"><h1>未找到这轮练习</h1><p>可能尚未导入这轮记录，或本地数据已被清空。</p><Link to="/practice">返回组题</Link></section>;
   const path = coreLearningPaths.find(p => p.id === session.filtersSnapshot?.learningPath);
-  const pathLabel = path && `${path.name} · ${session.filtersSnapshot?.pathStage === 'all' ? '完整路径' : path.stages.find(s => s.id === session.filtersSnapshot?.pathStage)?.name ?? '路径练习'}`;
+  const pathLabel = path && `${path.name} · ${session.filtersSnapshot?.pathStage === 'all' ? '完整路径' : session.filtersSnapshot?.pathStage === 'warmup' && coreWarmups[path.id] ? '起步练习' : path.stages.find(s => s.id === session.filtersSnapshot?.pathStage)?.name ?? '路径练习'}`;
   const rounds = session.roundIds.map((roundId) => {
     const record = state.data.records.find((r) => r.namespace === 'drafts' && r.id === sessionDraftId(roundId) && !r.deleted);
     return record ? storedRoundSchema.parse(record.value).round : undefined;

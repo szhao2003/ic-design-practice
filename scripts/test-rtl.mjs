@@ -28,10 +28,21 @@ for (const [module,id] of Object.entries(mapping)) {
   const reference = await readFile(`rtl/reference/${module}.sv`,'utf8');
   if (code?.replaceAll('\r','').trim() !== reference.replaceAll('\r','').trim()) throw new Error(`${id}: 网页参考代码与仿真文件不一致`);
 }
+const starterSnippets = [
+  ['starter_enable4', 'ADAPTED-STARTER-RTL-0001', 'promptMd'],
+  ['starter_tick_bug', 'ADAPTED-STARTER-RTL-0002', 'promptMd'],
+  ['starter_tick_fixed', 'ADAPTED-STARTER-RTL-0002', 'referenceAnswerMd'],
+];
+for (const [module, id, field] of starterSnippets) {
+  const q = questions.find(q => q.id === id);
+  const shown = q?.[field]?.match(/```systemverilog\s*\n([\s\S]*?)```/)?.[1];
+  const tested = await readFile(`rtl/review/${module}.sv`, 'utf8');
+  if (shown?.replaceAll('\r', '').trim() !== tested.replaceAll('\r', '').trim()) throw new Error(`${id}: starter snippet differs from test source`);
+}
 const available = ['iverilog','vvp'].every(tool=>!spawnSync(tool,['-V'],{stdio:'ignore'}).error);
 if (!available) {
   if (!process.argv.includes('--if-available')) throw new Error('需要安装 Icarus Verilog (iverilog + vvp)，未执行 HDL 仿真。');
-  console.log(`SKIP HDL 仿真：本机未安装 iverilog/vvp；${count} 份网页参考代码一致性检查通过。CI 使用严格模式。`);
+  console.log(`SKIP HDL 仿真：本机未安装 iverilog/vvp；${count} 份网页参考代码及3段起步代码一致性检查通过。CI 使用严格模式。`);
 } else {
   await mkdir('.rtl-build',{recursive:true});
   const cases=Object.keys(mapping).map(module=>({module,sources:[`rtl/reference/${module}.sv`,`rtl/tb/${module}_tb.sv`]}));
@@ -39,6 +50,7 @@ if (!available) {
   cases.push({module:'parity_review',sources:['rtl/tb/parity_review_tb.sv']});
   cases.push({module:'event_reset_review',sources:['rtl/tb/event_reset_review_tb.sv']});
   cases.push({module:'fifo_capacity_review',sources:['rtl/reference/async_fifo_gray.sv','rtl/tb/fifo_capacity_review_tb.sv']});
+  cases.push({module:'starter_review',sources:[...starterSnippets.map(([module])=>`rtl/review/${module}.sv`),'rtl/tb/starter_review_tb.sv']});
   for (const {module,sources} of cases) {
     const output = `.rtl-build/${module}.vvp`;
     for(const [tool,args] of [['iverilog',['-g2012','-s','tb','-o',output,...sources]],['vvp',[output]]]) {
@@ -53,5 +65,5 @@ if (!available) {
       if(result.error || result.status!==0) throw new Error(`${module}: ${tool} 失败 (${result.error?.message ?? result.status})`);
     }
   }
-  console.log(`RTL simulation: ${count}/${count} references + language, parity, reset/event observation, and FIFO capacity checks PASS (digital functional checks; not CDC/STA/silicon sign-off).`);
+  console.log(`RTL simulation: ${count}/${count} references + language, parity, reset/event observation, FIFO capacity, and starter trace checks PASS (digital functional checks; not CDC/STA/silicon sign-off).`);
 }
