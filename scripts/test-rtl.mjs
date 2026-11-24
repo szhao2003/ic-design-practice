@@ -2,6 +2,7 @@ import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 const mapping = {
+  async_fifo_gray:'ADAPTED-INTEGRATION-FIFO-0001', axil_regs2:'ADAPTED-INTEGRATION-AXIL-0001',
   seq1101_valid:'ADAPTED-FOCUSED-RTL-SEQ-0001', sync_fifo4x8:'ADAPTED-FOCUSED-RTL-FIFO-0001',
   divide3_half:'ADAPTED-FOCUSED-RTL-DIV-0001', stream_second8:'ADAPTED-FOCUSED-RTL-MIN-0001',
   debounce3:'ADAPTED-FOCUSED-RTL-DEBOUNCE-0001',

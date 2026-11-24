@@ -1,6 +1,6 @@
 {
   "sourceUrl": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
-  "checkedOn": "2026-11-23",
+  "checkedOn": "2026-11-24",
   "basis": "任务覆盖，不是公司原卷认证；covered/rewritten为有可答的对应任务，partial不计完整覆盖。",
   "entries": [
     {
@@ -497,11 +497,12 @@
     },
     {
       "number": 61,
-      "status": "partial",
+      "status": "rewritten",
       "localIds": [
-        "ORIGINAL-STA-0006"
+        "ADAPTED-INTEGRATION-STA-0001",
+        "ADAPTED-INTEGRATION-STA-0002"
       ],
-      "note": "不能仅由乘法器执行10cycle推出合法multicycle约束；尚需写具体enable/边沿合同。"
+      "note": "补同钟同相、端点共同使能、复位/模式与工具语义，给setup3/hold2和setup/hold预算；不能由运算延迟直接推例外。"
     },
     {
       "number": 62,
@@ -685,11 +686,12 @@
     },
     {
       "number": 83,
-      "status": "partial",
+      "status": "covered",
       "localIds": [
-        "ADAPTED-ADVANCED-FIFO-0002"
+        "ADAPTED-INTEGRATION-FIFO-0001",
+        "ADAPTED-INTEGRATION-FIFO-0002"
       ],
-      "note": "指针/满空已练，完整参数化双时钟FIFO RTL尚未实现，保留高优先级候选。"
+      "note": "完整参数化双时钟FIFO、注册Gray双级同步、next空满、寄存读valid与协调复位；独立队列TB，未宣称任意深度或单域独立复位支持。"
     },
     {
       "number": 84,
@@ -958,11 +960,12 @@
     },
     {
       "number": 118,
-      "status": "partial",
+      "status": "covered",
       "localIds": [
-        "ADAPTED-ADVANCED-AXI-0001"
+        "ADAPTED-INTEGRATION-AXIL-0001",
+        "ADAPTED-INTEGRATION-AXIL-0002"
       ],
-      "note": "已有AW/W/B时序；完整寄存器从设备RTL仍未写，保留候选。"
+      "note": "完整AXI4-Lite两寄存器从设备、独立AW/W缓存、strobe、错误地址、B/R背压与读快照；受限吞吐契约明确，独立TB。"
     },
     {
       "number": 119,

@@ -2,13 +2,13 @@
 
 面向数字 IC、ASIC RTL、DV 与 FPGA 的专题练习工具，中文界面。
 
-当前为 **1.10.0：高频任务与汇编补充**。已有 15 个专题及子专题、150 道完整题（原创 44、公开资料考点改编 106，其中笔经考点 7、教学/练习资料考点 99）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
+当前为 **1.11.0：完整接口与时序约束**。已有 15 个专题及子专题、156 道完整题（原创 44、公开资料考点改编 112，其中笔经考点 7、教学/练习资料考点 105）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
 
 学习进度及统计口径见 [学习进度阶段说明](docs/SECTION_07_PROGRESS.md)，模拟考试见 [第五阶段说明](docs/SECTION_05_VERIFICATION.md)。新增第二批见 [继续扩充与中性来源显示](docs/CONTENT_BATCH_04_COLLECTION.md)。第一批题与来源审核见 [资料考点扩充（第一批）](docs/CONTENT_BATCH_03_YHCHUB.md)，首版功能及回归范围见 [V1 验收](docs/V1_ACCEPTANCE.md)。
 
 本轮 74 题逐题复查、七个参考 RTL/TB、四份精确时序图与重做前资料隐藏，见 [教学升级验收](docs/CONTENT_UPGRADE_V15.md) 和 [逐题日志](docs/CONTENT_REVIEW_LOG.md)。后续增题遵循 [公开题源检索流程](docs/QUESTION_SOURCING_WORKFLOW.md)。
 
-新增 8 道 STA/CDC/FIFO/RTL/AXI 进阶练习，含背压缓冲和轮转仲裁；搜索“进阶练习第一批”可集中练习。来源、去重、独立验证见 [本批审核](docs/CONTENT_BATCH_05_ADVANCED.md)。目前维护侧 RTL 参考模块共 15 个。
+新增 8 道 STA/CDC/FIFO/RTL/AXI 进阶练习，含背压缓冲和轮转仲裁；搜索“进阶练习第一批”可集中练习。来源、去重、独立验证见 [本批审核](docs/CONTENT_BATCH_05_ADVANCED.md)。目前维护侧 RTL 参考模块共 17 个。
 
 新增跨专题基础8题，首次填充低功耗、DV/SVA、体系结构及DFT各2题；搜索“跨专题基础第一批”集中练习。[本批来源与验证](docs/CONTENT_BATCH_06_FOUNDATION.md) 明确区分笔经线索、教学资料和独立模型，不冒充公司原题。
 
@@ -35,7 +35,7 @@ npm run build
 npm run preview
 ```
 
-`validate:questions` 检查数据结构、分类引用、逐项解析、来源字段及 ID 唯一性，允许开发阶段空题库。`npm run validate:questions -- --release` 额外检查正式 V1 的题量与题型最低数量，当前 150 题满足该内容门槛；CI 同样执行 --release，内容门槛不能替代技术审核或浏览器验收。结构校验不能替代技术内容审核。
+`validate:questions` 检查数据结构、分类引用、逐项解析、来源字段及 ID 唯一性，允许开发阶段空题库。`npm run validate:questions -- --release` 额外检查正式 V1 的题量与题型最低数量，当前 156 题满足该内容门槛；CI 同样执行 --release，内容门槛不能替代技术审核或浏览器验收。结构校验不能替代技术内容审核。
 
 ## 项目结构
 
@@ -114,3 +114,5 @@ git push -u origin main
 Cache小补充新增2题：两路LRU替换、多级AMAT局部/全局miss率。搜索“Cache小补充”，详见 [本批审核](docs/CONTENT_BATCH_12_CACHE_MINI.md)。
 
 本轮新增18题，先补完整序列检测、同步FIFO和task/function，再按公开汇编任务去重改编；含5份新RTL/TB。搜索“高频任务与汇编补充”。[逐题审核](docs/CONTENT_BATCH_13_FOCUSED.md)及[132题号覆盖表](docs/SOURCE_COLLECTION_COVERAGE.md)明确区分已覆盖、部分覆盖、缺条件和暂缓，不声称已搬完汇编。
+
+新增6道完整接口与时序约束任务：参数化异步FIFO、AXI4-Lite寄存器模块、同步延迟/读快照逐沿分析和多周期SDC/预算。搜索“完整接口与时序约束”，来源与验证见 [本批审核](docs/CONTENT_BATCH_14_INTEGRATION.md)。

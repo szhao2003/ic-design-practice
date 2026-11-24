@@ -9,12 +9,12 @@ describe('高频任务与汇编补充',()=>{
   const audit=JSON.parse(readFileSync('docs/source-collection-coverage.json','utf8')) as {entries:Array<{number:number;status:string;localIds:string[];note:string}>};
   expect(audit.entries.map(r=>r.number)).toEqual(Array.from({length:132},(_,i)=>i+1));
   for(const row of audit.entries){expect(['covered','rewritten','partial','needs_conditions','deferred']).toContain(row.status);expect(row.note.length).toBeGreaterThan(5);for(const id of row.localIds)expect(questions.some(q=>q.id===id)).toBe(true);}
-  expect(audit.entries[82].status).toBe('partial');expect(audit.entries[107].status).toBe('rewritten');
+  expect(audit.entries[82].status).toBe('covered');expect(audit.entries[107].status).toBe('rewritten');
  });
 
  it('18道新增，保留132道历史，来源不冒充公司原题',()=>{
-  const batch=questions.filter(q=>q.id.startsWith('ADAPTED-FOCUSED-'));expect(batch).toHaveLength(18);expect(questions).toHaveLength(150);
-  expect(questions.filter(q=>!q.id.startsWith('ADAPTED-FOCUSED-'))).toHaveLength(132);
+  const batch=questions.filter(q=>q.id.startsWith('ADAPTED-FOCUSED-'));expect(batch).toHaveLength(18);expect(questions.filter(q=>!q.id.startsWith('ADAPTED-INTEGRATION-'))).toHaveLength(150);
+  expect(questions.filter(q=>!/^ADAPTED-(FOCUSED|INTEGRATION)-/.test(q.id))).toHaveLength(132);
   for(const q of batch){expect(q.contentVersion).toBe(1);expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.company).toBeUndefined();expect(q.reviewStatus).toBe('verified');}
  });
  it('五份网页RTL与实际仿真源码逐字一致，人工评分契约完整',()=>{

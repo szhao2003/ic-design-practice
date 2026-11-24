@@ -1,6 +1,6 @@
 # 公开汇编132题号覆盖对照
 
-核对日期2026-11-23；对应本地150题。按实际考查任务对照，不按公司名或专题名认定覆盖。77个题号已有对应/修正任务（69+8），30部分覆盖，13需补条件，12暂缓。同一现有题可以承载多个重复考点，因此这些数量不是新增题数，也不是独立公司考察频次。
+核对日期2026-11-24；对应本地156题。按实际考查任务对照，不按公司名或专题名认定覆盖。80个题号已有对应/修正任务（71+9），28部分覆盖，12需补条件，12暂缓。同一现有题可以承载多个重复考点，因此这些数量不是新增题数，也不是独立公司考察频次。
 
 covered和rewritten均为考点重构，不是逐字原题；partial不计完整覆盖。机器可读来源及引用见 [JSON表](source-collection-coverage.json)。
 
@@ -66,7 +66,7 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q58 | 已有对应任务 | ADAPTED-COLLECTION-STA-0003 | 补功能证据，避免按模式名随意屏蔽路径。 |
 | Q59 | 已有对应任务 | ORIGINAL-STA-0006 | 已有多周期与hold检查思路。 |
 | Q60 | 已有对应任务 | ORIGINAL-STA-0004 | Fmax路径条件包含setup与最大数据开销；hold单独检查。 |
-| Q61 | 部分覆盖 | ORIGINAL-STA-0006 | 不能仅由乘法器执行10cycle推出合法multicycle约束；尚需写具体enable/边沿合同。 |
+| Q61 | 已修正改编 | ADAPTED-INTEGRATION-STA-0001、ADAPTED-INTEGRATION-STA-0002 | 补同钟同相、端点共同使能、复位/模式与工具语义，给setup3/hold2和setup/hold预算；不能由运算延迟直接推例外。 |
 | Q62 | 已有对应任务 | ADAPTED-COLLECTION-STA-0004 | 串联关键路径推导已覆盖。 |
 | Q63 | 已修正改编 | ORIGINAL-CDC-0001、ADAPTED-COLLECTION-CDC-0004 | 合并为条件明确的同步能力与失败风险题，不继承绝对安全或“避免所有CDC”等模糊选项。 |
 | Q64 | 已修正改编 | ORIGINAL-CDC-0001、ADAPTED-COLLECTION-CDC-0004 | 合并为条件明确的同步能力与失败风险题，不继承绝对安全或“避免所有CDC”等模糊选项。 |
@@ -88,7 +88,7 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q80 | 需补条件 | — | 同步复位是否更利于STA取决于实现/工具和信号条件，不沿用一律100%同步的断言。 |
 | Q81 | 已有对应任务 | ORIGINAL-CDC-0005 | 完整reset RTL/TB及recovery/removal独立题，不能说绝对消除风险。 |
 | Q82 | 已有对应任务 | ORIGINAL-CDC-0005 | 完整reset RTL/TB及recovery/removal独立题，不能说绝对消除风险。 |
-| Q83 | 部分覆盖 | ADAPTED-ADVANCED-FIFO-0002 | 指针/满空已练，完整参数化双时钟FIFO RTL尚未实现，保留高优先级候选。 |
+| Q83 | 已有对应任务 | ADAPTED-INTEGRATION-FIFO-0001、ADAPTED-INTEGRATION-FIFO-0002 | 完整参数化双时钟FIFO、注册Gray双级同步、next空满、寄存读valid与协调复位；独立队列TB，未宣称任意深度或单域独立复位支持。 |
 | Q84 | 已有对应任务 | ADAPTED-FOCUSED-RTL-FIFO-0001 | 完整同步FIFO及边界契约，独立队列TB。 |
 | Q85 | 已有对应任务 | ADAPTED-ADVANCED-FIFO-0002 | 判空满域、额外环绕位及next指针已有题。 |
 | Q86 | 已有对应任务 | ADAPTED-ADVANCED-FIFO-0002 | 判空满域、额外环绕位及next指针已有题。 |
@@ -123,7 +123,7 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q115 | 暂缓 | — | 总线对比可作后续简答，需约束版本与场景。 |
 | Q116 | 需补条件 | — | 协议名本身不保证速度，需固定时钟/等待/突发与开销再比较。 |
 | Q117 | 需补条件 | — | 缺少原选项，只能另行构造有完整条件的比较题。 |
-| Q118 | 部分覆盖 | ADAPTED-ADVANCED-AXI-0001 | 已有AW/W/B时序；完整寄存器从设备RTL仍未写，保留候选。 |
+| Q118 | 已有对应任务 | ADAPTED-INTEGRATION-AXIL-0001、ADAPTED-INTEGRATION-AXIL-0002 | 完整AXI4-Lite两寄存器从设备、独立AW/W缓存、strobe、错误地址、B/R背压与读快照；受限吞吐契约明确，独立TB。 |
 | Q119 | 已有对应任务 | ADAPTED-ADVANCED-AXI-0001 | 写地址/数据独立到达与响应依赖已有逐沿任务。 |
 | Q120 | 已有对应任务 | ADAPTED-CORE-DV-0004 | 已有:=与:/权重对照解释，避免只换数字。 |
 | Q121 | 部分覆盖 | ADAPTED-FOCUSED-CLOCK-MUX-0001 | 新增直接MUX反例与实现前提；未重建来源缺失的具体完整切换电路。 |
@@ -139,4 +139,4 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q131 | 部分覆盖 | ADAPTED-TOOLSFPGA-CMOS-0001、ORIGINAL-STA-0001 | 基础语义与时序已覆盖，来源题组的Maxpooling RTL仍未实现。 |
 | Q132 | 部分覆盖 | ADAPTED-FOCUSED-MEM-CAP-0001、ADAPTED-EXTENSION-TOOLS-0001 | 容量和字节解释已有，偶校验及内存布局仍可补，不把整个题组都计覆盖。 |
 
-下一轮高优先级候选：完整异步FIFO（Q83）、明确接口的AXI4-Lite寄存器模块（Q118）、补完整条件的multicycle约束（Q61）；不直接追求所有题号变绿。
+本轮补全Q61/Q83/Q118。后续仍优先核心任务：读beat交织的完整逐拍推导（Q113）、带完整相位与同步延迟的FIFO深度（Q88–93）、可配置去抖阈值（Q127）。不追求所有题号变绿。

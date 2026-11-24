@@ -620,5 +620,80 @@
       "将三段延迟相加计算吞吐频率，忽略各级并行。",
       "只算组合最大值4 ns，漏掉固定0.6 ns开销。"
     ]
+  },
+  {
+    "id": "ADAPTED-INTEGRATION-STA-0001",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "sdc",
+    "title": "多周期约束落到边沿：setup 3与hold 2的适用前提",
+    "type": "short_answer",
+    "difficulty": "hard",
+    "tags": [
+      "完整接口与时序约束",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 12,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q61 的任务方向；本题接口、参数、边界和解答独立重构，非公司原题，不继承汇编的公司/届别归因。"
+    },
+    "promptMd": "Vivado 2023.2，同一个无相移上升沿时钟clk、周期4ns。源u_src/q_reg和目的u_dst/d_reg使用同一个稳定、同相、每3周期一次的clock enable；从复位/模式切换到稳态均保证只在E0/E3/E6…使能，中间沿两端保持。E0发射D0，E3捕获D0并发射D1；此路径是组合计算，不含中间流水寄存器。\n\n假定网表中上述两个cell名精确存在，查询各只匹配目标寄存器；已经证明功能使能关系。写仅作用于该路径的setup和hold多周期命令，解释两条命令对应的边沿及hold为何仍需检查。若另一电路只是“3级乘法流水线，级间每拍采样”，能否直接使用同样例外？本题不要求运行STA工具，也不涉及异频或相移时钟。",
+    "explanationMd": "**setup用3，hold用2；两者必须限制到已经证明使能关系的具体路径。** 本题固定同一时钟、无相移，使用Vivado 2023.2的命令语义，不把此配对外推到不同频率/相位的时钟。\n\n```tcl\nset_multicycle_path 3 -setup -from [get_cells u_src/q_reg] -to [get_cells u_dst/d_reg]\nset_multicycle_path 2 -hold  -from [get_cells u_src/q_reg] -to [get_cells u_dst/d_reg]\n```\n\n这些层级名假定在本题综合网表中精确存在、每次查询只匹配预期寄存器；实际要检查非空、例外范围及report_timing的边沿，不应扩大为整个时钟域。\n\n| 功能事件 | 边沿 | 规则 |\n|---|---|---|\n| 发射D0 | E0 | 源寄存器更新 |\n| 不采样 | E1/E2 | 两端同相使能为0，源保持 |\n| 捕获D0并发射D1 | E3 | setup看E0→E3，hold保护E3捕获的旧数据 |\n| 下一次捕获 | E6 | 同样重复 |\n\n只设setup=3会将工具推导的hold关系一起移动，常见的默认关系变为跨2个周期的最小延迟要求。hold=2把这部分移动撤回，恢复同沿的最小延迟检查；不是要求数据再稳定2T，也不是取消hold。物理上E3新发射的D1不能过早冲掉E3捕获的D0。\n\n“乘法器延迟3拍”并不足以使用该例外：若是三段流水线，每段寄存器每拍都接收下一笔，级间仍须单周期时序。只有当前被约束路径的端点保持/采样关系被证明，才能放宽。false path会丢掉E3真实需要的检查，同样不合适。技术依据：[AMD set_multicycle_path命令参考](https://docs.amd.com/r/2023.2-English/ug835-vivado-tcl-commands/set_multicycle_path)。",
+    "commonMistakes": [
+      "只凭模块输出延迟为3就放宽所有级间路径。",
+      "setup=3后漏配hold或把hold=2理解为必须再稳定2T。",
+      "用整个时钟域作为例外范围，误放宽无相同使能的路径。"
+    ],
+    "referenceAnswerMd": "**setup用3，hold用2；两者必须限制到已经证明使能关系的具体路径。** 本题固定同一时钟、无相移，使用Vivado 2023.2的命令语义，不把此配对外推到不同频率/相位的时钟。\n\n```tcl\nset_multicycle_path 3 -setup -from [get_cells u_src/q_reg] -to [get_cells u_dst/d_reg]\nset_multicycle_path 2 -hold  -from [get_cells u_src/q_reg] -to [get_cells u_dst/d_reg]\n```\n\n这些层级名假定在本题综合网表中精确存在、每次查询只匹配预期寄存器；实际要检查非空、例外范围及report_timing的边沿，不应扩大为整个时钟域。\n\n| 功能事件 | 边沿 | 规则 |\n|---|---|---|\n| 发射D0 | E0 | 源寄存器更新 |\n| 不采样 | E1/E2 | 两端同相使能为0，源保持 |\n| 捕获D0并发射D1 | E3 | setup看E0→E3，hold保护E3捕获的旧数据 |\n| 下一次捕获 | E6 | 同样重复 |\n\n只设setup=3会将工具推导的hold关系一起移动，常见的默认关系变为跨2个周期的最小延迟要求。hold=2把这部分移动撤回，恢复同沿的最小延迟检查；不是要求数据再稳定2T，也不是取消hold。物理上E3新发射的D1不能过早冲掉E3捕获的D0。\n\n“乘法器延迟3拍”并不足以使用该例外：若是三段流水线，每段寄存器每拍都接收下一笔，级间仍须单周期时序。只有当前被约束路径的端点保持/采样关系被证明，才能放宽。false path会丢掉E3真实需要的检查，同样不合适。技术依据：[AMD set_multicycle_path命令参考](https://docs.amd.com/r/2023.2-English/ug835-vivado-tcl-commands/set_multicycle_path)。",
+    "rubric": [
+      "给同路径setup 3、hold 2命令，并限定工具/同钟同相前提。",
+      "解释E0→E3的setup和E3同沿的新旧数据hold关系。",
+      "说明查询范围、功能使能和复位/模式需证明。",
+      "指出每拍工作的多级流水线不自动适用，不能改成false path。"
+    ]
+  },
+  {
+    "id": "ADAPTED-INTEGRATION-STA-0002",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "setup-hold",
+    "title": "三周期setup预算：别把clock-to-Q也算成组合余量",
+    "type": "numeric",
+    "difficulty": "hard",
+    "tags": [
+      "完整接口与时序约束",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 12,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q43/Q61 的任务方向；本题接口、参数、边界和解答独立重构，非公司原题，不继承汇编的公司/届别归因。"
+    },
+    "promptMd": "一条已证明合法的三周期路径：同一4ns上升沿时钟，源E0发射、目的E3捕获；已用同钟setup=3/hold=2保持原同沿hold关系。源时钟插入延迟取0，捕获时钟插入延迟+0.20ns；setup uncertainty=0.10ns，目的setup=0.30ns，源最大clock-to-Q=0.40ns。所有值在对应分析中固定，不另计抖动、CPPR或OCV。\n\n求允许的最大组合延迟（ns，容差0.001ns）。另外在解析中检查：源最小clock-to-Q=0.15ns，组合最小延迟0.25ns，目的hold=0.12ns，hold uncertainty=0.05ns时，恢复原同沿关系后的hold是否通过？最小/最大延迟来自各自固定分析，不要求彼此同一corner。",
+    "explanationMd": "**最大组合延迟11.40ns；给定hold通过，slack=+0.03ns。** 三周期只改变真正的setup捕获边沿，源寄存器本身仍有clock-to-Q。\n\nsetup要求到达不晚于3T+捕获插入延迟−setup uncertainty−setup=12+0.20−0.10−0.30=11.80ns。最大到达为0.40+Dcomb_max，所以Dcomb_max<=11.80−0.40=11.40ns。若只答11.80，就把包括clock-to-Q的数据路径预算误当组合预算；若用4ns则仍按单周期捕获。\n\n恢复同沿hold后，最早到达0.15+0.25=0.40ns；要求不早于0.20+0.12+0.05=0.37ns，因此hold slack=0.40−0.37=+0.03ns。setup正裕量不能代替此最小延迟检查；正捕获skew增加setup可用时间，却提高hold要求。这里没有执行真实网表STA，只验证题定边沿与算式。",
+    "commonMistakes": [
+      "忘记从数据路径预算中扣除最大clock-to-Q。",
+      "hold预算也直接乘3，混淆恢复后的同沿关系。",
+      "捕获skew对setup和hold的影响使用同一符号。"
+    ],
+    "expectedValue": 11.4,
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    },
+    "absoluteTolerance": 0.001
   }
 ]

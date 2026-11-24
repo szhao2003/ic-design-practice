@@ -602,5 +602,81 @@
     "type": "numeric",
     "expectedValue": 128,
     "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-INTEGRATION-FIFO-0001",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "full-empty",
+    "title": "完整异步FIFO：双时钟Gray指针与寄存读输出",
+    "type": "rtl_coding",
+    "difficulty": "hard",
+    "tags": [
+      "完整接口与时序约束",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 35,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q83/Q85/Q87 的任务方向；本题接口、参数、边界和解答独立重构，非公司原题，不继承汇编的公司/届别归因。"
+    },
+    "promptMd": "实现完整参数化模块async_fifo_gray，参数WIDTH>=1、ADDR_BITS>=2，容量为2**ADDR_BITS个字。写域输入wclk、wrst_n、winc、wdata[WIDTH-1:0]，输出wfull；读域输入rclk、rrst_n、rinc，输出rdata[WIDTH-1:0]、rvalid、rempty。不能用跨域共享count。\n\n两时钟相互异步；所有采样数据为二值且满足所在域的时序。两复位异步低有效，必须协调断言以丢弃全部在途数据；外部保证各自在本域安全释放，业务请求只在两端均完成复位后恢复。不要求支持运行中单域独立复位。复位清指针、同步器、wfull=0、rempty=1、rdata=0、rvalid=0，不清RAM。\n\n写在wclk上升沿按沿前winc&&!wfull接受；读在rclk上升沿按沿前rinc&&!rempty接受。接受读的同沿NBA后rdata为最旧字且rvalid=1；未读时rdata保持、rvalid=0。这是寄存读，不是FWFT；本题用单写时钟、单读时钟存储阵列建模，不要求绑定某个器件RAM宏。\n\n二进制指针用于地址，额外1bit用于绕回；注册Gray指针分别经对方域两级同步，使用next指针注册空满。满拒写、空拒读，禁止旁路；允许跨域同步带来的保守阻塞。给完整RTL，并说明复位、RAM实现和Gray总线物理约束为什么仍需单独检查。",
+    "explanationMd": "**两个域各自管理本地指针，只跨域发布注册的Gray指针。** 深度D=2^A，地址只用A位，但计入绕回的指针需A+1位。接受请求才推进二进制指针；Gray由下一二进制值计算G=B^(B>>1)，不能把组合计数器的中间毛刺直接跨域。\n\n| 检查 | 所在域 | 本次寄存的条件 |\n|---|---|---|\n| empty | rclk | rg_next == 同步到读域的wg |\n| full | wclk | wg_next == 同步到写域的rg翻转最高两位 |\n\n满时两个二进制指针相差D；经反射Gray编码后表现为最高两位相反、其余相同，不能只翻最高一位。比较next能让最后一个空位被写入的同沿置满、最后一个字读出的同沿置空，避免多接受一次请求。读写接受仍由沿前标志决定，不用下一状态反向产生组合接受环。\n\n指针经两级同步后，标志又在本域寄存，因此对端刚读/写不会让标志立即撤销。保守拒绝可能降低短时吞吐，但不会允许空读或覆盖未读数据。rdata只在接受读时从旧读地址取字，随后读指针推进；外部在rvalid高的沿后使用rdata。\n\n实现前提：协调复位清空逻辑所有权；释放满足各域复位时序。标记同步器并不会自动保证Gray各bit的布局延迟/偏斜，需要CDC和器件约束检查。RAM需匹配单写/单读双时钟能力及指定读模式，不能把行为仿真通过当所有RAM宏可直接推断。数字TB不模拟模拟亚稳态，亦未完成物理签核。",
+    "commonMistakes": [
+      "将跨域总线二进制计数逐bit打拍，可能读到混合指针。",
+      "Gray满比较只翻最高1bit，导致容量/绕回错误。",
+      "认为刚写入后读域立刻非空，忽略同步器及标志寄存。",
+      "独立复位一侧后仍按原数据队列继续运行。"
+    ],
+    "referenceAnswerMd": "```systemverilog\nmodule async_fifo_gray #(\n  parameter integer WIDTH = 8,\n  parameter integer ADDR_BITS = 2\n) (\n  input logic wclk, wrst_n, winc,\n  input logic [WIDTH-1:0] wdata,\n  output logic wfull,\n  input logic rclk, rrst_n, rinc,\n  output logic [WIDTH-1:0] rdata,\n  output logic rvalid, rempty\n);\n  // Contract: WIDTH >= 1, ADDR_BITS >= 2; capacity is 2**ADDR_BITS.\n  localparam integer DEPTH = 1 << ADDR_BITS;\n  localparam logic [ADDR_BITS:0] FULL_MASK = {2'b11, {(ADDR_BITS-1){1'b0}}};\n  logic [WIDTH-1:0] mem [0:DEPTH-1];\n  logic [ADDR_BITS:0] wb, wg, rb, rg;\n  logic [ADDR_BITS:0] wb_next, wg_next, rb_next, rg_next;\n  (* ASYNC_REG = \"TRUE\" *) logic [ADDR_BITS:0] rg_w1, rg_w2;\n  (* ASYNC_REG = \"TRUE\" *) logic [ADDR_BITS:0] wg_r1, wg_r2;\n  logic put, take;\n\n  assign put = winc && !wfull;\n  assign take = rinc && !rempty;\n  assign wb_next = wb + {{ADDR_BITS{1'b0}}, put};\n  assign rb_next = rb + {{ADDR_BITS{1'b0}}, take};\n  assign wg_next = (wb_next >> 1) ^ wb_next;\n  assign rg_next = (rb_next >> 1) ^ rb_next;\n\n  // Only registered Gray pointers cross domains, through two stages.\n  always_ff @(posedge wclk or negedge wrst_n) begin\n    if (!wrst_n) begin\n      rg_w1 <= '0;\n      rg_w2 <= '0;\n    end else begin\n      rg_w1 <= rg;\n      rg_w2 <= rg_w1;\n    end\n  end\n  always_ff @(posedge rclk or negedge rrst_n) begin\n    if (!rrst_n) begin\n      wg_r1 <= '0;\n      wg_r2 <= '0;\n    end else begin\n      wg_r1 <= wg;\n      wg_r2 <= wg_r1;\n    end\n  end\n\n  always_ff @(posedge wclk or negedge wrst_n) begin\n    if (!wrst_n) begin\n      wb <= '0;\n      wg <= '0;\n      wfull <= 1'b0;\n    end else begin\n      wb <= wb_next;\n      wg <= wg_next;\n      wfull <= (wg_next == (rg_w2 ^ FULL_MASK));\n    end\n  end\n  // Memory is not reset. A read is permitted only after a published write.\n  always_ff @(posedge wclk) begin\n    if (wrst_n && put) mem[wb[ADDR_BITS-1:0]] <= wdata;\n  end\n  always_ff @(posedge rclk or negedge rrst_n) begin\n    if (!rrst_n) begin\n      rb <= '0;\n      rg <= '0;\n      rempty <= 1'b1;\n      rdata <= '0;\n      rvalid <= 1'b0;\n    end else begin\n      rb <= rb_next;\n      rg <= rg_next;\n      rempty <= (rg_next == wg_r2);\n      rvalid <= take;\n      if (take) rdata <= mem[rb[ADDR_BITS-1:0]];\n    end\n  end\nendmodule\n```\n\nwb/rb含绕回位，地址取低ADDR_BITS位；wg/rg为注册发布值。同步链只用于指针，数据通过存储阵列保持，直到读域获得所有权。rvalid在每个接受读的沿后为1，连续读可连续高，停读时清0；它不要求高电平之间必须插空拍。满/空采用本地next指针和旧的第二级同步指针，撤销会保守延后。参数范围已限定A>=2，未实现任意非2的幂深度或运行中单域清空协议。",
+    "rubric": [
+      "完整双时钟接口和明确参数范围，二进制/Gray指针含绕回位。",
+      "两个方向均为两级同步，跨域使用注册Gray。",
+      "next指针注册空满，满翻Gray最高两位。",
+      "沿前标志接受，寄存读输出和rvalid行为完整。",
+      "协调复位、非FWFT及RAM/CDC物理约束边界解释清楚。"
+    ]
+  },
+  {
+    "id": "ADAPTED-INTEGRATION-FIFO-0002",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "fifo-read-mode",
+    "title": "异步FIFO刚写入为何还为空：两级同步加标志寄存",
+    "type": "waveform_analysis",
+    "difficulty": "hard",
+    "tags": [
+      "完整接口与时序约束",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 12,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q83/Q85 的任务方向；本题接口、参数、边界和解答独立重构，非公司原题，不继承汇编的公司/届别归因。"
+    },
+    "promptMd": "使用本批async_fifo_gray算法，ADDR_BITS=2、WIDTH=8。写域已经把唯一一字0xA5写到地址0，注册写Gray指针变为001，并在R1之前足够早稳定；之后不再写。读域复位已完成：rb=rg=000、wg_r1=wg_r2=000、rempty=1、rdata=0、rvalid=0。两级同步均为NBA；每个读沿还用沿前wg_r2与rg_next比较，登记rempty。rinc从R1到R4始终为1；数字模型无亚稳态、无复位变化。\n\n列R1/R2/R3/R4沿后的wg_r1、wg_r2、rempty、rvalid、rdata。最早哪沿接受读？为什么rvalid=1与rempty=1可以同拍出现？不要把这一特定相位模型的拍数推广为真实CDC固定延迟。",
+    "explanationMd": "**R3沿后才非空，最早R4接受读；R4沿后输出0xA5且再次为空。** 本题为两级同步加一个空标志寄存器，不能把“第二级有值”当成同一沿组合立即解空。\n\n| 沿后 | wg_r1 | wg_r2 | rempty | rvalid | rdata |\n|---|---:|---:|---:|---:|---|\n| R1 | 001 | 000 | 1 | 0 | 0x00 |\n| R2 | 001 | 001 | 1 | 0 | 0x00 |\n| R3 | 001 | 001 | 0 | 0 | 0x00 |\n| R4 | 001 | 001 | 1 | 1 | 0xA5 |\n\nR2计算rempty时仍读取沿前wg_r2=000，所以仍为空。R3沿前empty仍是1，故rinc即使一直为1也不能接受读；沿后标志才变0。R4沿前可读，旧读地址0对应唯一的字，rb_next=1、rg_next=001又等于同步写指针，因此同沿报读有效且空。\n\nrvalid代表刚接受的一字，不代表下一拍仍有字可读，故rvalid=1与rempty=1可以同时出现。真实CDC延迟受采样相位和亚稳态影响，不总是固定三拍；此表只针对题定无亚稳态、写指针早已稳定的数字模型。",
+    "commonMistakes": [
+      "第二级在R2更新后，误认为同沿empty寄存器也能使用新值。",
+      "R3沿后解空就把R3算作已接受读，忽略沿前判定。",
+      "以为empty=1与刚读出的rvalid=1矛盾。"
+    ],
+    "referenceAnswerMd": "**R3沿后才非空，最早R4接受读；R4沿后输出0xA5且再次为空。** 本题为两级同步加一个空标志寄存器，不能把“第二级有值”当成同一沿组合立即解空。\n\n| 沿后 | wg_r1 | wg_r2 | rempty | rvalid | rdata |\n|---|---:|---:|---:|---:|---|\n| R1 | 001 | 000 | 1 | 0 | 0x00 |\n| R2 | 001 | 001 | 1 | 0 | 0x00 |\n| R3 | 001 | 001 | 0 | 0 | 0x00 |\n| R4 | 001 | 001 | 1 | 1 | 0xA5 |\n\nR2计算rempty时仍读取沿前wg_r2=000，所以仍为空。R3沿前empty仍是1，故rinc即使一直为1也不能接受读；沿后标志才变0。R4沿前可读，旧读地址0对应唯一的字，rb_next=1、rg_next=001又等于同步写指针，因此同沿报读有效且空。\n\nrvalid代表刚接受的一字，不代表下一拍仍有字可读，故rvalid=1与rempty=1可以同时出现。真实CDC延迟受采样相位和亚稳态影响，不总是固定三拍；此表只针对题定无亚稳态、写指针早已稳定的数字模型。",
+    "rubric": [
+      "四行同步器旧/新值正确。",
+      "R3沿后解空、R4沿前才接受。",
+      "R4输出A5且再次为空，区分事件valid与库存标志。",
+      "不把数字无亚稳态采样表当真实CDC固定三拍。"
+    ]
   }
 ]
