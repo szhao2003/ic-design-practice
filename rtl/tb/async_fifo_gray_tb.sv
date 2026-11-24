@@ -3,7 +3,7 @@ module fifo_case #(
   parameter integer A=2, W=8, WH=5, RH=7
 ) (output reg done=0);
   localparam integer D=1<<A;
-  reg wclk=0,rclk=0,wrst_n=0,rrst_n=0,winc=0,rinc=0;
+  reg wclk=0,rclk=0,wrst_n=1,rrst_n=1,winc=0,rinc=0;
   reg [W-1:0] wdata=0;
   wire wfull,rempty,rvalid;
   wire [W-1:0] rdata;
@@ -42,6 +42,8 @@ module fifo_case #(
     if(rvalid!==accepted || rdata!==expected)$fatal(1,"FIFO data/valid A=%0d",A);
   end
   initial begin
+    // Create an actual falling edge before checking asynchronous reset.
+    #0.2;
     for(round=0;round<3;round=round+1) begin
       mode=0;wrst_n=0;rrst_n=0;
       #1;
