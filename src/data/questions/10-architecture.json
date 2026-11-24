@@ -1,0 +1,66 @@
+[
+  {
+    "id": "ADAPTED-FOUNDATION-ARCH-0001",
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "cache",
+    "type": "numeric",
+    "title": "直接映射 cache 的逐次冲突与命中",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://yafengnju.github.io/ComputerOrganization/7-%E5%AD%98%E5%82%A8%E5%99%A8%E5%B1%82%E6%AC%A1%E7%BB%93%E6%9E%84(2).pdf",
+      "note": "参考公开教学/练习资料中的直接映射 cache 与地址划分例题方向，独立构造参数、选项与解答，非公司原题。已核对链接和主题；不继承公司、届别或原卷归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "跨专题基础第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "absoluteTolerance": 0,
+    "promptMd": "32 bit 字节地址，直接映射数据 cache：数据区容量 4 KiB，cache line 为 16 B；1 KiB=1024 B。初始所有行 invalid。依次读取地址 0x00000000、0x00000010、0x00001000、0x00000000、0x00000010。\n\n每次 miss 都先完成整行填充，再开始下一次访问；不考虑预取、写操作、并发请求或其他访问。求这五次读取的**miss 次数**，填整数。解析中应区分 offset/index/tag。",
+    "expectedValue": 4,
+    "explanationMd": "**答案：4 次 miss，只有最后一次读 0x10 命中。**\n\n4 KiB/16 B=256 行，offset 用 log2(16)=4 bit，index 用 log2(256)=8 bit，tag 是剩下的 32−4−8=20 bit。\n\n`index=(address/16 的整数部分) mod 256`，`tag=address/4096 的整数部分`。\n\n| 次序 | 地址 | index | tag | 访问结果与更新 |\n|---|---|---:|---:|---|\n| 1 | 0x0000 | 0 | 0 | miss，行0装 tag0 |\n| 2 | 0x0010 | 1 | 0 | miss，行1装 tag0 |\n| 3 | 0x1000 | 0 | 1 | miss，替换行0的 tag0 |\n| 4 | 0x0000 | 0 | 0 | miss，tag1 不匹配，重新填 tag0 |\n| 5 | 0x0010 | 1 | 0 | hit，行1未受影响 |\n\n0x1000 虽然是新的主存地址，却与 0x0000 争用同一 cache 行。容量足够装下三个块，不等于直接映射允许任意位置摆放。0x10 是下一条 line，而非 0x00 那条 line 内的字节。",
+    "commonMistakes": [
+      "把 cache 的 4 KiB 容量当成 4096 条 line，漏除 line 大小。",
+      "认为曾读过的 0x00 再次访问必命中，忽略 tag 被替换。",
+      "认为 tag 相同就命中，却不先定位 index 并检查 valid。"
+    ]
+  },
+  {
+    "id": "ADAPTED-FOUNDATION-ARCH-0002",
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "pipeline-hazard",
+    "type": "numeric",
+    "title": "有限指令流的 CPI：别漏流水线填充",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.cise.ufl.edu/~mssz/CompOrg/CDA-pipe.html",
+      "note": "参考公开教学/练习资料中的流水线性能、填充和停顿代价方向，独立构造参数、选项与解答，非公司原题。已核对链接和主题；不继承公司、届别或原卷归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "跨专题基础第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "absoluteTolerance": 0.001,
+    "promptMd": "一个五级、单发射、顺序完成的理想流水线从空开始执行 100 条最终退休指令，直到最后一条完成。每级一周期，忽略停顿时第一条需 5 周期，之后每周期完成一条。\n\n另外有 12 次 load-use 事件，每次恰好增加 1 个空泡周期；8 次分支事件，每次恰好增加 2 个恢复周期。这些额外周期相互不重叠，也不与初始填充重叠；没有其他延迟，不把被冲刷指令计入这 100 条。\n\n求该完整观察窗口的 CPI=总周期数/退休指令数，填写无单位数值。",
+    "expectedValue": 1.32,
+    "explanationMd": "**答案：CPI=1.32。**\n\n理想流水线的五个阶段可以重叠，但从空开始时不能立即每拍退休：第一条用 5 拍，其余 99 条各增加一拍，因此基线 `5+99=104` 拍，也就是 `N+k−1`。\n\n| 项目 | 周期数 |\n|---|---:|\n| 理想执行含填充/排空 | 100+5−1=104 |\n| Load-use 空泡 | 12×1=12 |\n| 分支恢复 | 8×2=16 |\n| 合计 | 132 |\n\n`CPI=132/100=1.32 周期/退休指令`。若只用 1 加平均停顿 `1+12/100+16/100=1.28`，会漏掉有限窗口的 4 个填充周期。若是很长的稳态指令流，这部分才可近似忽略。\n\n被冲刷的工作已体现在题定恢复周期，不再额外加一遍；也不能把五级流水线当成每条都独占五拍而算成 500 拍。",
+    "commonMistakes": [
+      "默认 CPI=1 加停顿就够，漏掉本题从空开始的四拍开销。",
+      "每条指令乘五级，忽略流水重叠。",
+      "把分支恢复周期与冲刷掉的指令数重复计费。"
+    ]
+  }
+]

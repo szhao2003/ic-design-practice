@@ -30,3 +30,20 @@
 | https://ee.ac.cn/index.php/archives/587.html | 第6题 Round Robin；不继承 lock 或公司归因 | ADAPTED-ADVANCED-RTL-0002 |
 
 另打开瑞芯微原帖核对候选方向，本批没有新增引用该帖的题；既有题来源字段未改变。技术正确性与去重见 [审核](CONTENT_BATCH_05_ADVANCED.md)。
+
+## 跨专题基础第一批实际使用（2026-11-23）
+
+以下公开页面本次实际打开；仅使用主题，不转录其题面、数值或代码；教学资料不归于公司。
+
+| URL | 使用 ID | 支持范围 |
+|---|---|---|
+| https://www.nowcoder.com/discuss/802688503929655296 | ADAPTED-FOUNDATION-POWER-0001 | 电压、频率与活动率一起变化后的总功耗；具体题设独立构造 |
+| https://onlinedocs.microchip.com/oxy/GUID-8F0CC4C0-0317-4262-89CA-CE7773ED1931-en-US-13/GUID-34A62246-6CB9-47E1-A743-D3E10C3AEA25.html | ADAPTED-FOUNDATION-POWER-0002 | 门控时钟：为什么不能直接 clk AND en？；具体题设独立构造 |
+| https://www.eecs.umich.edu/courses/eecs578/eecs578.f15/miniprojects/SVAproject/manuals/SVA_manual.pdf | ADAPTED-FOUNDATION-DV-0001 | SVA：多拍前件结束后从哪一拍检查？；具体题设独立构造 |
+| https://verificationacademy.com/forums/t/ignore-bins-and-cross/41200 | ADAPTED-FOUNDATION-DV-0002 | Cross coverage：忽略一个组合后的覆盖率；具体题设独立构造 |
+| https://yafengnju.github.io/ComputerOrganization/7-%E5%AD%98%E5%82%A8%E5%99%A8%E5%B1%82%E6%AC%A1%E7%BB%93%E6%9E%84(2).pdf | ADAPTED-FOUNDATION-ARCH-0001 | 直接映射 cache 的逐次冲突与命中；具体题设独立构造 |
+| https://www.cise.ufl.edu/~mssz/CompOrg/CDA-pipe.html | ADAPTED-FOUNDATION-ARCH-0002 | 有限指令流的 CPI：别漏流水线填充；具体题设独立构造 |
+| https://www.eecs.umich.edu/courses/eecs627/testability.html | ADAPTED-FOUNDATION-DFT-0001 | 四位 scan 链：沿前 SO 与沿后状态；具体题设独立构造 |
+| https://www.eecs.umich.edu/courses/eecs627/testability.html | ADAPTED-FOUNDATION-DFT-0002 | Stuck-at-0：激活了故障还要传播出去；具体题设独立构造 |
+
+完整技术核对及SVA/coverage原生仿真限制见 [本批审核](CONTENT_BATCH_06_FOUNDATION.md)。其他未成功打开的笔经未作为本批题源。

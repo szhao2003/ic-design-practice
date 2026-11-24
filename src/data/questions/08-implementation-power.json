@@ -1,0 +1,98 @@
+[
+  {
+    "id": "ADAPTED-FOUNDATION-POWER-0001",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "clock-power-gating",
+    "type": "numeric",
+    "title": "电压、频率与活动率一起变化后的总功耗",
+    "source": {
+      "kind": "firsthand_recall",
+      "evidenceGrade": "A",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/discuss/802688503929655296",
+      "note": "公开亲历笔经提到动态/静态功耗与低功耗手段；本题功耗模型和全部数值独立设定，非原题，不继承原帖的计算条件。已核对原帖支持这一知识方向。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "跨专题基础第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "absoluteTolerance": 0.001,
+    "promptMd": "某模块原工作点的动态功耗为 80 mW、漏电等静态功耗为 20 mW。采用题定简化模型 Pdyn=α·C·V²·f，α 为每周期有效开关活动因子，C 为等效电容。\n\n新工作点满足 α_new=0.5α_old、V_new=0.8V_old、f_new=0.75f_old，C 不变。**本题规定静态功耗仍为 20 mW**，忽略稳压器、时钟网络变化和短路功耗的额外项。求新工作点的总功耗，单位 mW。只比较功率，不计算完成同一任务的能量。",
+    "expectedValue": 39.2,
+    "unit": "mW",
+    "defaultUnit": "mW",
+    "acceptedUnits": {
+      "mW": 1,
+      "W": 1000
+    },
+    "explanationMd": "**答案：39.2 mW。**\n\n动态部分先取比值，公共电容和原工作点因子抵消：\n\n`Pdyn,new/Pdyn,old = 0.5 × (0.8)² × 0.75 = 0.24`。\n\n| 功耗项 | 新工作点计算 | 结果 |\n|---|---|---:|\n| 动态 | 80 mW × 0.24 | 19.2 mW |\n| 静态 | 题设保持不变 | 20.0 mW |\n| 合计 | 19.2 + 20.0 | 39.2 mW |\n\n电压平方不能只乘一次 0.8；静态项也不能跟着动态比值缩放。实际漏电通常随电压、温度等变化，这里将其固定是为了隔离模型。\n\n降低频率可能增加完成固定任务的时间；功率降低不自动证明任务能量同比降低。本题没有给执行时间，所以只求功率。",
+    "commonMistakes": [
+      "把 V² 的比例写成 0.8，漏掉平方。",
+      "将原总功耗 100 mW 整体乘以 0.24，错误缩放固定的静态项。",
+      "把功率降低直接当成完成同一任务的能量降低。"
+    ]
+  },
+  {
+    "id": "ADAPTED-FOUNDATION-POWER-0002",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "clock-power-gating",
+    "type": "multiple_choice",
+    "title": "门控时钟：为什么不能直接 clk AND en？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://onlinedocs.microchip.com/oxy/GUID-8F0CC4C0-0317-4262-89CA-CE7773ED1931-en-US-13/GUID-34A62246-6CB9-47E1-A743-D3E10C3AEA25.html",
+      "note": "参考公开教学/练习资料中的低电平透明锁存的门控时钟方向，独立构造参数、选项与解答，非公司原题。已核对链接和主题；不继承公司、届别或原卷归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "跨专题基础第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "promptMd": "上升沿工作的时钟 clk 在 [5 ns,10 ns) 为高、其余本周期时间为低。en 在上升沿前已为 1，却在 7 ns 从 1 变为 0。忽略传播延迟，仅推演理想逻辑。\n\n比较①直接 gclk=clk & en；②在 clk=0 时透明、clk=1 时保持的锁存器先保存 en，再与 clk 相与。②的锁存输出在 5 ns 前已经为 1。哪些判断正确？",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "①的本次高脉冲仍会完整持续到 10 ns，因为 clk 本身没有提前下降。"
+      },
+      {
+        "id": "B",
+        "textMd": "①会在 7 ns 提前结束高脉冲；②会让本次高脉冲保持到 10 ns。"
+      },
+      {
+        "id": "C",
+        "textMd": "改成 clk=1 时透明的锁存器，也能用同样机制屏蔽 7 ns 的 en 变化。"
+      },
+      {
+        "id": "D",
+        "textMd": "②说明了逻辑上的防截断机制，但真实实现仍需检查门控时序，并采用目标工艺/器件支持的时钟门控资源。"
+      }
+    ],
+    "correctOptionIds": [
+      "B",
+      "D"
+    ],
+    "explanationMd": "**答案：B、D。使能应在时钟高相位保持稳定。**\n\n| 时间段 | clk | en | 直接 AND | 低透明锁存后 AND |\n|---|---:|---:|---:|---:|\n| 5…7 ns | 1 | 1 | 1 | 1 |\n| 7…10 ns | 1 | 0 | 0（被截短） | 1（锁存仍保持旧 1） |\n| 10 ns 之后低相位 | 0 | 0 | 0 | 0，锁存可接收新使能 |\n\n直接 AND 的输出由两个输入共同决定，clk 没下降并不能阻止 en 把输出拉低。低电平透明锁存器在高相位关闭，因而屏蔽了 7 ns 的使能变化；下次时钟到来前可在低相位接收新 en=0，阻止下一完整脉冲。\n\n这不是“RTL 画个锁存器就完成时钟签核”。使能在锁存关闭边界附近仍须满足门控检查；ASIC 使用合适的 ICG 单元，FPGA 使用对应专用时钟使能/门控资源，不能把任意 fabric 门当作安全时钟树。",
+    "optionExplanations": {
+      "A": "gclk=1&0 在 7 ns 已变为 0，因此本次高脉冲只有 2 ns，而非 clk 的完整 5 ns。",
+      "B": "直接逻辑受 en 的中途下降影响；低透明锁存器在 5…10 ns 保持旧 1，所以当前高脉冲完整结束。",
+      "C": "高透明锁存器在 7 ns 仍跟随 en，输出同样会从 1 降至 0，无法用此机制防止截短。",
+      "D": "理想值表不包含单元时序与布线；实际门控资源、使能时序和时钟分发仍需工具及目标库验证。"
+    },
+    "commonMistakes": [
+      "只观察 clk 的边沿，忽略 AND 门的另一路使能也会改变输出。",
+      "将高透明和低透明锁存器的相位选反。",
+      "把理想数字无毛刺推演当成物理时钟实现已经签核。"
+    ]
+  }
+]

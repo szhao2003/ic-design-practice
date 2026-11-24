@@ -1,0 +1,76 @@
+[
+  {
+    "id": "ADAPTED-FOUNDATION-DV-0001",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "sva",
+    "type": "waveform_analysis",
+    "title": "SVA：多拍前件结束后从哪一拍检查？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.eecs.umich.edu/courses/eecs578/eecs578.f15/miniprojects/SVAproject/manuals/SVA_manual.pdf",
+      "note": "参考公开教学/练习资料中的断言序列与 implication 示例方向，独立构造参数、选项与解答，非公司原题。已核对链接和主题；不继承公司、届别或原卷归因。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "跨专题基础第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "promptMd": "只考虑单时钟并发断言，采样值均为 0/1，整个观察窗口无复位或 disable。每个上升沿都会尝试启动下面的 property：\n\n```systemverilog\nassert property (@(posedge clk) (a ##1 b) |=> c);\n```\n\n| 采样沿 | E0 | E1 | E2 | E3 | E4 |\n|---|---:|---:|---:|---:|---:|\n| a | 1 | 0 | 1 | 0 | 0 |\n| b | 0 | 1 | 0 | 1 | 0 |\n| c | 0 | 1 | 1 | 1 | 0 |\n\n只分析 E0…E4 启动的尝试，后续 a 保持 0。找出两个成功匹配前件的起始沿、各自前件结束沿、c 的检查沿与通过/失败结果。如果把 |=> 改成 |->，这两个尝试的 c 检查沿和结果如何变化？不要把没有匹配前件的尝试当成已经验证了 c。",
+    "referenceAnswerMd": "**原式在 E0 启动的有效尝试通过，在 E2 启动的有效尝试于 E4 失败。**\n\n| 前件起点 | a 为 1 | 一拍后 b 为 1，前件结束 | 原式 non-overlapped 检查 c | 原式结果 | 改为 overlapped 检查 c | 改式结果 |\n|---|---|---|---|---|---|---|\n| E0 | E0 | E1 | E2：c=1 | 通过 | E1：c=1 | 通过 |\n| E2 | E2 | E3 | E4：c=0 | 失败 | E3：c=1 | 通过 |\n\n其他起点没有匹配 a ##1 b，其 implication 是空真（vacuous success），不代表 c 被实际检查为真。",
+    "explanationMd": "**先找前件的结束拍，再应用 implication 的一拍差别。**\n\na ##1 b 是两拍前件：起点检查 a，下一拍检查 b。以 E2 起点为例，E2 的 a=1、E3 的 b=1，前件到 E3 才结束。\n\n- |=>（non-overlapped）从前件结束的下一拍开始后件，所以看 E4 的 c=0，失败。\n- |->（overlapped）从前件结束的同拍开始后件，所以看 E3 的 c=1，通过。\n\n不能简单记成“|=> 看 a 后一拍”，因为前件本身已经跨两拍。这里 c 只是一个布尔后件，不包含额外延迟。采样表已明确断言采样值，不把同沿 NBA 后新值补进这个表。\n\n没有发生前件只说明没有触发检查义务。验证时还应关注有效触发/覆盖，避免把始终不触发的断言当成充分验证。这里只做明确子集的离散推演，未调用 SVA 仿真器。",
+    "rubric": [
+      "找到前件从 E0/E2 开始，在 E1/E3 结束。",
+      "原 |=> 分别检查 E2/E4，结果通过/失败。",
+      "改 |-> 检查 E1/E3，均通过。",
+      "区分 vacuous success 与实际检查后件通过。"
+    ],
+    "commonMistakes": [
+      "从 a 的起始沿直接数一拍，漏掉前件 a ##1 b 已持续一拍间隔。",
+      "把 |-> 理解为永远检查前件起始沿，而非匹配结束沿。",
+      "前件没触发也计作一次 c 已验证成功。"
+    ]
+  },
+  {
+    "id": "ADAPTED-FOUNDATION-DV-0002",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "coverage",
+    "type": "numeric",
+    "title": "Cross coverage：忽略一个组合后的覆盖率",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://verificationacademy.com/forums/t/ignore-bins-and-cross/41200",
+      "note": "参考公开教学/练习资料中的cross 与 ignore_bins 的公开问答方向，独立构造参数、选项与解答，非公司原题。已核对链接和主题；不继承公司、届别或原卷归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "跨专题基础第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "absoluteTolerance": 0.001,
+    "promptMd": "两个 coverpoint：mode 有独立 bins 0、1；len 有独立 bins 0、1、2。二者 cross 的每个组合分别算一个 bin，均至少命中一次才算覆盖，所有 bin 权重相同。显式用 ignore_bins 排除组合 (mode=1,len=0)，忽略项不计入本题分母。\n\n实际采样（mode,len）依次为 (0,0)、(0,1)、(1,2)、(0,1)、(1,0)。求**仅这个 cross** 的覆盖百分数，填写 0…100 的数值。不是整个 covergroup 的加权总覆盖率，也不计算代码覆盖率。",
+    "expectedValue": 60,
+    "unit": "%",
+    "defaultUnit": "%",
+    "acceptedUnits": {
+      "%": 1
+    },
+    "explanationMd": "**答案：60%。两个 coverpoint 各自 100%，也不代表 cross 是 100%。**\n\n原来有 2×3=6 个组合，忽略 (1,0) 后，有效分母为 5。逐个组合检查：\n\n| mode | len | 本次状态 |\n|---:|---:|---|\n| 0 | 0 | 命中 |\n| 0 | 1 | 命中，重复样本不新增 bin |\n| 0 | 2 | 未命中 |\n| 1 | 0 | ignore，不计分子或分母 |\n| 1 | 1 | 未命中 |\n| 1 | 2 | 命中 |\n\n三个有效 bin 命中，所以 `3/5×100%=60%`。mode 的 0/1 和 len 的 0/1/2 都出现过，但它们未以所有需要的组合出现。\n\n本题明确 ignore_bins 改变目标集合；不能把条件采样 iff 与排除 bin 混同。也不能仅凭某个覆盖百分数认定 DUT 无 bug，覆盖模型本身仍需审核。",
+    "commonMistakes": [
+      "使用原始 6 个组合做分母，没有扣掉明确的 ignore 项。",
+      "重复命中 (0,1) 多加一次分子，或把被忽略样本当成有效命中。",
+      "用两个 coverpoint 的覆盖率代替 cross 的覆盖率。"
+    ]
+  }
+]

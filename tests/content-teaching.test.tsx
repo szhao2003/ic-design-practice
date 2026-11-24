@@ -7,7 +7,7 @@ import { manual } from './fixtures';
 
 describe('教学内容发布保护', () => {
   it('74 题均完成版本升级，四份关键时序图有解释采样语义的文字', () => {
-    const baseline = questions.filter(q=>!q.id.startsWith('ADAPTED-ADVANCED-'));
+    const baseline = questions.filter(q=>!/^ADAPTED-(ADVANCED|FOUNDATION)-/.test(q.id));
     expect(baseline).toHaveLength(74);
     expect(baseline.every(q => q.contentVersion >= 2)).toBe(true);
     expect(inspectTeachingContent(questions).errors).toEqual([]);

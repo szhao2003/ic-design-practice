@@ -1,0 +1,96 @@
+[
+  {
+    "id": "ADAPTED-FOUNDATION-DFT-0001",
+    "contentVersion": 1,
+    "topicId": "12",
+    "subtopicId": "scan",
+    "type": "waveform_analysis",
+    "title": "四位 scan 链：沿前 SO 与沿后状态",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.eecs.umich.edu/courses/eecs627/testability.html",
+      "note": "参考公开教学/练习资料中的scan chain 与 scan-in/scan-out 接口方向，独立构造参数、选项与解答，非公司原题。已核对链接和主题；不继承公司、届别或原卷归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "跨专题基础第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "promptMd": "四个扫描 FF 的连接为 SI→q0→q1→q2→q3→SO，SO 连 q3。scan_enable 始终为 1，每个上升沿执行等价于 q[3:0]<={q[2:0],SI} 的非阻塞更新。E0 前 q[3:0]=1010，E0…E3 沿上采样的 SI 依次是 1、0、1、1。\n\n外部测试仪在每个沿读取**更新前**的 SO，读取满足采样条件。列出每沿读出的 SO 及 NBA 完成后的 q[3:0]，并说明四次读出的位是否来自初始状态还是新装入的数据。本题只讨论 shift，不进行功能 capture，也不考虑多时钟链或锁存锁定单元。",
+    "referenceAnswerMd": "**读出的 SO 依次为 1、0、1、0；最终 q=1011。**\n\n| 沿 | 沿前 q[3:0] | SI | 本沿读取 SO=旧 q3 | NBA 后 q[3:0] |\n|---|---|---:|---:|---|\n| E0 | 1010 | 1 | 1 | 0101 |\n| E1 | 0101 | 0 | 0 | 1010 |\n| E2 | 1010 | 1 | 1 | 0101 |\n| E3 | 0101 | 1 | 0 | 1011 |\n\n读出的是初态 q3、q2、q1、q0，顺序为高索引到低索引。新装入的 SI 最早要在后续沿才从 SO 移出，不是本沿立刻到达 q3。",
+    "explanationMd": "**每沿分开看“读取旧值”和“移位更新”。**\n\nSO 是最末级 q3，测试仪本沿读取它时，新 SI 只会安排进入 q0。E0 的输入 1 在 E0 后位于 q0，随后每沿向 q1、q2、q3 移动，不能跨四级同沿直通。\n\nE3 后完整装入的四位是 1011，按输入先后顺序从 q3 排到 q0。原来的四位则已经按 1、0、1、0 移出。若拿沿后新 q3 当成本沿读出的 SO，会把读出序列错移一位。\n\nScan 使内部寄存器状态更容易串行装载和读出，但 shift 序列不等于功能 capture 或故障覆盖率已验证。这里没有定义 capture 行为，因此不能从这张表推断功能输出或测试覆盖。",
+    "rubric": [
+      "SO 按沿前 q3 读取，结果 1、0、1、0。",
+      "沿后状态依次 0101、1010、0101、1011。",
+      "说明原状态由 q3 到 q0 依次读出，新 SI 不会同沿穿过四级。",
+      "区分 scan shift 与功能 capture。"
+    ],
+    "commonMistakes": [
+      "用本沿 NBA 后 q3 充当沿上读取值，导致错位。",
+      "将 SI 直接当成 SO，忽略扫描链的串行级数。",
+      "把 shift 成功误当作功能故障测试已经完成。"
+    ]
+  },
+  {
+    "id": "ADAPTED-FOUNDATION-DFT-0002",
+    "contentVersion": 1,
+    "topicId": "12",
+    "subtopicId": "stuck-at",
+    "type": "single_choice",
+    "title": "Stuck-at-0：激活了故障还要传播出去",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.eecs.umich.edu/courses/eecs627/testability.html",
+      "note": "参考公开教学/练习资料中的可控性、可观测性与测试向量方向，独立构造参数、选项与解答，非公司原题。已核对链接和主题；不继承公司、届别或原卷归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "跨专题基础第一批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 6,
+    "reviewStatus": "verified",
+    "promptMd": "二值组合电路 n=a&b，y=n|c。仅内部节点 n 存在 stuck-at-0（固定为 0）故障；其他门、输入和观测端无故障。可自由设置 a、b、c，只能观测 y。哪组 (a,b,c) 能让正常电路与故障电路的 y 不同，从而检测此故障？",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "(1,1,0)"
+      },
+      {
+        "id": "B",
+        "textMd": "(1,1,1)"
+      },
+      {
+        "id": "C",
+        "textMd": "(0,1,0)"
+      },
+      {
+        "id": "D",
+        "textMd": "(0,0,0)"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "explanationMd": "**答案：A。既要激活 n 的差异，也要让差异通过 OR 门。**\n\n正常 n 应为 1，才能和 stuck-at-0 的 n=0 不同，所以必须 a=b=1。还需 c=0，避免 OR 的另一路把两种输出都强制为 1。\n\n| 选项 | 正常 n | 正常 y | 故障 y | 能否检测 |\n|---|---:|---:|---:|---|\n| A：110 | 1 | 1 | 0 | 是 |\n| B：111 | 1 | 1 | 1 | 否，差异被 c=1 屏蔽 |\n| C：010 | 0 | 0 | 0 | 否，未激活 |\n| D：000 | 0 | 0 | 0 | 否，未激活 |\n\n把故障节点控制成与固定值相反叫激活；把其影响传到观测输出叫传播/可观测。只满足其中一个不够。这里是明确的单 stuck-at 模型，不覆盖桥接、过渡延迟等其他缺陷。",
+    "optionExplanations": {
+      "A": "a=b=1 令正常 n=1，c=0 让 OR 传出 n；正常 y=1、故障 y=0，可区分。",
+      "B": "虽然正常 n=1 已激活差异，但 c=1 使 OR 输出不论 n 都为 1，故障被屏蔽。",
+      "C": "a=0 令正常 n 也为 0，与 stuck-at-0 一致，y 都为 0，没有激活。",
+      "D": "正常 n=0、故障 n=0，c=0 也不能凭空产生差异，输出均为 0。"
+    },
+    "commonMistakes": [
+      "只看 a=b=1 就选 B，忽略 c=1 的输出屏蔽。",
+      "以为把输入全清零最容易测试 stuck-at-0，实际需要正常节点为 1。",
+      "把单节点 stuck-at 结果推广到所有物理故障模型。"
+    ]
+  }
+]
