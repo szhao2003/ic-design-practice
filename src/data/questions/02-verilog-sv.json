@@ -625,5 +625,99 @@
       "C": "s已声明signed，其算术右移不是零扩展。",
       "D": "没有保持原值；移位运算确实改变了两者位模式。"
     }
+  },
+  {
+    "id": "ADAPTED-FOCUSED-SV-TASK-0001",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "sv-basics",
+    "title": "SystemVerilog task/function：时间、返回值和综合边界",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q30 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "按SystemVerilog讨论以下四句话。只讨论普通过程内的直接调用；不涉及fork/join_none等特殊后台进程。关于function和task，哪些正确？综合指能否实现为目标硬件，不能只根据关键字判断。",
+    "explanationMd": "**答案：A、C。**\n\nfunction适合零仿真时间的计算，不能直接包含#、@或会阻塞等待时间推进的语句。task可以有耗时控制，也可以完全不耗时；没有“task必然至少一拍”的要求。\n\nSystemVerilog允许无参function以及function void；不能照搬“function一定至少一个input且一定返回数值”的旧式Verilog简化说法。task通常通过output/inout等参数带回结果，是否耗时取决于其内容。\n\n“仿真可运行”和“可综合”是不同问题。含#延时的测试task不能因此变成真实延迟硬件；一个仅做组合计算的task也不能仅因名字是task就断言不可综合，仍需看内容和工具支持。",
+    "commonMistakes": [
+      "把旧式Verilog限制一概套到SystemVerilog。",
+      "以为task一定耗时，function void等价于task。",
+      "仅凭task/function关键字判断综合结果。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "普通function不能直接通过#5等待仿真时间推进。"
+      },
+      {
+        "id": "B",
+        "textMd": "所有task调用都必然至少消耗一个时钟周期。"
+      },
+      {
+        "id": "C",
+        "textMd": "SystemVerilog允许无参数function和function void。"
+      },
+      {
+        "id": "D",
+        "textMd": "任何task只要仿真能执行，包含#延时也一定可综合为同样的硬件延时。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "直接耗时控制不属于普通function的执行语义。",
+      "B": "task可以只执行零时间计算，没有隐含时钟周期。",
+      "C": "这是SystemVerilog允许的形式，不能套用旧式简化限制。",
+      "D": "仿真调度延时不等于可综合硬件延时，需独立审查。"
+    }
+  },
+  {
+    "id": "ADAPTED-FOCUSED-SV-TASK-0002",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "event-scheduling",
+    "title": "task的input复制与output返回时机",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q30 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "时间单位1 ns，无其他写入。task automatic delayed(input integer x, output integer z)内部依次执行z=x+1; #2; z=z+10;。初始a=3、y=99；t=0一个进程调用delayed(a,y)，另一个进程t=1令a=8。\n\n在t=0.5、1.5、2.5 ns观察(a,y)，分别是多少？观察点避开赋值同刻。参数均按普通值传递，不使用ref。",
+    "explanationMd": "**依次为(3,99)、(8,99)、(8,14)。**\n\n| 时刻 | task内x | task内z | 调用者a | 调用者y |\n|---:|---:|---:|---:|---:|\n| 0.5 | 3 | 4 | 3 | 99 |\n| 1.5 | 3 | 4 | 8 | 99 |\n| 2.5 | 已返回 | 返回值14 | 8 | 14 |\n\ninput x在调用进入时复制a的值3，之后a改8不会追溯修改x。output z是task的局部形式参数：内部写4不会立刻改变调用者y；等#2结束后z变14，task返回时才复制到y。automatic控制每次调用的局部存储，不把output变成引用，也不会自动使调用并行。",
+    "commonMistakes": [
+      "把input参数当作持续连接，认为a变化会让x也变8。",
+      "把output当ref，认为y在t=0就变4。",
+      "认为automatic意味着输出实时共享或自动并行。"
+    ],
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "t=0.5为(3,99)，t=1.5为(8,99)，t=2.5为(8,14)。input进入时复制，output返回时复制；#2期间调用者y不更新。",
+    "rubric": [
+      "列出三个时刻的正确(a,y)。",
+      "解释input在进入时取值。",
+      "解释output在返回时拷回，区分ref。"
+    ]
   }
 ]

@@ -2,6 +2,9 @@ import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 const mapping = {
+  seq1101_valid:'ADAPTED-FOCUSED-RTL-SEQ-0001', sync_fifo4x8:'ADAPTED-FOCUSED-RTL-FIFO-0001',
+  divide3_half:'ADAPTED-FOCUSED-RTL-DIV-0001', stream_second8:'ADAPTED-FOCUSED-RTL-MIN-0001',
+  debounce3:'ADAPTED-FOCUSED-RTL-DEBOUNCE-0001',
   saturating_credit4: 'ADAPTED-CORE3-RTL-0001',
   pulse_toggle_cdc: 'ADAPTED-RK26-CDC-0001', reset_release: 'ORIGINAL-CDC-0005',
   pipeline_adder: 'ADAPTED-RK26-RTL-0001', mod10_counter: 'ORIGINAL-RTL-0001',
@@ -27,14 +30,16 @@ if (!available) {
   console.log(`SKIP HDL 仿真：本机未安装 iverilog/vvp；${count} 份网页参考代码一致性检查通过。CI 使用严格模式。`);
 } else {
   await mkdir('.rtl-build',{recursive:true});
-  for (const module of Object.keys(mapping)) {
+  const cases=Object.keys(mapping).map(module=>({module,sources:[`rtl/reference/${module}.sv`,`rtl/tb/${module}_tb.sv`]}));
+  cases.push({module:'source_review_rules',sources:['rtl/tb/source_review_rules_tb.sv']});
+  for (const {module,sources} of cases) {
     const output = `.rtl-build/${module}.vvp`;
-    for(const [tool,args] of [['iverilog',['-g2012','-s','tb','-o',output,`rtl/reference/${module}.sv`,`rtl/tb/${module}_tb.sv`]],['vvp',[output]]]) {
+    for(const [tool,args] of [['iverilog',['-g2012','-s','tb','-o',output,...sources]],['vvp',[output]]]) {
       const result=spawnSync(tool,args,{encoding:'utf8',timeout:30000});
       if(result.stdout) process.stdout.write(result.stdout);
       if(result.stderr) process.stderr.write(result.stderr);
       if(result.error || result.status!==0) throw new Error(`${module}: ${tool} 失败 (${result.error?.message ?? result.status})`);
     }
   }
-  console.log(`RTL simulation: ${count}/${count} PASS (digital functional checks; not CDC/STA/silicon sign-off).`);
+  console.log(`RTL simulation: ${count}/${count} references + source-review language checks PASS (digital functional checks; not CDC/STA/silicon sign-off).`);
 }

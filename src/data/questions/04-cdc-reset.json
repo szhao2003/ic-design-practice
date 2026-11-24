@@ -602,5 +602,41 @@
       "在70 ns立即发第二笔，跳过返回低电平流程。",
       "源150 ns刚回IDLE就同沿再执行发起分支，违背状态机契约。"
     ]
+  },
+  {
+    "id": "ADAPTED-FOCUSED-CLOCK-MUX-0001",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "rdc-reset",
+    "title": "直接组合切时钟：选择信号会制造额外边沿",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q121/Q122/Q123 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "组合式clk_out=sel?clk1:clk0，忽略门延迟。t=0…5ns，clk0恒0、clk1恒1；sel在2ns从0跳1，在3ns从1跳0。仅考虑这个区间，两输入时钟都没有边沿。列出clk_out变化，并说明“把sel在某个时钟域打两拍后直接送MUX”是否已足以证明切换无毛刺。",
+    "explanationMd": "**clk_out在2ns上升、3ns下降，出现1ns脉冲，两个边沿都由sel制造。**\n\n| 区间 | sel | 所选输入 | clk_out |\n|---|---:|---|---:|\n| 0…2ns | 0 | clk0 | 0 |\n| 2…3ns | 1 | clk1 | 1 |\n| 3…5ns | 0 | clk0 | 0 |\n\n输入时钟都没跳变，选择变化仍制造输出边沿。这可以造成寄存器多采一次或违反最小高/低脉宽。同步sel只降低该同步链的跨域风险，不保证切换发生时两个被选时钟都处于安全相位。\n\n可靠方案需按目标器件使用专用无毛刺时钟MUX，或具备互斥、先关后开和合适相位使能的完整切换电路；还要明确停钟、复位、选择稳定等契约。不能只画两级同步器就承诺任意异步时钟的切换安全。本题仅证明直接MUX反例，不给出可物理签核的替代模块。",
+    "commonMistakes": [
+      "以为两个输入时钟不跳变，输出就一定不跳变。",
+      "把sel同步与输出时钟脉宽保证混为一谈。",
+      "忽略停钟/复位条件就承诺通用无毛刺切换。"
+    ],
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "输出0→1@2ns，1→0@3ns，形成1ns高脉冲。只同步sel不能证明两个时钟相位下切换都安全，需要专用资源或完整互斥切换结构。",
+    "rubric": [
+      "列出2ns/3ns边沿及1ns宽度。",
+      "指出边沿来自选择变化。",
+      "区分同步控制与时钟脉宽保证。"
+    ]
   }
 ]

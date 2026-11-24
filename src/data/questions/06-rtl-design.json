@@ -632,5 +632,189 @@
       "inc=dec时所有状态保持，包括0和15。",
       "时序非阻塞赋值，输出不另加流水级。"
     ]
+  },
+  {
+    "id": "ADAPTED-FOCUSED-RTL-SEQ-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "fsm",
+    "title": "带输入空泡的1101重叠序列检测",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q10/Q13/Q14 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 18,
+    "reviewStatus": "verified",
+    "promptMd": "编写完整模块seq1101_valid：输入clk、同步高有效rst、in_valid、din，输出寄存器match。每个上升沿仅在in_valid=1时接受一个din，按接受顺序检查最近4位是否为1101，支持重叠。rst优先清状态和match。无效周期保持部分匹配状态，但match必须清0；有效沿接受最后一位后，同沿NBA完成时match=1，下一沿若无新匹配则清0。复位后未接受满4位不匹配。所有输入为0/1且满足采样条件。\n\n例：连续接受1101101，应在第4和第7个有效bit后报match。给完整RTL及状态含义。",
+    "explanationMd": "**用“已经匹配的最长前缀”作为状态，并把match独立做成逐沿事件。**\n\n| 当前前缀 | din=0 | din=1 |\n|---|---|---|\n| 无 | 无 | 1 |\n| 1 | 无 | 11 |\n| 11 | 110 | 11 |\n| 110 | 无 | 命中，保留后缀1 |\n\n1101命中后，末尾1仍可作为下次的开头，不能无条件回空态。输入1110也应保留最后两个1，故11遇1仍处于11。只有in_valid时才走转移；空泡不加入数据流。match每拍默认清0，防止空泡把上次匹配高电平延长。\n\n这里输出在接受末位的同一上升沿后变高，没有额外延迟一拍；它是注册事件输出，不是直接依赖异步din的组合脉冲。状态转移使用旧state及本沿din，寄存器统一NBA更新。",
+    "commonMistakes": [
+      "命中后完全清状态，漏掉1101101中的第二次匹配。",
+      "空泡也消费din，改变有效序列。",
+      "无效周期保持match=1，把一次事件重复输出。"
+    ],
+    "type": "rtl_coding",
+    "referenceAnswerMd": "```systemverilog\nmodule seq1101_valid (\n  input logic clk, rst, in_valid, din,\n  output logic match\n);\n  typedef enum logic [1:0] {NONE, P1, P11, P110} state_t;\n  state_t state, next_state;\n  logic hit;\n  // State is the longest suffix of accepted bits that is a pattern prefix.\n  always_comb begin\n    next_state = state;\n    hit = 1'b0;\n    case (state)\n      NONE: next_state = din ? P1 : NONE;\n      P1: next_state = din ? P11 : NONE;\n      P11: next_state = din ? P11 : P110;\n      P110: begin\n        next_state = din ? P1 : NONE;\n        hit = din;\n      end\n      default: next_state = NONE;\n    endcase\n  end\n  always_ff @(posedge clk) begin\n    if (rst) begin\n      state <= NONE;\n      match <= 1'b0;\n    end else begin\n      // Invalid cycles do not consume bits, but the event output clears.\n      match <= 1'b0;\n      if (in_valid) begin\n        state <= next_state;\n        match <= hit;\n      end\n    end\n  end\nendmodule\n```\n\nNONE/P1/P11/P110分别记住最长前缀。命中后退到P1保留重叠；空泡只清事件，不清前缀。",
+    "rubric": [
+      "状态覆盖无/1/11/110及正确回退。",
+      "in_valid限定消费，rst优先。",
+      "匹配在接受末位的沿后报出，空泡match清0。",
+      "提供完整接口与非阻塞时序逻辑。"
+    ]
+  },
+  {
+    "id": "ADAPTED-FOCUSED-RTL-DIV-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "divider",
+    "title": "固定三分频：双边沿构造稳态50%占空比",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q25 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 18,
+    "reviewStatus": "verified",
+    "promptMd": "编写divide3_half，输入clk、异步低有效rst_n，输出clk_div3。clk为连续、周期T且50%占空比的理想时钟。复位至少覆盖输入上升/下降沿，释放避开采样沿；复位期间输出0。释放后首个上升沿开始计数，稳态输出周期3T，高低各1.5T。允许分别在正沿、负沿触发的寄存器与组合OR，不允许#延时、双边沿同一always或组合反馈。\n\n不要求运行时改分频、停钟恢复或复位过程保持完整脉宽；异步复位可截短正在进行的输出脉冲。只做题定数字功能，不宣称该结构直接适用于任意FPGA时钟网络。",
+    "explanationMd": "**先产生每3T重复、宽T的正沿窗口，再复制到负沿延长半个周期。**\n\n正沿计数0→1→2→0循环；旧count=0时把pos_window置1，其余置0。负沿寄存pos_window形成延迟半周期的neg_window。两者OR，连续高窗口从T延长到1.5T，总周期仍3T。\n\n若输入上升沿在0、T、2T、3T，首个输出高为[0,1.5T)，第二个为[3T,4.5T)，中间低为1.5T。不能把计数翻转一次就称为50%奇数分频：只靠同类边沿、整数拍计数无法把3T平分为1.5T。\n\n实际生成时钟需要正确的generated clock、半周期路径和时钟网络处理；FPGA通常应优先选择专用时钟资源或clock enable方案。仿真验证的50%占空比不替代物理脉宽签核。",
+    "commonMistakes": [
+      "正沿每3拍翻转一次，实际变成6分频。",
+      "把输入50%占空比条件省掉，仍声称固定半周期。",
+      "把异步复位期间截短脉冲也误判为稳态占空比。"
+    ],
+    "type": "rtl_coding",
+    "referenceAnswerMd": "```systemverilog\nmodule divide3_half (\n  input logic clk, rst_n,\n  output logic clk_div3\n);\n  logic [1:0] count;\n  logic pos_window, neg_window;\n  // A one-input-period high window repeats every three rising edges.\n  always_ff @(posedge clk or negedge rst_n) begin\n    if (!rst_n) begin\n      count <= 2'd0;\n      pos_window <= 1'b0;\n    end else begin\n      count <= (count == 2'd2) ? 2'd0 : count + 2'd1;\n      pos_window <= (count == 2'd0);\n    end\n  end\n  // Extending the high window by half an input period makes 50% duty.\n  always_ff @(negedge clk or negedge rst_n) begin\n    if (!rst_n) neg_window <= 1'b0;\n    else neg_window <= pos_window;\n  end\n  assign clk_div3 = pos_window | neg_window;\nendmodule\n```\n\npos_window宽T，neg_window延后T/2，OR后宽1.5T；周期3T。异步复位清两路窗口，复位截断不在稳态脉宽承诺内。",
+    "rubric": [
+      "完整双过程及OR输出，无仿真延时。",
+      "稳态周期3T、高低1.5T。",
+      "明确输入占空比和复位假设。",
+      "说明生成时钟实际实现边界。"
+    ]
+  },
+  {
+    "id": "ADAPTED-FOCUSED-RTL-MIN-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "serial-parallel",
+    "title": "流式次小不同值及次数：新最小时继承旧计数",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q126 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 18,
+    "reviewStatus": "verified",
+    "promptMd": "实现stream_second8：clk、同步高有效rst、start、in_valid、din[7:0]；输出second_valid、second_value[7:0]、second_count[7:0]。rst或start在本沿优先清整段统计，start同沿数据不接收。每段最多255个有效样本；无效周期保持。\n\n对本段已接收样本，输出第二小的不同数值及它的出现次数，不是排序后的第2个元素。少于2种不同值时second_valid=0，另两输出保持清零；凑齐2种后，每个有效沿NBA完成时输出截至本沿的结果。start之外无隐含结束行为，结果可持续读取。示例9,9,4,7,7→次小7、次数2。",
+    "explanationMd": "**维护最小值及次数、次小不同值及次数，并用标志区分是否已存在。**\n\n| 新数据情况 | 操作 |\n|---|---|\n| 尚无最小值 | 初始化最小，次小仍无效 |\n| 小于最小值 | 旧最小与旧计数转为次小，新最小计数1 |\n| 等于最小值 | 只增最小计数 |\n| 大于最小但尚无次小，或小于已有次小 | 次小改为新值，计数1 |\n| 等于次小 | 次小计数加1 |\n| 大于次小 | 不变 |\n\n例如9,9之后只有一种值，次小无效；再来4时旧最小9成为次小，次数必须继承2。再来7用7替换次小9，次数从1开始。不能用255当“尚未初始化”的哨兵，因为255是合法样本；需要显式have_min/second_valid。每段有效样本≤255保证8bit计数不溢出。",
+    "commonMistakes": [
+      "把重复最小值当第二小元素，而题目要求第二小不同值。",
+      "新最小到来时把次小计数重置1，丢掉旧最小重复次数。",
+      "用最大数255充当未初始化标志，排除了合法输入。"
+    ],
+    "type": "rtl_coding",
+    "referenceAnswerMd": "```systemverilog\nmodule stream_second8 (\n  input logic clk, rst, start, in_valid,\n  input logic [7:0] din,\n  output logic second_valid,\n  output logic [7:0] second_value, second_count\n);\n  logic have_min;\n  logic [7:0] min_value, min_count;\n  always_ff @(posedge clk) begin\n    if (rst || start) begin\n      have_min <= 1'b0;\n      second_valid <= 1'b0;\n      min_value <= 8'd0;\n      min_count <= 8'd0;\n      second_value <= 8'd0;\n      second_count <= 8'd0;\n    end else if (in_valid) begin\n      if (!have_min) begin\n        have_min <= 1'b1;\n        min_value <= din;\n        min_count <= 8'd1;\n      end else if (din < min_value) begin\n        // The former minimum becomes the second DISTINCT value.\n        second_valid <= 1'b1;\n        second_value <= min_value;\n        second_count <= min_count;\n        min_value <= din;\n        min_count <= 8'd1;\n      end else if (din == min_value) begin\n        min_count <= min_count + 8'd1;\n      end else if (!second_valid || din < second_value) begin\n        second_valid <= 1'b1;\n        second_value <= din;\n        second_count <= 8'd1;\n      end else if (din == second_value) begin\n        second_count <= second_count + 8'd1;\n      end\n    end\n  end\nendmodule\n```\n\n显式标志处理未初始化；新最小把旧min_value/min_count一起转到次小，重复最小不改变第二不同值。",
+    "rubric": [
+      "清段优先于valid，最多255样本的宽度正确。",
+      "处理首值、重复值、下降新最小及次小替换。",
+      "第二小按不同值定义，计数随值转移。",
+      "无效保持，输出同沿后更新。"
+    ]
+  },
+  {
+    "id": "ADAPTED-FOCUSED-RTL-DEBOUNCE-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "counter",
+    "title": "连续三拍去抖：不是累计三次不同就更新",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q127 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 18,
+    "reviewStatus": "verified",
+    "promptMd": "实现debounce3：输入clk、同步高有效rst、sample；输出stable和changed。sample已经同步到clk，均为0/1；本模块不负责亚稳态处理。rst优先令stable=0、changed=0并清历史。\n\n只有连续3个采样沿sample都等于当前stable的相反值，才在第3沿后更新stable为该值，并输出一拍changed=1；sample回到当前stable时立即清掉尚未满3拍的计数。其他沿changed=0。长时间维持新电平只能产生一次changed；之后反方向同样需要3个连续样本。",
+    "explanationMd": "**统计连续偏离当前稳定值的长度，而不是统计整段出现过多少次。**\n\n例如复位后输入1,1,0,1,1,1，对应stable=0,0,0,0,0,1，changed只有最后一拍为1；中间0使第一次两拍尝试作废。run保存此前连续偏离次数0/1/2，遇第3个偏离时旧run=2，直接确认并清run。\n\n更新stable后，后续同样sample就等于stable，会清计数且不重复报changed。反方向更新规则相同。本题输入已同步，不在去抖电路里假装解决CDC；实际按键可能还需同步链及按采样率选择阈值。\n\n阈值单位是采样次数，不能把“数到3”写成第4拍才更新；复位不算一次有效偏离样本。",
+    "commonMistakes": [
+      "将1,0,1,0,1三次出现累计成去抖成功。",
+      "计数从0开始却到3才更新，实际需要4拍。",
+      "stable改变后changed一直保持高。"
+    ],
+    "type": "rtl_coding",
+    "referenceAnswerMd": "```systemverilog\nmodule debounce3 (\n  input logic clk, rst, sample,\n  output logic stable, changed\n);\n  logic [1:0] run;\n  // sample is already synchronous; this module is NOT a CDC synchronizer.\n  always_ff @(posedge clk) begin\n    if (rst) begin\n      stable <= 1'b0;\n      changed <= 1'b0;\n      run <= 2'd0;\n    end else begin\n      changed <= 1'b0;\n      if (sample == stable) run <= 2'd0;\n      else if (run == 2'd2) begin\n        stable <= sample;\n        changed <= 1'b1;\n        run <= 2'd0;\n      end else run <= run + 2'd1;\n    end\n  end\nendmodule\n```\n\n相同stable样本清run，第三个连续反向样本确认新stable。changed逐拍清零，只在确认时置1。",
+    "rubric": [
+      "连续性与打断清零正确。",
+      "第3沿更新，不提前/不多等一拍。",
+      "双方向支持且长稳态只报一次。",
+      "输入同步和复位前提清楚。"
+    ]
+  },
+  {
+    "id": "ADAPTED-FOCUSED-RTL-LFSR-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "counter",
+    "title": "LFSR状态轨道：给定反馈后再判断周期",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q33 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "一个3bit寄存器q，每个有效上升沿执行q_next={q[1:0],q[2]^q[0]}，初态001，无复位或使能变化。列出直到首次回到初态的状态，求周期；再判断初态000的行为。所有位为0/1，不要求识别多项式名称。",
+    "explanationMd": "**非零初态001的周期为7；000会一直锁在000。**\n\n| 有效沿数 | q |\n|---:|---|\n| 0 | 001 |\n| 1 | 011 |\n| 2 | 111 |\n| 3 | 110 |\n| 4 | 101 |\n| 5 | 010 |\n| 6 | 100 |\n| 7 | 001 |\n\n每行使用旧q最高位与最低位异或，再左移并写入低位。7个非零状态恰好都出现一次，因此对给定反馈和此非零初态达到2³−1周期。\n\n000的反馈也是0，移位后仍000，是另一个长度1轨道。不能只凭“3bit LFSR”就说任意反馈、任意初态都周期7；最大长度还取决于反馈结构和合法非零初始化。",
+    "commonMistakes": [
+      "把异或反馈写成直接复制旧最高位。",
+      "将零初态也算入长度7的非零轨道。",
+      "不检查具体反馈就给所有3bit移位反馈器套周期7。"
+    ],
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "001→011→111→110→101→010→100→001，周期7；000→000，周期1。",
+    "rubric": [
+      "逐沿按旧位计算，列出全部7个非零状态。",
+      "首次返回时刻和周期正确。",
+      "说明000锁死及最大长度前提。"
+    ]
   }
 ]

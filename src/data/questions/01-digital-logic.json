@@ -365,5 +365,95 @@
       "用次高位代替最高有效符号位。",
       "零扩展得到 45，改变了有符号值。"
     ]
+  },
+  {
+    "id": "ADAPTED-FOCUSED-LOGIC-ABS-0001",
+    "contentVersion": 1,
+    "topicId": "01",
+    "subtopicId": "signed-width",
+    "title": "补码绝对值：最小负数需要额外一位",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q39 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "4bit二进制补码输入x可取−8…7。要对所有输入输出精确的非负整数|x|，输出约定为signed，不能饱和或丢失高位。哪些说法正确？",
+    "explanationMd": "**答案：A、C。**\n\n4bit signed的范围为−8…7，最大需要表示的绝对值为8，所以signed输出至少5bit，其范围−16…15覆盖0…8。输入1000表示−8；仍在4bit里做取反加1，结果1000不变，解释为signed仍为−8。必须先符号扩展到5bit，得到11000，再取反加1得到01000=8。\n\n如果输出改为unsigned，4bit可以表示0…8；但本题明确signed，不能偷换输出类型。对其他负数例如−7，绝对值7在4bit内能表示，不代表最小负数也能。",
+    "commonMistakes": [
+      "只检查−7等普通负数，漏掉最小补码负数。",
+      "先在4bit内取负再扩宽，丢失的正值不能恢复。",
+      "把unsigned所需位宽当signed的答案。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "signed精确绝对值输出至少5bit。"
+      },
+      {
+        "id": "B",
+        "textMd": "所有4bit负数在4bit内取负后都会成为正确的非负signed数。"
+      },
+      {
+        "id": "C",
+        "textMd": "应先把输入符号扩展到5bit，再对负数取负。"
+      },
+      {
+        "id": "D",
+        "textMd": "4bit signed输出可以精确表示+8。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "必须覆盖+8，5bit signed足够且4bit不足。",
+      "B": "输入−8是反例，4bit取负仍为1000。",
+      "C": "扩宽使正端点可表示，再取负才能得到01000。",
+      "D": "4bit signed最大+7，+8超出范围。"
+    }
+  },
+  {
+    "id": "ADAPTED-FOCUSED-LOGIC-MUX-0001",
+    "contentVersion": 1,
+    "topicId": "01",
+    "subtopicId": "mux-decoder",
+    "title": "用2选1树实现8选1：按内部结点计门数",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q125 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "要实现8路输入、每路4bit、输出4bit的8选1MUX。只允许使用1bit的2选1MUX，采用完整二叉选择树；四个输出bit分别实现，可共享选择信号但不能把四个bit当作一个器件。忽略选择线缓冲、反相器和布线成本。最少需要多少个1bit 2选1MUX？",
+    "explanationMd": "**答案：28个。**\n\n单个输出bit的树第一层8选4需要4个2选1，第二层4选2需2个，第三层2选1需1个，总4+2+1=7。四个输出bit并行，合计7×4=28。\n\n完整二叉树8个叶子对应7个内部选择结点，也独立得到单bit7个。共享select只减少选择信号的生成/分配，不能让一个1bit数据MUX同时处理四条独立数据线。\n\n“8×4=32”统计的是输入数据bit数，并非2选1器件数量；不同标准单元库若直接有8选1或多bit单元，面积需另算，本题固定基本器件。",
+    "commonMistakes": [
+      "把输入bit总数32当成选择器数量。",
+      "只算三层就答3，混淆逻辑深度与器件数。",
+      "忘记每个输出bit各需要一棵选择树。"
+    ],
+    "type": "numeric",
+    "expectedValue": 28,
+    "absoluteTolerance": 0
   }
 ]

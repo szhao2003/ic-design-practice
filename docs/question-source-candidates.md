@@ -132,3 +132,7 @@ N1570/GNU位移手册本次超时未采用；UW PDF无可读正文，使用同�
 ## Cache小补充（2026-11-23）
 
 实际访问 https://www.cs.cornell.edu/courses/cs3410/2024fa/notes/caches.html ，仅使用LRU与多级AMAT方向；独立构造ADAPTED-MINI-CACHE-0001/0002。去重和验证见 [审核](CONTENT_BATCH_12_CACHE_MINI.md)。
+
+## 高频任务与汇编补充（2026-11-23）
+
+新增ADAPTED-FOCUSED系列18题。先按招聘记录缺口完成FSM/FIFO/task，再提炼Q25/30/33/39/49/50/52/94/95/103/107/108/110/111/113/121/122/123/125/126/127/128/132等方向。精确逐题来源以各题note为准，不把方向涉及算完整覆盖。全132条处理见 [覆盖对照](SOURCE_COLLECTION_COVERAGE.md)，技术与实际运行边界见 [本批审核](CONTENT_BATCH_13_FOCUSED.md)。

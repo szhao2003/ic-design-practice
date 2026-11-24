@@ -1,6 +1,6 @@
 # 公开来源索引
 
-这是公开入口与可用方向，不是公司原题认证。索引根据已有交接材料和仓库来源整理；教学升级时未逐条重开笔经；进阶第一批单独记录本次访问范围，不提高已有题的核验等级。当前 132 题中，44 道原创、7 道公开笔经考点改编、81 道公开教学/练习资料考点改编；未增加转述或原题摘录。
+这是公开入口与可用方向，不是公司原题认证。索引根据已有交接材料和仓库来源整理；教学升级时未逐条重开笔经；进阶第一批单独记录本次访问范围，不提高已有题的核验等级。当前 150 题中，44 道原创、7 道公开笔经考点改编、99 道公开教学/练习资料考点改编；未增加转述或原题摘录。
 
 | 资料 | 公开链接 | 允许提炼的方向 / 限制 |
 |---|---|---|
@@ -12,7 +12,7 @@
 | 联发科旧届 | https://www.nowcoder.com/discuss/353159350510362624 | 时序、时钟切换、RTL、C 大小端、脚本、系统知识；不冒充当届 |
 | 大疆 FPGA 旧届 | https://www.nowcoder.com/discuss/490905319980224512 | RTL、CDC、AXI/I²C、FPGA、CPU pipeline |
 | 星宸数字 IC 旧届 | https://www.nowcoder.com/discuss/481038706426535936 | signed/位宽、仿真、PPA、逻辑优化 |
-| 数字前端/数字 IC 公开练习汇编 | https://www.yhchub.com/数字前端数字IC笔试真题与解析.html | 已独立改编 24 题；用 Q 题号去重，不继承其公司归因 |
+| 数字前端/数字 IC 公开练习汇编 | https://www.yhchub.com/数字前端数字IC笔试真题与解析.html | 已多批提炼考点；132个Q题号覆盖状态见专门审计，不继承其公司归因 |
 | IC 企业笔试分类 | https://yueanic.com/ic-interview/c/company-written | 仅检索入口，逐题核对原始证据与答案 |
 | 华为数通逻辑旧届复盘 | https://cloud.tencent.com/developer/article/2194861 | FPGA/数字逻辑考点线索，注意年份及岗位 |
 | 华为 2027 届 RTL 面试整理 | https://onefly.top/zero2Leetcode/05_interview/coding/huawei-2027/ | **面试**，不能称作在线笔试原卷 |
@@ -41,3 +41,5 @@
 电路脚本与接口第二批的来源链接、支持范围与未采用入口见 [本批审核](CONTENT_BATCH_10_EXTENSION.md)。
 
 RTL与协议第三批采用HDLBits、Verification Academy、Google Verilog指南、AMD、Cornell、Arm与Microchip技术资料；逐题支持范围见 [审核](CONTENT_BATCH_11_CORE.md)。
+
+最新公开汇编覆盖情况见 [逐题覆盖表](SOURCE_COLLECTION_COVERAGE.md)，对应150题基线。原“24道汇编映射”仅指最初两批，后续方向支持不应误算成完整逐题移植。技术来源和招聘频率证据继续分开。

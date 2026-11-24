@@ -604,5 +604,195 @@
       "按四次采样列出0001/0010/0101/1011。",
       "最终1011=11=0xB。"
     ]
+  },
+  {
+    "id": "ADAPTED-FOCUSED-AXI-WRAP-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "title": "AXI WRAP：首地址不必等于整个回绕块下界",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q106/Q107/Q108 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "AXI4，AxADDR=0x5C，AxLEN=3，AxSIZE=2，AxBURST=WRAP；4个beat，每beat4B。起始地址已按beat大小对齐，没有4KB问题。列出4个beat的首字节地址、wrap下界/上界，判断这个首地址是否合法。忽略byte strobe与响应时序。",
+    "explanationMd": "**合法；地址依次0x5C、0x50、0x54、0x58。**\n\n每beat字节数2²=4；长度AxLEN+1=4；回绕区域4×4=16B。下界floor(0x5C/16)×16=0x50，上界不含0x60。\n\n| beat | 首字节地址 | 下一地址计算 |\n|---:|---|---|\n| 0 | 0x5C | +4到0x60，回绕到0x50 |\n| 1 | 0x50 | +4到0x54 |\n| 2 | 0x54 | +4到0x58 |\n| 3 | 0x58 | 本burst结束 |\n\nWRAP首地址必须按单beat大小对齐，不要求等于总burst大小的边界。本例0x5C mod4=0，长度4也是合法WRAP长度，因此合法；0x50是回绕区域下界，不是必须的首地址。把INCR的0x5C,60,64,68搬过来会越过回绕区域。",
+    "commonMistakes": [
+      "把AxLEN=3当成只有3beat。",
+      "错误要求首地址按16B对齐，拒绝合法的0x5C。",
+      "使用INCR地址序列，忘掉上界回绕。"
+    ],
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "下界0x50，上界0x60（不含）；4拍地址5C、50、54、58，首地址按4B对齐因此合法。",
+    "rubric": [
+      "正确解码长度和每beat大小。",
+      "算16B回绕区域和上下界。",
+      "逐拍回绕而非普通递增。",
+      "明确单beat对齐与区域下界不是同一条件。"
+    ]
+  },
+  {
+    "id": "ADAPTED-FOCUSED-APB-STATE-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "apb",
+    "title": "APB等待与背靠背：下一笔不能跳过SETUP",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q94/Q95 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "APB3/4 requester向同一外设连续写两笔，第一笔ACCESS被PREADY=0延长。所有信号按PCLK采样，外设无额外寄存器副作用约定。哪些行为符合协议？",
+    "explanationMd": "**答案：A、C。**\n\nSETUP的PSEL=1、PENABLE=0；下一周期进入ACCESS并置PENABLE=1。等待时仍是同一笔传输，地址、方向、写数据和相关控制必须保持，不能因PREADY低就先放第二笔地址。\n\n第一笔在ACCESS且PREADY=1的沿完成后，若立即访问同一外设，PSEL可以持续高，但PENABLE必须回0形成下一笔SETUP，然后才能再次置1进入ACCESS。因此每笔至少有SETUP与ACCESS，不是把PENABLE一直维持1就能无缝每拍发新地址。\n\nPREADY在SETUP的值不构成完成条件；传输完成要同时处于有效ACCESS。",
+    "commonMistakes": [
+      "PSEL连续高就认为两笔可共用一个ACCESS阶段。",
+      "等待期间提前改变地址/写数据。",
+      "PREADY在SETUP高时就把传输记为完成。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "ACCESS等待期间保持本笔地址、方向、写数据和PSEL/PENABLE。"
+      },
+      {
+        "id": "B",
+        "textMd": "等待期间可以改成第二笔地址，只要PSEL仍然为1。"
+      },
+      {
+        "id": "C",
+        "textMd": "同一外设背靠背传输可保持PSEL高，但下一笔要先让PENABLE低一周期。"
+      },
+      {
+        "id": "D",
+        "textMd": "PREADY在SETUP为1时，当前传输已经完成，可以省略ACCESS。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "等待扩展当前ACCESS，相关请求信息保持到完成。",
+      "B": "会篡改尚未完成的第一笔请求。",
+      "C": "允许直接从ACCESS到下一笔SETUP，但不能跳过SETUP。",
+      "D": "完成只在PSEL与PENABLE均有效的ACCESS中判定。"
+    }
+  },
+  {
+    "id": "ADAPTED-FOCUSED-AXI-DEADLOCK-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "title": "AXI互等死锁：三种合法时序不代表任意依赖都合法",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q110/Q111 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "一个AXI通道，发送端有一笔已就绪的数据，但设计为“只有先观察到READY=1才置VALID”；接收端设计为“只有观察到VALID=1才置READY”。初始VALID=READY=0，无其他唤醒条件。哪些判断正确？",
+    "explanationMd": "**答案：A、D。**\n\n初态00时，发送端等READY，接收端等VALID，两边都不先变化，状态可永久停在00。有数据就绪并不自动打破这个组合/时序依赖。发送端的VALID不得依赖接收端READY才发起；接收端可以等看到VALID再准备接收。\n\nVALID先、READY先、同沿有效都是可能的合法观察结果，但观察结果的先后与内部是否建立禁止的依赖是两回事。修复应让发送端根据数据是否可用产生VALID，并在未握手前保持；接收端按自己的容量产生READY。仅把READY线加一拍、仍等不到首次VALID，不会解决初始互等。",
+    "commonMistakes": [
+      "只背三种合法波形，没检查状态00能否自行离开。",
+      "要求接收端必须无条件永远READY，过度限制协议。",
+      "认为任意加一拍就能消除逻辑上的互等条件。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "本设计可能永久卡在VALID=READY=0，尽管数据已经就绪。"
+      },
+      {
+        "id": "B",
+        "textMd": "READY必须永远先于VALID，故接收端只需永久置READY就能证明任何设计正确。"
+      },
+      {
+        "id": "C",
+        "textMd": "只要最终握手条件是VALID&&READY，发送端等待READY再发VALID一定合法。"
+      },
+      {
+        "id": "D",
+        "textMd": "应让发送端按数据可用性独立发VALID，未握手前保持；接收端可依VALID决定READY。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "两边条件都不满足，没有起始动作。",
+      "B": "协议允许不同先后，也允许接收端施加背压。",
+      "C": "握手条件正确不代表产生VALID的依赖合法。",
+      "D": "消除发送端对READY的发起依赖，才能打破本例互等。"
+    }
+  },
+  {
+    "id": "ADAPTED-FOCUSED-AXI-VERSION-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "title": "AXI3到AXI4：突发上限与写数据交织不能混为一谈",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q103/Q107/Q113 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "比较完整AXI3与AXI4（不是AXI4-Lite）。某设计声称：“AXI4支持256beat，因此可以继续依靠WID把两笔写事务的数据beat交错送出；所有burst类型也都可以256beat。”指出两处问题，并说明哪些能力仍可保留。只讨论协议能力，不要求某器件必须支持全部能力。",
+    "explanationMd": "**AXI4扩展的是INCR突发上限；它移除了AXI3的WID及写数据交织支持。**\n\n| 项目 | AXI3 | AXI4 |\n|---|---|---|\n| INCR长度 | 最多16beat | 最多256beat |\n| WID / 写数据交织 | 有相应机制 | 无WID，不支持按WID交织写数据 |\n| WRAP长度 | 2/4/8/16 | 仍为2/4/8/16 |\n| FIXED长度 | 最多16 | 仍最多16 |\n\n因此不能在AXI4中沿用WID来交错两笔写事务的数据beat，也不能把WRAP/FIXED上限一并放大到256。\n\n移除写数据交织不等于只能有一笔outstanding事务；地址ID、多个在途请求和按协议约束的不同ID返回行为是其他维度。具体endpoint可只支持能力子集，检查协议与IP参数时要分开看。",
+    "commonMistakes": [
+      "把AXI4误写成AXI4-Lite，从而否定所有burst。",
+      "把INCR最大256beat推广到WRAP/FIXED。",
+      "把不支持写数据交织理解成不能有多个outstanding。"
+    ],
+    "type": "short_answer",
+    "referenceAnswerMd": "AXI4 INCR最多256beat，WRAP仍2/4/8/16、FIXED最多16；AXI4去掉WID及写数据交织。多outstanding与写数据交织是不同能力，不能互相代替。",
+    "rubric": [
+      "完整AXI3/AXI4与Lite区分。",
+      "正确的burst类型长度限制。",
+      "移除WID/写数据交织。",
+      "区分outstanding和interleaving。"
+    ]
   }
 ]

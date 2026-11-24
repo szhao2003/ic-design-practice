@@ -189,5 +189,99 @@
       "C": "二值功能RTL不能凭空产生电源失效行为，需要相应电源意图和验证。",
       "D": "题设安全值为0；钳1可能使接收侧误收事务。"
     }
+  },
+  {
+    "id": "ADAPTED-FOCUSED-PPA-CORNER-0001",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "timing-closure",
+    "title": "选更快cell也要看hold与漏电：按表判断修复方案",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q49/Q50/Q52 的时序修复取舍方向；本题各corner延迟和漏电数据独立给定，非公司原题，不把更快cell等同完整时序通过。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "同一接口的两个约束已折算为数据路径延迟：setup要求Dmax≤2.0ns；hold要求Dmin≥0.30ns。三种库映射在指定corners的结果为A:(Dmax=2.2,Dmin=0.40,漏电1单位)，B:(1.8,0.25,漏电3)，C:(1.9,0.35,漏电2)。表中数据为题设，不推导实际工艺规律，其他路径不变。哪些判断正确？",
+    "explanationMd": "**答案：A、C。**\n\n| 方案 | setup | hold | 结论 |\n|---|---|---|---|\n| A | 2.2>2.0，失败 | 0.40≥0.30，通过 | setup违例 |\n| B | 1.8≤2.0，通过 | 0.25<0.30，失败 | hold违例 |\n| C | 1.9≤2.0，通过 | 0.35≥0.30，通过 | 两者均满足 |\n\nB的最大延迟最小不等于整体最优，它的最小延迟也减小，违反hold。C在题设下兼顾两端，但漏电比A高。不能从单一corner或最大延迟指标直接断言完整时序关闭，更不能把“更快cell”无条件当作所有问题的修复。\n\n本题用明确数据比较取舍；真实库还需要各PVT corner、负载、slew及功耗条件，不能用这张表猜某类器件的通用参数。",
+    "commonMistakes": [
+      "只检查Dmax，漏掉B的Dmin过小。",
+      "把漏电低当成可以忽略setup违例的理由。",
+      "将题设延迟和漏电值推广为所有工艺的固定关系。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "A满足hold但不满足setup。"
+      },
+      {
+        "id": "B",
+        "textMd": "B速度最快，所以setup和hold一定都通过。"
+      },
+      {
+        "id": "C",
+        "textMd": "C同时满足两项延迟约束，但漏电高于A。"
+      },
+      {
+        "id": "D",
+        "textMd": "只要在一个corner检查Dmax，就不需要检查Dmin。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "按上下限分别比较可见A的最大延迟超标。",
+      "B": "B的0.25ns低于0.30ns，hold失败。",
+      "C": "C的1.9/0.35分别符合约束，漏电2大于1。",
+      "D": "setup/hold不同极值路径与corners不能互相替代。"
+    }
+  },
+  {
+    "id": "ADAPTED-FOCUSED-FLOW-GLS-0001",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "lec-gls",
+    "title": "RTL、等价检查和带SDF门级仿真各能回答什么",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/discuss/353149126944694272",
+      "note": "公开旧届笔试题目记录提及post-simulation作用；仅参考这一任务，重新设计比较范围及解析，不继承未核实公司原卷保真。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "promptMd": "同一个设计有RTL仿真、RTL对综合网表的逻辑等价检查（LEC），以及带正确库模型与SDF回标的门级仿真（GLS）。说明各自主要用途，并判断“GLS无报错就证明所有输入、全部PVT时序以及真实亚稳态都绝对安全”是否成立。无需写工具命令。",
+    "explanationMd": "**三种检查互补，GLS通过不能作为全空间或物理亚稳态证明。**\n\n| 方法 | 能回答的主要问题 | 不能由一次通过自动推出 |\n|---|---|---|\n| RTL仿真 | 给定激励下功能/状态/协议是否符合预期 | 所有输入和所有物理延时都正确 |\n| LEC | 在建模与约束前提下，RTL与网表逻辑是否等价 | 电路满足setup/hold或电源/模拟特性 |\n| SDF GLS | 给定测试与回标条件下网表时序、初始化/X传播等行为 | 所有路径/全部corners签核及真实模拟亚稳态安全 |\n\n正确库模型及timing checks可能揭示某些违例，但是否启用、覆盖到何种激励和corner都影响结果。STA按约束系统性检查时序路径，CDC/RDC检查跨域结构，物理模拟亚稳态不能靠数字GLS的X或无X简单判定。\n\n“无报错”只说明执行过的检查没有报告，不能替代完整的验证计划和签核范围。不同工具检查内容应在报告中如实标记，不把一类通过升级成另一类结论。",
+    "commonMistakes": [
+      "把逻辑等价通过当作时序通过。",
+      "把一个GLS测试集当全输入穷举。",
+      "把数字X传播当真实亚稳态模拟结果。"
+    ],
+    "type": "short_answer",
+    "referenceAnswerMd": "RTL仿真测给定激励功能，LEC在其模型约束下比较逻辑等价，SDF GLS测给定网表/回标/激励下的数字行为。它们均不能单独证明全部PVT、全部路径和模拟亚稳态绝对安全。",
+    "rubric": [
+      "列出三类检查的用途。",
+      "说明模型、激励、corner与约束前提。",
+      "不把GLS或LEC等同物理时序/CDC签核。"
+    ]
   }
 ]
