@@ -19,7 +19,7 @@ describe('资料考点扩充与来源显示', () => {
     expect(displayTag('YHCHub 考点改编')).toBe('公开资料考点改编');
   });
   it('统一标签能筛到新旧两批二十四题，原标签链接仍可匹配旧批', () => {
-    const priorBatches=questions.filter(q=>!/^ADAPTED-(ADVANCED|FOUNDATION|TOOLSFPGA|CORE|SYSTEM|EXTENSION|CORE3|MINI|FOCUSED|INTEGRATION)-/.test(q.id));
+    const priorBatches=questions.filter(q=>!/^ADAPTED-(ADVANCED|FOUNDATION|TOOLSFPGA|CORE|SYSTEM|EXTENSION|CORE3|MINI|FOCUSED|INTEGRATION|BOUNDARY)-/.test(q.id));
     expect(filterQuestions(priorBatches, { tag: '公开资料考点改编' }, emptyBackup())).toHaveLength(24);
     expect(filterQuestions(questions, { tag: 'YHCHub 考点改编' }, emptyBackup())).toHaveLength(12);
     const batch = questions.filter(q => q.id.startsWith('ADAPTED-COLLECTION-'));

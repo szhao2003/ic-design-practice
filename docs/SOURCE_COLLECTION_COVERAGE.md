@@ -1,6 +1,6 @@
 # 公开汇编132题号覆盖对照
 
-核对日期2026-11-24；对应本地156题。按实际考查任务对照，不按公司名或专题名认定覆盖。80个题号已有对应/修正任务（71+9），28部分覆盖，12需补条件，12暂缓。同一现有题可以承载多个重复考点，因此这些数量不是新增题数，也不是独立公司考察频次。
+核对日期2026-11-24；对应本地162题。按实际考查任务对照，不按公司名或专题名认定覆盖。82个题号已有对应/修正任务（72+10），26部分覆盖，12需补条件，12暂缓。同一现有题可以承载多个重复考点，因此这些数量不是新增题数，也不是独立公司考察频次。
 
 covered和rewritten均为考点重构，不是逐字原题；partial不计完整覆盖。机器可读来源及引用见 [JSON表](source-collection-coverage.json)。
 
@@ -118,7 +118,7 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q110 | 已有对应任务 | ORIGINAL-AXI-0001、ADAPTED-FOCUSED-AXI-DEADLOCK-0001 | 已有稳定性，新增发起依赖与初态互等死锁。 |
 | Q111 | 已有对应任务 | ORIGINAL-AXI-0001、ADAPTED-FOCUSED-AXI-DEADLOCK-0001 | 已有稳定性，新增发起依赖与初态互等死锁。 |
 | Q112 | 已有对应任务 | ADAPTED-CORE-AXI-0002 | 同ID与跨ID返回顺序具体任务已有。 |
-| Q113 | 部分覆盖 | ADAPTED-FOCUSED-AXI-VERSION-0001、ADAPTED-CORE-AXI-0002 | AXI3/4差异、写交织与outstanding已练；读beat交织未完整逐拍建模。 |
+| Q113 | 已有对应任务 | ADAPTED-FOCUSED-AXI-VERSION-0001、ADAPTED-CORE-AXI-0002、ADAPTED-BOUNDARY-AXI-0001、ADAPTED-BOUNDARY-AXI-0002 | 补完整按ID队列追踪的读beat交织、背压末拍计数、完成顺序及AXI3/4读写交织区别；不把跨ID许可推广到同ID。 |
 | Q114 | 暂缓 | — | AXI五通道跨域的完整设计未覆盖；不能用数据逐位打两拍替代。 |
 | Q115 | 暂缓 | — | 总线对比可作后续简答，需约束版本与场景。 |
 | Q116 | 需补条件 | — | 协议名本身不保证速度，需固定时钟/等待/突发与开销再比较。 |
@@ -132,11 +132,11 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q124 | 已有对应任务 | ADAPTED-SYSTEM-ARCH-0002 | 同一局部/整体加速任务，已有额外开销边界。 |
 | Q125 | 已修正改编 | ADAPTED-FOCUSED-LOGIC-MUX-0001 | 明确基本器件为1bit 2选1并计树结点，舍弃输入bit数当MUX个数的混淆。 |
 | Q126 | 已有对应任务 | ADAPTED-FOCUSED-RTL-MIN-0001 | 补完整流式不同值定义、次数继承和start/valid契约，独立直方图TB。 |
-| Q127 | 部分覆盖 | ADAPTED-FOCUSED-RTL-DEBOUNCE-0001 | 新增连续样本去抖RTL；配置毫秒阈值与计数位宽尚非完整等价任务。 |
+| Q127 | 已修正改编 | ADAPTED-FOCUSED-RTL-DEBOUNCE-0001、ADAPTED-BOUNDARY-DEBOUNCE-0001、ADAPTED-BOUNDARY-DEBOUNCE-0002、ADAPTED-BOUNDARY-DEBOUNCE-0003 | 补50MHz下5/10/15/20ms可配置去抖、20bit计数与配置变更清段契约；默认25万/100万样本终点及缩短参数独立TB。阈值按连续采样数量定义，原模拟按键条件重新明确。 |
 | Q128 | 部分覆盖 | ADAPTED-FOCUSED-MEM-CAP-0001 | 容量拼接已练；引脚总数须明确控制/电源/双向线是否计入，不能直接等同容量题。 |
 | Q129 | 暂缓 | — | 题源有具体任务，但当前集中数字IC核心设计，智力题暂不增加。 |
 | Q130 | 暂缓 | — | 题源有具体任务，但当前集中数字IC核心设计，智力题暂不增加。 |
 | Q131 | 部分覆盖 | ADAPTED-TOOLSFPGA-CMOS-0001、ORIGINAL-STA-0001 | 基础语义与时序已覆盖，来源题组的Maxpooling RTL仍未实现。 |
 | Q132 | 部分覆盖 | ADAPTED-FOCUSED-MEM-CAP-0001、ADAPTED-EXTENSION-TOOLS-0001 | 容量和字节解释已有，偶校验及内存布局仍可补，不把整个题组都计覆盖。 |
 
-本轮补全Q61/Q83/Q118。后续仍优先核心任务：读beat交织的完整逐拍推导（Q113）、带完整相位与同步延迟的FIFO深度（Q88–93）、可配置去抖阈值（Q127）。不追求所有题号变绿。
+本轮补完整Q113及修正重构Q127。FIFO深度新增明确相位/双向同步模型，但Q88–93原条件不全，各题仍保留需补条件，不批量改成已完成。后续可补复位实现与STA条件（Q80）、完整双边沿检测接口（Q16），仍优先核心任务，不追求所有题号变绿。

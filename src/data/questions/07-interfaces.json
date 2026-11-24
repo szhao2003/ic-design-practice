@@ -870,5 +870,100 @@
       "E6新响应取FFBBFFDD，正确区分无效payload与有效响应。",
       "指出读写独立及同拍冲突语义由实现契约规定。"
     ]
+  },
+  {
+    "id": "ADAPTED-BOUNDARY-AXI-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "title": "AXI4读beat交织：带背压时怎样数事务完成",
+    "type": "waveform_analysis",
+    "difficulty": "hard",
+    "tags": [
+      "协议与计数边界",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 12,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q112/Q113 的任务方向；具体时序、接口、参数和解析独立重构，非公司原题，不继承公司或届别归因。"
+    },
+    "promptMd": "AXI4完整读接口，所有事务到同一从设备，该接口明确支持跨ID读beat交织；无原子或独占访问。AR按A→B→C顺序握手完成后，才出现以下R序列：A的ARID=1、ARLEN=2（3beat），B的ARID=2、ARLEN=1（2beat），C的ARID=1、ARLEN=0（1beat）。每个事务内部beat按地址顺序返回，所有RRESP=OKAY。A0/A1/A2、B0/B1、C0是可区分的32bit数据标记；只用于本题标识数据归属。\n\n下表是每个上升沿的沿前采样值，RVALID均为1。\n\n| 沿 | RID | RDATA标记 | RLAST | RREADY |\n|---|---:|---|---:|---:|\n| E0 | 1 | A0 | 0 | 1 |\n| E1 | 2 | B0 | 0 | 1 |\n| E2 | 1 | A1 | 0 | 1 |\n| E3 | 1 | A2 | 1 | 0 |\n| E4 | 1 | A2 | 1 | 1 |\n| E5 | 1 | C0 | 1 | 1 |\n| E6 | 2 | B1 | 1 | 1 |\n\n判断序列是否合法；逐沿列各事务累计接受beat数和未完成事务数、事务完成顺序。说明outstanding、读交织、乱序完成在此例分别体现在哪里，以及E3→E4为什么不能换数据。",
+    "explanationMd": "**合法；共接受6个beat，完成顺序A→C→B；E3没有完成任何传输。** A、C同ID且保持事务顺序；B可以与A交织，也可以晚于后提交的C完成。\n\n| 沿 | 是否握手 | 接受的beat | A/B/C累计接受数 | 沿后未完成事务数 |\n|---|---|---|---|---:|\n| E0 | 是 | A0 | 1/0/0 | 3 |\n| E1 | 是 | B0 | 1/1/0 | 3 |\n| E2 | 是 | A1 | 2/1/0 | 3 |\n| E3 | 否 | 无，A2仍在等待 | 2/1/0 | 3 |\n| E4 | 是 | A2（末拍） | 3/1/0 | 2 |\n| E5 | 是 | C0（末拍） | 3/1/1 | 1 |\n| E6 | 是 | B1（末拍） | 3/2/1 | 0 |\n\noutstanding表示已有请求被接受但尚未全部返回，不要求R通道连续服务它。interleaving体现在B0插在A0/A1之间；out-of-order completion体现在C比更早请求的B先完成。两种行为都须遵守ID和接口实际支持范围，不代表任何ID都能随意重排。\n\nE3即使RVALID=1、RLAST=1，也因RREADY=0没有接受末拍；RID/RDATA/RLAST/RRESP须保持到E4握手。E4必须仍是A2，不能偷换成别的ID。A在E4完成后，E5才能返回相同ID的C；每个事务内部beat的地址顺序也必须保持。本题固定为AXI4完整读通道且接口支持跨ID交织，不适用于没有ID/burst的AXI4-Lite。",
+    "commonMistakes": [
+      "看到RLAST就把E3算作事务完成，忽略READY。",
+      "以为AXI4取消写交织，也一并取消了跨ID读交织。",
+      "把同ID的C与A交叉返回，破坏同ID事务顺序。"
+    ],
+    "referenceAnswerMd": "**合法；共接受6个beat，完成顺序A→C→B；E3没有完成任何传输。** A、C同ID且保持事务顺序；B可以与A交织，也可以晚于后提交的C完成。\n\n| 沿 | 是否握手 | 接受的beat | A/B/C累计接受数 | 沿后未完成事务数 |\n|---|---|---|---|---:|\n| E0 | 是 | A0 | 1/0/0 | 3 |\n| E1 | 是 | B0 | 1/1/0 | 3 |\n| E2 | 是 | A1 | 2/1/0 | 3 |\n| E3 | 否 | 无，A2仍在等待 | 2/1/0 | 3 |\n| E4 | 是 | A2（末拍） | 3/1/0 | 2 |\n| E5 | 是 | C0（末拍） | 3/1/1 | 1 |\n| E6 | 是 | B1（末拍） | 3/2/1 | 0 |\n\noutstanding表示已有请求被接受但尚未全部返回，不要求R通道连续服务它。interleaving体现在B0插在A0/A1之间；out-of-order completion体现在C比更早请求的B先完成。两种行为都须遵守ID和接口实际支持范围，不代表任何ID都能随意重排。\n\nE3即使RVALID=1、RLAST=1，也因RREADY=0没有接受末拍；RID/RDATA/RLAST/RRESP须保持到E4握手。E4必须仍是A2，不能偷换成别的ID。A在E4完成后，E5才能返回相同ID的C；每个事务内部beat的地址顺序也必须保持。本题固定为AXI4完整读通道且接口支持跨ID交织，不适用于没有ID/burst的AXI4-Lite。",
+    "rubric": [
+      "只在VALID&&READY时计数，E3为停顿。",
+      "接受A3/B2/C1，共6beat，完成A/C/B。",
+      "未完成事务数3/3/3/3/2/1/0正确。",
+      "解释同ID约束、跨ID交织及停顿payload稳定性。"
+    ]
+  },
+  {
+    "id": "ADAPTED-BOUNDARY-AXI-0002",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "axi",
+    "title": "读交织与写交织的边界：ID不是任意重排许可证",
+    "type": "multiple_choice",
+    "difficulty": "medium",
+    "tags": [
+      "协议与计数边界",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 12,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q103/Q113 的任务方向；具体时序、接口、参数和解析独立重构，非公司原题，不继承公司或届别归因。"
+    },
+    "promptMd": "继续讨论支持跨ID读beat交织的AXI4完整接口：A(ID=1,3beat)、B(ID=2,2beat)、C(ID=1,1beat)按此顺序被同一从设备接受，之后才返回R数据。所有beat在事务内部保持地址顺序，其他协议规则正常满足。下列哪些判断正确？",
+    "explanationMd": "**答案A、C。** AXI的ID把顺序关系分组，不是取消所有顺序要求。\n\n不同ID的读事务可以交织，A0、B0、A1是合法开头；相同ID的A、C仍按请求顺序返回，不能把C0插在A末拍之前。请求可以同时outstanding，不等于可以同ID数据交错。\n\n末拍完成的条件仍是RVALID&&RREADY&&RLAST，等待中的RLAST只表示当前待接受beat是最后一拍；不能提前释放事务槽，也不能切换其payload。\n\nAXI4完整写通道取消AXI3的WID及跨事务写数据交织，不能拿读通道RID规则当作写交织许可。AXI4-Lite又是不同的单beat、无事务ID接口，不能用它的简化约束解释本题。",
+    "commonMistakes": [
+      "将RLAST当无条件事务结束。",
+      "只看总线叫AXI4，就认为读写交织规则完全相同。",
+      "有相同ID就按数据内容猜归属，无视请求先后。"
+    ],
+    "options": [
+      {
+        "id": "A",
+        "textMd": "在其他规则满足时，A0、B0、A1可以连续被接受。"
+      },
+      {
+        "id": "B",
+        "textMd": "A2已经提供且RLAST=1，即使RREADY=0也可以把A标为完成。"
+      },
+      {
+        "id": "C",
+        "textMd": "C虽然已outstanding，仍不能在A的末拍接受前插入C0。"
+      },
+      {
+        "id": "D",
+        "textMd": "AXI4允许借助WID按与RID相同的方式交织A、B的写数据。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确。A/B的ID不同，且题设接口支持读交织；各自内部beat顺序仍保持。",
+      "B": "错误。末拍必须完成VALID&&READY握手才结束事务；等待时必须保留它。",
+      "C": "正确。同ID的事务按请求顺序返回，C不能超越未完成的A。",
+      "D": "错误。AXI4没有AXI3式WID，不能跨写事务交织数据；读交织许可不能推广到写通道。"
+    }
   }
 ]

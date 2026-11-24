@@ -816,5 +816,117 @@
       "首次返回时刻和周期正确。",
       "说明000锁死及最大长度前提。"
     ]
+  },
+  {
+    "id": "ADAPTED-BOUNDARY-DEBOUNCE-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "counter",
+    "title": "可配置毫秒去抖：换阈值时如何处理在途计数",
+    "type": "rtl_coding",
+    "difficulty": "hard",
+    "tags": [
+      "协议与计数边界",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 25,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q127 的任务方向；具体时序、接口、参数和解析独立重构，非公司原题，不继承公司或届别归因。"
+    },
+    "promptMd": "实现debounce_cfg，输入clk、同步高有效rst、已在本时钟域同步的sample、同步配置cfg[1:0]，输出寄存stable与changed。默认50MHz，每毫秒50000个采样沿；参数CYCLES_PER_MS可设1…50000供缩短测试，默认50000。cfg=00/01/10/11对应5/10/15/20ms，即N=5*(cfg+1)*CYCLES_PER_MS个连续样本，不使用真实时间延时。\n\n复位优先：stable=0、changed=0、计数=0，并记录当前cfg。正常情况下，sample==stable立即清掉未完成的反向计数；sample!=stable连续达到N个采样时，在第N个采样沿NBA后更新stable并使changed=1；否则changed=0。稳定后持续相同输入不重复输出事件，两个方向规则相同。只讨论采样序列，不承诺两个采样沿间的模拟输入行为。\n\n当某沿观察到cfg与已记录cfg不同，该沿只记录新配置、清掉未完成计数，保持stable并令changed=0；当前sample不计入新阈值。次沿开始重新累计，即使新阈值变小也不继承旧计数。所有输入是二值、符合本域时序。给完整可综合参数化RTL，不使用#延时；说明计数位宽和第N拍的判断。",
+    "explanationMd": "**把去抖定义成“连续N个反向采样”，配置变化则重新开始。** 计数保存已经连续观察到的反向样本数，当前样本尚未计入。旧计数N−1且本沿仍反向时刚好达到N，更新stable和changed，然后清计数。\n\n| 优先级 | 本沿条件 | stable | 未完成计数 | changed |\n|---|---|---|---|---|\n| 1 | rst | 清0 | 清0 | 0 |\n| 2 | cfg变化 | 保持 | 清0且丢弃当前样本 | 0 |\n| 3 | sample==stable | 保持 | 清0 | 0 |\n| 4 | 反向且旧计数N−1 | 改为sample | 清0 | 1 |\n| 5 | 其余反向样本 | 保持 | 加1 | 0 |\n\n不能用累计反向次数替代连续次数，也不能把配置变小后旧计数直接与新阈值比较，否则旧配置期间的抖动可能立即被新配置误接受。复位时记录cfg，所以复位后的第一个普通样本无需再浪费一拍等待配置确认。\n\n默认最大N=1000000，计数需表示0…999999，20bit足够；实现的threshold还需表示N，使用clog2(最大N+1)同样为20。采样阈值N个样本与从第一到第N采样点的(N−1)个周期并非同一时间定义；本题明确按样本数确认。sample和cfg已同步，当前模块不负责跨域配置相干或机械按键的模拟滤波。",
+    "commonMistakes": [
+      "用run_count==N判断，在第N+1样本才更新。",
+      "cfg变小时继承旧计数，未经新阈值的连续样本就接受。",
+      "sample返回当前stable时仍保留旧累计值。"
+    ],
+    "referenceAnswerMd": "```systemverilog\nmodule debounce_cfg #(\n  parameter integer CYCLES_PER_MS = 50000\n) (\n  input logic clk, rst, sample,\n  input logic [1:0] cfg,\n  output logic stable, changed\n);\n  // Contract: 1 <= CYCLES_PER_MS <= 50000; inputs are already synchronous.\n  localparam integer BITS = $clog2(20 * CYCLES_PER_MS + 1);\n  logic [BITS-1:0] run_count, threshold;\n  logic [1:0] cfg_seen;\n  always_comb begin\n    case (cfg)\n      2'b00: threshold = 5 * CYCLES_PER_MS;\n      2'b01: threshold = 10 * CYCLES_PER_MS;\n      2'b10: threshold = 15 * CYCLES_PER_MS;\n      default: threshold = 20 * CYCLES_PER_MS;\n    endcase\n  end\n  always_ff @(posedge clk) begin\n    if (rst) begin\n      stable <= 1'b0;\n      changed <= 1'b0;\n      run_count <= '0;\n      cfg_seen <= cfg;\n    end else begin\n      changed <= 1'b0;\n      if (cfg != cfg_seen) begin\n        // A configuration change discards both the partial run and this sample.\n        cfg_seen <= cfg;\n        run_count <= '0;\n      end else if (sample == stable) begin\n        run_count <= '0;\n      end else if (run_count == threshold - 1'b1) begin\n        // Old count N-1 plus this opposite sample is exactly N samples.\n        stable <= sample;\n        changed <= 1'b1;\n        run_count <= '0;\n      end else begin\n        run_count <= run_count + 1'b1;\n      end\n    end\n  end\nendmodule\n```\n\nthreshold由cfg给出5/10/15/20毫秒的样本数；run_count表示当前样本之前的连续反向数量。配置变化优先于输入判定，记录新值并丢弃当前样本。终点比较旧计数threshold−1，更新后清计数；changed每拍先默认清0，稳定输入不会重复触发。参数范围保证乘法不溢出且位宽非零。",
+    "rubric": [
+      "完整接口、参数、同步复位和cfg记录。",
+      "cfg变化优先清段且丢弃本沿样本。",
+      "反向连续N次才更新，返回stable立即清段。",
+      "计数位宽足够，精确N−1终点、无综合延时。",
+      "changed单次事件，双方向与持续稳态行为完整。"
+    ]
+  },
+  {
+    "id": "ADAPTED-BOUNDARY-DEBOUNCE-0002",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "counter",
+    "title": "50MHz、20ms阈值：计数器到底需要多少位",
+    "type": "numeric",
+    "difficulty": "hard",
+    "tags": [
+      "协议与计数边界",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 12,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q127 的任务方向；具体时序、接口、参数和解析独立重构，非公司原题，不继承公司或届别归因。"
+    },
+    "promptMd": "50MHz采样时钟，去抖cfg=11要求连续1000000个反向样本（按20ms×50MHz定义）。计数器只保存当前样本前的数量0…N−1；旧计数等于N−1时接受当前样本，清计数并更新稳定值，所以寄存器永不保存N。问最小无符号计数位宽（bit，整数）。同时解释为什么不能把20ms直接当20000个采样、为什么此实现比较N−1。",
+    "explanationMd": "**需要20bit。** 50MHz是每秒50000000个采样，20ms=0.020s，所以N=1000000；计数最大999999。19bit最大524287不足，20bit最大1048575足够，即ceil(log2 N)=20。\n\n在第一个反向样本到来前run_count=0；本沿观察到第N个样本时，旧run_count已是N−1，当前样本使总连续数量刚好达到N，此时更新而不保存N。若把比较改为旧计数==N，会等到N+1样本，且在边界为2的幂时还可能引入额外位宽要求。\n\n20000是20ms中的微秒数，不是采样数；50MHz每微秒有50个周期。以时间单位换算和2^w−1容量两种方式检查能避免只背clog2而写错范围。本题明确按采样数量定义确认阈值，不声称第一至最后采样点相隔整20ms。",
+    "commonMistakes": [
+      "把毫秒换成微秒后直接当周期数，漏掉每微秒50次采样。",
+      "只看20这个数字计算位宽。",
+      "旧计数比较N，造成额外一拍等待。"
+    ],
+    "expectedValue": 20,
+    "absoluteTolerance": 0,
+    "unit": "bit",
+    "defaultUnit": "bit",
+    "acceptedUnits": {
+      "bit": 1
+    }
+  },
+  {
+    "id": "ADAPTED-BOUNDARY-DEBOUNCE-0003",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "counter",
+    "title": "去抖过程中更改配置：当前样本是否算入新段",
+    "type": "waveform_analysis",
+    "difficulty": "hard",
+    "tags": [
+      "协议与计数边界",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 12,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q127 的任务方向；具体时序、接口、参数和解析独立重构，非公司原题，不继承公司或届别归因。"
+    },
+    "promptMd": "使用本批debounce_cfg，测试参数CYCLES_PER_MS=1；cfg00阈值5个样本，cfg01阈值10个样本。复位已结束且stable=0、changed=0、反向计数0、记录cfg00。输入和配置均是各上升沿的沿前采样值：E1…E3为sample1/cfg00；E4改为sample1/cfg01；E5…E15持续sample1/cfg01；E16改为sample0/cfg00；E17…E21持续sample0/cfg00。无复位变化。\n\n契约：配置变化沿清计数、记录cfg、保持stable、changed=0，当前样本丢弃；只有连续N个新反向样本才更新stable且changed=1一次。列关键沿后的反向计数、stable/changed，指出两次稳定值更新分别在哪一沿。",
+    "explanationMd": "**E14沿后stable=1且changed=1；E21沿后stable=0且changed=1。** E4/E16都是配置变化沿，必须丢弃当前输入而不计数。\n\n| 沿/区间 | 配置及输入 | 沿后反向计数 | stable/changed |\n|---|---|---|---|\n| E1…E3 | cfg00，sample1 | 1…3 | 0/0 |\n| E4 | cfg改01，sample1 | 0 | 0/0 |\n| E5…E13 | cfg01，sample1 | 1…9 | 0/0 |\n| E14 | cfg01，sample1，第10个新样本 | 0 | 1/1 |\n| E15 | cfg01，sample1 | 0 | 1/0 |\n| E16 | cfg改00，sample0 | 0 | 1/0 |\n| E17…E20 | cfg00，sample0 | 1…4 | 1/0 |\n| E21 | cfg00，sample0，第5个新样本 | 0 | 0/1 |\n\n若继承E1…E3的3次旧计数，cfg01的确认就会提前，混用了两个不同配置的连续段。E16同时发生输入反向和配置变化，但配置变化优先，该0不计入新段。changed只表示刚发生稳定值变化的事件，E15必须清0，不能因stable继续为1而保持高。此例把CYCLES_PER_MS缩到1便于逐沿分析，不把小参数的周期数说成真实50MHz毫秒。",
+    "commonMistakes": [
+      "把E4或E16的样本算入新配置的第一拍。",
+      "配置变动时保留此前连续数量。",
+      "稳定值为1期间一直保持changed=1。"
+    ],
+    "referenceAnswerMd": "**E14沿后stable=1且changed=1；E21沿后stable=0且changed=1。** E4/E16都是配置变化沿，必须丢弃当前输入而不计数。\n\n| 沿/区间 | 配置及输入 | 沿后反向计数 | stable/changed |\n|---|---|---|---|\n| E1…E3 | cfg00，sample1 | 1…3 | 0/0 |\n| E4 | cfg改01，sample1 | 0 | 0/0 |\n| E5…E13 | cfg01，sample1 | 1…9 | 0/0 |\n| E14 | cfg01，sample1，第10个新样本 | 0 | 1/1 |\n| E15 | cfg01，sample1 | 0 | 1/0 |\n| E16 | cfg改00，sample0 | 0 | 1/0 |\n| E17…E20 | cfg00，sample0 | 1…4 | 1/0 |\n| E21 | cfg00，sample0，第5个新样本 | 0 | 0/1 |\n\n若继承E1…E3的3次旧计数，cfg01的确认就会提前，混用了两个不同配置的连续段。E16同时发生输入反向和配置变化，但配置变化优先，该0不计入新段。changed只表示刚发生稳定值变化的事件，E15必须清0，不能因stable继续为1而保持高。此例把CYCLES_PER_MS缩到1便于逐沿分析，不把小参数的周期数说成真实50MHz毫秒。",
+    "rubric": [
+      "E4/E16配置变化清计数且不计当前样本。",
+      "E14第10个新1、E21第5个新0准确。",
+      "E15清事件，计数更新后复零。",
+      "测试加速参数与真实采样频率区分清楚。"
+    ]
   }
 ]

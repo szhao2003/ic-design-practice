@@ -927,12 +927,14 @@
     },
     {
       "number": 113,
-      "status": "partial",
+      "status": "covered",
       "localIds": [
         "ADAPTED-FOCUSED-AXI-VERSION-0001",
-        "ADAPTED-CORE-AXI-0002"
+        "ADAPTED-CORE-AXI-0002",
+        "ADAPTED-BOUNDARY-AXI-0001",
+        "ADAPTED-BOUNDARY-AXI-0002"
       ],
-      "note": "AXI3/4差异、写交织与outstanding已练；读beat交织未完整逐拍建模。"
+      "note": "补完整按ID队列追踪的读beat交织、背压末拍计数、完成顺序及AXI3/4读写交织区别；不把跨ID许可推广到同ID。"
     },
     {
       "number": 114,
@@ -1033,11 +1035,14 @@
     },
     {
       "number": 127,
-      "status": "partial",
+      "status": "rewritten",
       "localIds": [
-        "ADAPTED-FOCUSED-RTL-DEBOUNCE-0001"
+        "ADAPTED-FOCUSED-RTL-DEBOUNCE-0001",
+        "ADAPTED-BOUNDARY-DEBOUNCE-0001",
+        "ADAPTED-BOUNDARY-DEBOUNCE-0002",
+        "ADAPTED-BOUNDARY-DEBOUNCE-0003"
       ],
-      "note": "新增连续样本去抖RTL；配置毫秒阈值与计数位宽尚非完整等价任务。"
+      "note": "补50MHz下5/10/15/20ms可配置去抖、20bit计数与配置变更清段契约；默认25万/100万样本终点及缩短参数独立TB。阈值按连续采样数量定义，原模拟按键条件重新明确。"
     },
     {
       "number": 128,

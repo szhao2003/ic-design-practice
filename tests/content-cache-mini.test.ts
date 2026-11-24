@@ -4,7 +4,7 @@ import {gradeAnswer} from '../src/domain/grading';
 const get=(n:number)=>questions.find(q=>q.id===`ADAPTED-MINI-CACHE-000${n}`)!;
 describe('Cache两题小补充',()=>{
  it('新增2题，共132，来源与旧题数量明确',()=>{
-  expect(questions.filter(q=>!/^ADAPTED-(FOCUSED|INTEGRATION)-/.test(q.id))).toHaveLength(132);expect(questions.filter(q=>q.id.startsWith('ADAPTED-MINI-'))).toHaveLength(2);
+  expect(questions.filter(q=>!/^ADAPTED-(FOCUSED|INTEGRATION|BOUNDARY)-/.test(q.id))).toHaveLength(132);expect(questions.filter(q=>q.id.startsWith('ADAPTED-MINI-'))).toHaveLength(2);
   for(const q of [get(1),get(2)])expect(q).toMatchObject({contentVersion:1,source:{kind:'practice_collection',evidenceGrade:'C',questionFidelity:'topic_only_reconstruction'}});
  });
  it('按时间戳选最久未用者，独立核对LRU队列',()=>{
