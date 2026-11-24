@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 module tb;
   integer a=3,y=99,marker=0,i,expected;
-  reg signed [3:0] small;
+  reg signed [3:0] signed_input;
   reg signed [4:0] wide,magnitude;
   reg [2:0] q;
   integer orbit[0:7];
@@ -14,7 +14,7 @@ module tb;
     if(no_args()!=17)$fatal(1,"no-argument function");
     set_marker();if(marker!=23)$fatal(1,"void function");
     for(i=0;i<16;i++)begin
-      small=i[3:0];wide=small;magnitude=(wide<0)?-wide:wide;
+      signed_input=i[3:0];wide=signed_input;magnitude=(wide<0)?-wide:wide;
       expected=(i<8)?i:16-i;
       if(magnitude!==expected[4:0])$fatal(1,"extended absolute value");
     end
