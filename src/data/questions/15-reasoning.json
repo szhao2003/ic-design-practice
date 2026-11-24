@@ -72,5 +72,79 @@
       "只计算恰好一个坏件，遗漏可能同时抽到两个坏件。",
       "计算出8/15后忘记转成百分数。"
     ]
+  },
+  {
+    "id": "ADAPTED-EXTENSION-PROB-0001",
+    "contentVersion": 1,
+    "topicId": "15",
+    "subtopicId": "probability",
+    "title": "测试报Fail后，芯片真的有缺陷的概率",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://faculty.washington.edu/yenchic/20A_stat512/Lec1_probability.html",
+      "note": "参考公开技术/教学资料中的知识方向，题设、参数和解答独立构造，非公司原题。本次已核对链接与主题，不继承公司、届别或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路脚本与接口第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "随机抽取一颗芯片，真实有缺陷的先验概率2%。一次筛查对有缺陷芯片报Fail的概率90%，对无缺陷芯片误报Fail的概率5%。每颗芯片恰属于有缺陷或无缺陷之一，不进行复测。已知本颗报Fail，求它真实有缺陷的条件概率，填写百分数，例如25表示25%。",
+    "explanationMd": "**答案：约26.86567%。**\n\n以100000颗的期望数量作概率树：有缺陷2000，其中1800报Fail；无缺陷98000，其中4900误报Fail。因此所有Fail期望共6700，真正有缺陷的占1800/6700=18/67。\n\nBayes形式：P(缺陷|Fail)=(0.02×0.90)/(0.02×0.90+0.98×0.05)=0.018/0.067≈0.2686567，转换为百分数26.86567%。\n\n90%是P(Fail|缺陷)，不能反过来直接当P(缺陷|Fail)。分母必须包含良品误报；由于良品基数大，较低误报率仍贡献大量Fail。上述数量是按概率缩放的期望账，不保证每批恰有这些数量。",
+    "commonMistakes": [
+      "直接回答90%，把条件概率方向倒置。",
+      "只算0.02×0.9=1.8%，没有除以所有Fail概率。",
+      "分母用0.02+0.05，把先验与条件概率相加。"
+    ],
+    "type": "numeric",
+    "expectedValue": 26.865671641791046,
+    "absoluteTolerance": 0.0001,
+    "unit": "%",
+    "defaultUnit": "%",
+    "acceptedUnits": {
+      "%": 1
+    }
+  },
+  {
+    "id": "ADAPTED-EXTENSION-PROB-0002",
+    "contentVersion": 1,
+    "topicId": "15",
+    "subtopicId": "probability",
+    "title": "最多三次重试：完成时间不能直接套无限几何分布",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://ocw.mit.edu/courses/6-436j-fundamentals-of-probability-fall-2018/f6a391ad22d454dea0903bb72eb58728_MIT6_436JF18_lec06.pdf",
+      "note": "参考公开技术/教学资料中的知识方向，题设、参数和解答独立构造，非公司原题。本次已核对链接与主题，不继承公司、届别或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路脚本与接口第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "一次传输尝试耗时5 μs，无论成功或失败都占满5 μs。每次独立成功概率0.8。成功就结束；失败且还允许下一次时，等待2 μs后再试；最多尝试3次。第三次失败也立即结束，不再等待。\n\n从第一次开始到成功或最终放弃为止，求无条件期望总时间，单位μs。最终失败的记录也要计入，不要求成功条件下的均值。",
+    "explanationMd": "**答案：6.68 μs。**\n\n| 结束路径 | 概率 | 总时间 |\n|---|---:|---:|\n| 第1次成功 | 0.8 | 5 μs |\n| 第2次成功 | 0.2×0.8=0.16 | 5+2+5=12 μs |\n| 第3次结束（成功或失败） | 0.2²=0.04 | 5+2+5+2+5=19 μs |\n\n概率和为1。期望为0.8×5+0.16×12+0.04×19=6.68 μs。\n\n也可用“该阶段是否发生”分解：期望尝试数1+0.2+0.04=1.24；期望等待次数0.2+0.04=0.24，所以5×1.24+2×0.24=6.68。第三次尝试后没有额外等待。\n\n无限重试的1/p=1.25不适用于这个最多3次的停止规则；若只对最终成功的记录取平均，还须重新按成功概率0.992归一化，本题明确不这样做。",
+    "commonMistakes": [
+      "使用无限几何分布的1/0.8，忽略最多3次的上限。",
+      "第三次失败后又多加2 μs等待。",
+      "遗漏最终失败的0.008概率路径，误算为条件均值。"
+    ],
+    "type": "numeric",
+    "expectedValue": 6.68,
+    "absoluteTolerance": 0.0001,
+    "unit": "μs",
+    "defaultUnit": "μs",
+    "acceptedUnits": {
+      "μs": 1
+    }
   }
 ]

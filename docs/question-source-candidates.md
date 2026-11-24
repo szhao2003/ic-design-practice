@@ -94,3 +94,20 @@ Python参考代码实际运行、其他独立模型与未执行的物理实现�
 | ADAPTED-SYSTEM-FPGA-0002 | 16项signed乘加：为什么19 bit还差一个值？ | [公开资料](https://docs.amd.com/api/khub/documents/gu4oRPFEh_Pm2uaAlfY6Kg/content) |
 
 未采用：UNM旧bist1课件重定向到主页，无法核对正文。逐题支持范围与去重见 [本批审核](CONTENT_BATCH_09_SYSTEM.md)。
+
+## 电路脚本与接口第二批实际使用（2026-11-23）
+
+链接本次实际访问，仅取技术方向，条件独立构造。
+
+| ID | 内容 | URL |
+|---|---|---|
+| ADAPTED-EXTENSION-I2C-0001 | I²C仲裁逐位推演：发送1却读到0时谁退出？ | [技术/教学来源](https://www.ti.com/lit/an/sbaa565/sbaa565.pdf) |
+| ADAPTED-EXTENSION-I2C-0002 | I²C上拉：同时满足上升时间和灌电流 | [技术/教学来源](https://www.ti.com/lit/an/slva689a/slva689a.pdf) |
+| ADAPTED-EXTENSION-CIRCUIT-0001 | 带负载分压：输出电阻不能忽略 | [技术/教学来源](https://www.ocw.mit.edu/courses/6-061-introduction-to-electric-power-systems-spring-2011/d79822ef5fbdb21b1c44e1b3b8282453_MIT6_061S11_ch1.pdf) |
+| ADAPTED-EXTENSION-CIRCUIT-0002 | 有限脉冲的RC响应：下降段从哪个电压开始？ | [技术/教学来源](https://circuits.mit.edu/_static/S26/handouts/lec06a/slides.pdf) |
+| ADAPTED-EXTENSION-TOOLS-0001 | Python读寄存器字节：字节序与signed要分别指定 | [技术/教学来源](https://docs.python.org/3.12/library/stdtypes.html#int.from_bytes) |
+| ADAPTED-EXTENSION-TOOLS-0002 | 日志去重：保留最后值，并按最后出现顺序输出 | [技术/教学来源](https://docs.python.org/3.12/library/stdtypes.html#dict) |
+| ADAPTED-EXTENSION-PROB-0001 | 测试报Fail后，芯片真的有缺陷的概率 | [技术/教学来源](https://faculty.washington.edu/yenchic/20A_stat512/Lec1_probability.html) |
+| ADAPTED-EXTENSION-PROB-0002 | 最多三次重试：完成时间不能直接套无限几何分布 | [技术/教学来源](https://ocw.mit.edu/courses/6-436j-fundamentals-of-probability-fall-2018/f6a391ad22d454dea0903bb72eb58728_MIT6_436JF18_lec06.pdf) |
+
+N1570/GNU位移手册本次超时未采用；UW PDF无可读正文，使用同校公开HTML课程。范围与去重见 [本批审核](CONTENT_BATCH_10_EXTENSION.md)。

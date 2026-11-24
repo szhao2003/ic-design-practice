@@ -118,5 +118,61 @@ class ReadScoreboardTests(unittest.TestCase):
         self.assertEqual(valid, 3)
 
 
+
+latest_spec = importlib.util.spec_from_file_location(
+    "latest_by_key", ROOT / "examples/python/latest_by_key.py"
+)
+latest_module = importlib.util.module_from_spec(latest_spec)
+latest_spec.loader.exec_module(latest_module)
+latest_by_key = latest_module.latest_by_key
+
+
+class LatestByKeyTests(unittest.TestCase):
+    def test_question_example(self):
+        self.assertEqual(latest_by_key([("a", 1), ("b", 2), ("a", 3), ("c", 4), ("b", 5)]),
+                         [("a", 3), ("c", 4), ("b", 5)])
+
+    def test_empty_and_all_same_key(self):
+        self.assertEqual(latest_by_key([]), [])
+        self.assertEqual(latest_by_key([("x", 1), ("x", 2), ("x", 3)]), [("x", 3)])
+
+    def test_last_occurrence_order_is_not_alphabetic(self):
+        self.assertEqual(latest_by_key([("z", 1), ("a", 2), ("m", 3), ("a", 4)]),
+                         [("z", 1), ("m", 3), ("a", 4)])
+
+    def test_single_pass_iterable(self):
+        class Once:
+            def __init__(self):
+                self.started = False
+            def __iter__(self):
+                if self.started:
+                    raise AssertionError("input traversed twice")
+                self.started = True
+                yield "a", 1
+                yield "b", 2
+                yield "a", 3
+        self.assertEqual(latest_by_key(Once()), [("b", 2), ("a", 3)])
+
+    def test_input_unchanged_and_values_shared(self):
+        first, last = [], {"x": []}
+        records = [("", first), ("λ", 1), ("", last)]
+        before = records.copy()
+        result = latest_by_key(records)
+        self.assertEqual(records, before)
+        self.assertEqual(result[0], ("λ", 1))
+        self.assertIs(result[1][1], last)
+        self.assertEqual(first, [])
+        self.assertEqual(last, {"x": []})
+
+    def test_all_short_sequences_against_last_index_oracle(self):
+        from itertools import product
+        for size in range(7):
+            for keys in product("abc", repeat=size):
+                records = list(zip(keys, range(size)))
+                last_indices = [i for i, key in enumerate(keys) if key not in keys[i + 1:]]
+                expected = [records[i] for i in last_indices]
+                self.assertEqual(latest_by_key(iter(records)), expected)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -379,5 +379,99 @@
       "把多ID接口当成只有一个全局FIFO，错误拒绝B先返回。",
       "把单beat读结论未经分析套到其他通道、burst或更强内存顺序模型。"
     ]
+  },
+  {
+    "id": "ADAPTED-EXTENSION-I2C-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "i2c",
+    "title": "I²C仲裁逐位推演：发送1却读到0时谁退出？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.ti.com/lit/an/sbaa565/sbaa565.pdf",
+      "note": "参考公开技术/教学资料中的知识方向，题设、参数和解答独立构造，非公司原题。本次已核对链接与主题，不继承公司、届别或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路脚本与接口第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "两控制器A、B同时START，SCL已同步，无clock stretching，所有建立/保持时间满足。都使用开漏SDA：0表示拉低，1表示释放，由上拉产生高电平。地址为7 bit，MSB先传；A发地址0x52，B发0x56，两者R/W均为0。START后第一个地址bit编号1，第8bit为R/W，不包含ACK。\n\n每次SCL高电平采样SDA。控制器若想发1却读到0即失去仲裁，从随后各bit释放SDA，获胜者继续。列出第一次分歧的bit、谁退出、8个bit的总线序列，并解释为何不是“发送1的一方更强”。",
+    "explanationMd": "**A获胜，B在第5bit失去仲裁；总线8 bit为10100100，即0xA4。**\n\n| bit | A计划值 | B计划值 | 实际SDA |\n|---:|---:|---:|---:|\n| 1 | 1 | 1 | 1 |\n| 2 | 0 | 0 | 0 |\n| 3 | 1 | 1 | 1 |\n| 4 | 0 | 0 | 0 |\n| 5 | 0 | 1 | 0，B发现失仲裁 |\n| 6 | 1 | 已退出/释放 | 1 |\n| 7 | 0 | 已退出/释放 | 0 |\n| 8（R/W） | 0 | 已退出/释放 | 0 |\n\n0x52的7 bit地址是1010010，0x56是1010110。开漏中的1是释放，不是主动强驱高；任一器件拉低就会使SDA为0。B在bit5想发1却读0，必须停止争用，不能继续把后续计划位接到总线上。\n\n0x52是7 bit地址，左移一位并加R/W=0才得到本次总线首字节0xA4。题目不分析第9bit ACK、模拟电压波形或异步SCL竞争。",
+    "commonMistakes": [
+      "把0x52直接写成总线首字节，漏掉R/W位。",
+      "以为1会覆盖0，混淆开漏释放与推挽强驱高。",
+      "失去仲裁后继续用B的计划值参与后续逐位AND。"
+    ],
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**A获胜；B在第5个地址bit失去仲裁。**\n\n总线8 bit为10100100，即0xA4。A的7 bit地址为1010010，B为1010110；第5bit时A拉低而B释放，B想发1却读到0，因此退出，随后由A继续。逐位表及开漏原因见下方解析。",
+    "rubric": [
+      "地址展开为1010010与1010110。",
+      "第一次分歧为第5bit，A拉0，B释放1。",
+      "B读0而想发1，失去仲裁；随后释放。",
+      "总线10100100=0xA4，区分7bit地址与8bit首字节。"
+    ]
+  },
+  {
+    "id": "ADAPTED-EXTENSION-I2C-0002",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "i2c",
+    "title": "I²C上拉：同时满足上升时间和灌电流",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.ti.com/lit/an/slva689a/slva689a.pdf",
+      "note": "参考公开技术/教学资料中的知识方向，题设、参数和解答独立构造，非公司原题。本次已核对链接与主题，不继承公司、届别或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路脚本与接口第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "题定集总RC模型，VDD=1.8 V，允许VOL_max=0.2 V，器件在VOL_max处保证灌电流IOL=2 mA，总线电容Cb=150 pF。要求30%到70%上升时间tr≤300 ns。按本题模型需同时满足Rp≥(VDD−VOL_max)/IOL，以及tr=0.8473×Rp×Cb。忽略公差、额外漏电和其他限制。下列哪个单一上拉电阻满足两条条件？",
+    "explanationMd": "**答案：B，2.2 kΩ。**\n\n下限Rp_min=(1.8−0.2)/0.002=800 Ω；上限Rp_max=300 ns/(0.8473×150 pF)≈2360.44 Ω。允许范围约[800，2360.44] Ω。\n\n| 电阻 | 在VOL_max处需灌电流 | tr | 判断 |\n|---|---:|---:|---|\n| 680 Ω | 2.353 mA | 86.425 ns | 超过保证灌电流 |\n| 2.2 kΩ | 0.727 mA | 279.609 ns | 两项满足 |\n| 2.7 kΩ | 0.593 mA | 343.157 ns | 上升太慢 |\n| 4.7 kΩ | 0.340 mA | 597.347 ns | 上升太慢 |\n\n减小电阻能加快上升，却增加拉低电流；增大电阻则相反。本题只按给定两项约束判定，真实板级设计还应计电容与电阻公差、实际器件电压/电流规格及波形裕量，不以此替代测量。",
+    "commonMistakes": [
+      "只看RC越小越好，忽略低电平灌电流上限。",
+      "只看低电平功耗选大电阻，忽略上升时间。",
+      "将150 pF代为150 nF，或把2 mA写成2 A。"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "680 Ω"
+      },
+      {
+        "id": "B",
+        "textMd": "2.2 kΩ"
+      },
+      {
+        "id": "C",
+        "textMd": "2.7 kΩ"
+      },
+      {
+        "id": "D",
+        "textMd": "4.7 kΩ"
+      }
+    ],
+    "correctOptionIds": [
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "680<800 Ω；VOL_max处需约2.353 mA，超过2 mA保证值。",
+      "B": "2200位于800…2360.44 Ω内，tr约279.609 ns。",
+      "C": "2700超过上限，tr约343.157 ns，超过300 ns。",
+      "D": "4700超过上限，tr约597.347 ns；低电流不能弥补上升慢。"
+    }
   }
 ]

@@ -5,6 +5,7 @@ const questions=(await Promise.all(files.map(async f=>JSON.parse(await readFile(
 const references={
   'ADAPTED-TOOLSFPGA-TOOLS-0001':'examples/python/slack_summary.py',
   'ADAPTED-CORE-DV-0003':'examples/python/read_scoreboard.py',
+  'ADAPTED-EXTENSION-TOOLS-0002':'examples/python/latest_by_key.py',
 };
 for(const [id,file] of Object.entries(references)){
   const question=questions.find(q=>q.id===id);
@@ -15,4 +16,4 @@ for(const [id,file] of Object.entries(references)){
 const python=process.platform==='win32'?'python':'python3';
 const result=spawnSync(python,['-B','tests/python_reference_test.py'],{stdio:'inherit',timeout:30000});
 if(result.error||result.status!==0)throw new Error(`Python 参考代码测试失败：${result.error?.message??result.status}`);
-console.log('Python references: 2 exact published functions + 12 runtime tests PASS.');
+console.log('Python references: 3 exact published functions + 18 runtime tests PASS.');

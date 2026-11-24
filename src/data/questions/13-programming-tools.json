@@ -93,5 +93,74 @@
       "将mask本身与v相与，误把提取当成替换。",
       "把普通变量位运算结论直接推广到任意具有副作用的MMIO寄存器。"
     ]
+  },
+  {
+    "id": "ADAPTED-EXTENSION-TOOLS-0001",
+    "contentVersion": 1,
+    "topicId": "13",
+    "subtopicId": "bitwise",
+    "title": "Python读寄存器字节：字节序与signed要分别指定",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.python.org/3.12/library/stdtypes.html#int.from_bytes",
+      "note": "参考公开技术/教学资料中的知识方向，题设、参数和解答独立构造，非公司原题。本次已核对链接与主题，不继承公司、届别或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路脚本与接口第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "Python 3中有原始字节raw=bytes([0x80,0x00,0x00,0x01])。求int.from_bytes(raw, byteorder=\"big\", signed=True)的十进制结果。这是按给定字节序解释32 bit补码，不依赖运行电脑的本机字节序。",
+    "explanationMd": "**答案：−2147483647。**\n\nbig表示第一个字节最重要，位模式为0x80000001。先当无符号解释，值为2^31+1=2147483649；最高位为1且signed=True，所以按32 bit补码减去2^32，得到−2147483647。\n\n| 解释方式 | 数值 |\n|---|---:|\n| big, signed=False | 2147483649 |\n| big, signed=True | −2147483647 |\n| little, signed=True | 16777344（0x01000080） |\n\n字节序控制每个字节的权重；signed控制得到的完整位模式是否按补码解读。显式传入big不会随CPU字节序改变。Python整数本身无固定32 bit溢出，但这4个输入字节定义了本次补码解释的宽度。",
+    "commonMistakes": [
+      "把0x80直接当作负128后与其他字节随意相加。",
+      "忽略signed=True，只返回无符号2147483649。",
+      "把本机字节序当作显式big参数的替代。"
+    ],
+    "type": "numeric",
+    "expectedValue": -2147483647,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-EXTENSION-TOOLS-0002",
+    "contentVersion": 1,
+    "topicId": "13",
+    "subtopicId": "file-processing",
+    "title": "日志去重：保留最后值，并按最后出现顺序输出",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.python.org/3.12/library/stdtypes.html#dict",
+      "note": "参考公开技术/教学资料中的知识方向，题设、参数和解答独立构造，非公司原题。本次已核对链接与主题，不继承公司、届别或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路脚本与接口第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "编写Python 3.7+函数latest_by_key(records)。records是只遍历一次的可迭代对象，每项为(key,value)二元组，key保证为字符串，value可为任意对象。对每个key只保留最后一次的value，并按各key最后一次出现的位置从前到后输出(key,value)列表。不要排序key，不改动输入记录或value对象，不要求深复制。\n\n例：[(\"a\",1),(\"b\",2),(\"a\",3),(\"c\",4),(\"b\",5)]应返回[(\"a\",3),(\"c\",4),(\"b\",5)]。空输入返回[]。给完整函数并说明为什么只做d[key]=value不够。",
+    "explanationMd": "**先删除旧键再重新插入，更新值的同时更新字典迭代位置。**\n\nPython 3.7+字典保证插入顺序。已有键仅重新赋值不会移动位置；删除后再插入才会移到末尾。因此单纯dict(records)的a/b/c顺序仍按第一次出现，不符合题目要求。\n\n处理样例时，键顺序依次为a；a,b；b,a；b,a,c；a,c,b，最终值为3/4/5。一次遍历完成，平均时间O(n)、额外空间O(k)，k为不同key数；字典操作复杂度使用通常平均情况。value不做拷贝，所以返回的value与输入是同一对象，符合题设。",
+    "commonMistakes": [
+      "只重赋值而不更新键的位置。",
+      "按key字母排序，得到的不是最后出现位置顺序。",
+      "对单次迭代器进行第二次遍历，丢失全部记录。"
+    ],
+    "type": "short_answer",
+    "referenceAnswerMd": "```python\ndef latest_by_key(records):\n    \"\"\"Keep the last value per string key, ordered by its last occurrence.\"\"\"\n    latest = {}\n    for key, value in records:\n        # Reassignment alone would retain the first insertion position.\n        if key in latest:\n            del latest[key]\n        latest[key] = value\n    return list(latest.items())\n```\n\n样例返回[(\"a\",3),(\"c\",4),(\"b\",5)]。删除/重插使重复键移动到当前遍历末尾；仅赋值不会改变已有键顺序。",
+    "rubric": [
+      "最后一次的value覆盖旧值。",
+      "输出按最后出现位置排序，不按初次插入或字母序。",
+      "只遍历records一次，支持迭代器和空输入。",
+      "不修改输入元素；value允许共享引用。"
+    ]
   }
 ]

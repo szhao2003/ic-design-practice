@@ -96,3 +96,7 @@
 | ORIGINAL-APB-0001 | waveform_analysis | 1→2 | 在 E2 完成，共 3 个 PCLK 周期；E2 后回 IDLE。 | 握手逐沿/阶段划分/吞吐单位换算 |
 | ORIGINAL-SPI-0001 | single_choice | 1→2 | 答案：A。空闲低，上升沿采样，首位提前准备。 | 握手逐沿/阶段划分/吞吐单位换算 |
 | ORIGINAL-UART-0001 | numeric | 1→2 | 答案：11520 byte/s。 | 握手逐沿/阶段划分/吞吐单位换算 |
+
+## 2026-11-23 电路脚本与接口第二批
+
+新增ADAPTED-EXTENSION系列8题，原114题逐对象未改。公开来源仅支持方向，全部条件与参考函数独立构造；逐题链接、去重、模型核对及未执行事项见 [本批审核](CONTENT_BATCH_10_EXTENSION.md)。245项前端回归、18项Python运行测试通过；新增函数网页代码与实测文件一致。

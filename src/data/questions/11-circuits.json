@@ -88,5 +88,79 @@
       "把RC时间常数直接当成t50，漏乘ln2。",
       "对7.099四舍五入或向上取整，违反不能超过预算的条件。"
     ]
+  },
+  {
+    "id": "ADAPTED-EXTENSION-CIRCUIT-0001",
+    "contentVersion": 1,
+    "topicId": "11",
+    "subtopicId": "kcl-kvl",
+    "title": "带负载分压：输出电阻不能忽略",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.ocw.mit.edu/courses/6-061-introduction-to-electric-power-systems-spring-2011/d79822ef5fbdb21b1c44e1b3b8282453_MIT6_061S11_ch1.pdf",
+      "note": "参考公开技术/教学资料中的知识方向，题设、参数和解答独立构造，非公司原题。本次已核对链接与主题，不继承公司、届别或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路脚本与接口第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "理想3.3 V电源经R_top=1 kΩ连接输出节点Vout，节点经R_bottom=2 kΩ接地；另有负载R_load=2 kΩ也从Vout接地。所有元件线性、阻值准确，无其他支路，电压测量不加载。求稳态Vout，单位V。",
+    "explanationMd": "**答案：1.65 V。**\n\n负载与下臂接在同一对节点上，应先并联：R_eq=2 kΩ∥2 kΩ=1 kΩ。上下等阻分压，Vout=3.3×1/(1+1)=1.65 V。\n\n用节点KCL独立核对：(3.3−Vout)/1000=Vout/2000+Vout/2000，因此3.3−Vout=Vout。上臂电流1.65 mA，两条下支路各0.825 mA，流入等于流出。\n\n若未接负载，输出才是3.3×2/3=2.2 V。也可把原分压器等效为2.2 V电源串联(1 kΩ∥2 kΩ)=2/3 kΩ，再接2 kΩ负载，仍得1.65 V。分压器不是理想电压源；负载变化会改变输出。",
+    "commonMistakes": [
+      "直接套未加载的2.2 V，忽略负载电流。",
+      "将两个2 kΩ相加，混淆并联与串联。",
+      "只让负载分走电流，却仍强行保持原输出电压。"
+    ],
+    "type": "numeric",
+    "expectedValue": 1.65,
+    "absoluteTolerance": 0.0001,
+    "unit": "V",
+    "defaultUnit": "V",
+    "acceptedUnits": {
+      "V": 1
+    }
+  },
+  {
+    "id": "ADAPTED-EXTENSION-CIRCUIT-0002",
+    "contentVersion": 1,
+    "topicId": "11",
+    "subtopicId": "rc",
+    "title": "有限脉冲的RC响应：下降段从哪个电压开始？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://circuits.mit.edu/_static/S26/handouts/lec06a/slides.pdf",
+      "note": "参考公开技术/教学资料中的知识方向，题设、参数和解答独立构造，非公司原题。本次已核对链接与主题，不继承公司、届别或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "电路脚本与接口第二批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "理想输入电压源经1 kΩ电阻接电容上端，1 nF电容下端接地，输出为电容电压。初始电容电压0 V。t=0输入从0跳到3 V，保持1 μs；t=1 μs输入跳回0 V并保持。无其他负载。电压源变化瞬间电容电压连续。\n\n求t=2 μs时输出电压，单位V，保留至少5位小数。这里仅分析一阶RC模型，不考虑MOS门限。",
+    "explanationMd": "**答案：约0.69763 V。**\n\n时间常数τ=RC=1 kΩ×1 nF=1 μs。\n\n| 时段 | 目标稳态值 | 初始值 | 结束值 |\n|---|---:|---:|---|\n| 0…1 μs | 3 V | 0 V | V1=3(1−e^−1)≈1.89636 V |\n| 1…2 μs | 0 V | V1 | V2=V1 e^−1≈0.69763 V |\n\n合并为V2=3(e^−1−e^−2)。通用公式是V(t)=V_final+(V_initial−V_final)e^(−Δt/τ)。第二段的初值必须是第一段实际结束电压，而不是3 V；有限1τ充电并未到达电源电压。输入骤降时，电容电压不会瞬间变为0，只是电阻电流改变方向。\n\n这是理想线性响应的计算，不是SPICE或晶体管级仿真。",
+    "commonMistakes": [
+      "以3 V作为下降段初值，忘记上升段尚未充满。",
+      "输入跳回0时让电容电压也瞬间归零。",
+      "把第二段时间写成从t=0起的2 μs，又重复计算一段衰减。"
+    ],
+    "type": "numeric",
+    "expectedValue": 0.6976324738044889,
+    "absoluteTolerance": 0.00001,
+    "unit": "V",
+    "defaultUnit": "V",
+    "acceptedUnits": {
+      "V": 1
+    }
   }
 ]
