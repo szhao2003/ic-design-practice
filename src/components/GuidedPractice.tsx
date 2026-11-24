@@ -3,6 +3,7 @@ import type { GuidanceContent, PracticeRound } from '../domain/practice';
 import { guidancePending } from '../domain/practice';
 import { questionGuidance } from '../data/question-guidance';
 import { questions } from '../data/question-bank';
+import { topics } from '../data/topics';
 import { RichText } from './QuestionContent';
 
 export function GuidedPractice({ round, content, disabled, onStart, onAdvance }: { round: PracticeRound; content?: GuidanceContent; disabled: boolean; onStart: () => void; onAdvance: () => void }) {
@@ -19,8 +20,12 @@ export function GuidanceChecklist({ checks }: { checks?: string[] }) {
 }
 
 export function GuidedQuestionLinks() {
-  return <section className="panel"><h2>综合题分步引导</h2><p>这6道题提供逐步思路与答案后的自查清单。可先独立尝试，卡住后再进入辅助引导。</p><ul className="guided-question-links">{questionGuidance.map(item => {
+  const available = questionGuidance.flatMap(item => {
     const q = questions.find(q => q.id === item.questionId && q.contentVersion === item.contentVersion);
-    return q && <li key={q.id}><Link to={`/practice/${encodeURIComponent(q.id)}`}>{q.title}</Link></li>;
-  })}</ul></section>;
+    return q ? [q] : [];
+  });
+  return <section className="panel"><h2>综合题分步引导</h2><p>这{available.length}道题提供逐步思路与答案后的自查清单。可先独立尝试，卡住后再进入辅助引导。</p><div className="guided-topic-grid">{topics.map(topic => {
+    const items = available.filter(q => q.topicId === topic.id);
+    return items.length > 0 && <section key={topic.id}><h3>{topic.name} · {items.length}题</h3><ul className="guided-question-links">{items.map(q => <li key={q.id}><Link to={`/practice/${encodeURIComponent(q.id)}`}>{q.title}</Link></li>)}</ul></section>;
+  })}</div></section>;
 }
