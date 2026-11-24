@@ -1,10 +1,12 @@
+import { guidanceFor } from '../data/question-guidance';
+import { GuidedPractice, GuidanceChecklist } from '../components/GuidedPractice';
 import { displayTag } from '../domain/source-presentation';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { questions } from '../data/question-bank';
 import type { Question } from '../domain/question-schema';
 import { isManual, type Answer } from '../domain/grading';
-import { revealAnswer, saveDraft, selfGrade, submitAutomatic, type PracticeRound } from '../domain/practice';
+import { advanceGuidedPractice, guidancePending, revealAnswer, saveDraft, selfGrade, startGuidedPractice, submitAutomatic, type PracticeRound } from '../domain/practice';
 import { useLearning } from '../storage/LearningContext';
 import { issueSchema, type StoredRound } from '../storage/backup-schema';
 import type { JsonValue } from '../domain/backup-merge';
@@ -77,6 +79,8 @@ export function QuestionWorkspace({ question: latestQuestion, removed, sessionCo
   }
   const round = saved?.round;
   const question = round?.snapshot.question ?? latestQuestion;
+  const guide = guidanceFor(question);
+  const guidePending = guidancePending(round);
   const locked = round?.status !== 'answering';
   const topic = topics.find(t => t.id === question.topicId);
   const subtopic = topic?.subtopics.find(t => t.id === question.subtopicId);
@@ -103,16 +107,18 @@ export function QuestionWorkspace({ question: latestQuestion, removed, sessionCo
       {!locked && <div className="button-row">{isManual(question) ? <button className="button primary" disabled={!!busy || Boolean(error) || (!paper && !(typeof draft === 'string' && draft.trim()))} onClick={() => change((r) => revealAnswer(r, new Date().toISOString(), true, paper))}>保存独立作答并查看参考答案</button> : <button className="button primary" disabled={!!busy || Boolean(error)} onClick={() => change((r) => submitAutomatic(r, new Date().toISOString()))}>提交答案</button>}<button className="button secondary" disabled={!!busy || Boolean(error)} onClick={() => change((r) => revealAnswer(r, new Date().toISOString()))}>直接查看答案（辅助学习）</button></div>}
       {result?.kind === 'submitted' && <div className={result.result.isCorrect ? 'result correct' : 'result incorrect'} role="status">{result.result.isCorrect ? '回答正确' : '回答错误，已加入待巩固与复习'}<pre>你的答案：{answerText(result.answer)}</pre></div>}
       {round?.events.some((event) => event.kind === 'revealed_without_submission') && <p className="notice">本轮属于辅助学习，不计入自动正确率，也不累计独立掌握；下次请重新独立作答。</p>}
-      {round?.status === 'awaiting_self_grade' && <div className="self-grade"><h3>对照评分点，自评本次掌握程度</h3><div className="button-row">{(['good', 'partial', 'again'] as const).map((grade) => <button key={grade} className="button secondary" disabled={!!busy || Boolean(error)} onClick={() => change((r) => selfGrade(r, grade, new Date().toISOString()))}>{({ good: '掌握', partial: '部分掌握', again: '不会' })[grade]}</button>)}</div></div>}
+      {round?.status === 'awaiting_self_grade' && !guidePending && <div className="self-grade"><h3>对照评分点，自评本次掌握程度</h3><div className="button-row">{(['good', 'partial', 'again'] as const).map((grade) => <button key={grade} className="button secondary" disabled={!!busy || Boolean(error)} onClick={() => change((r) => selfGrade(r, grade, new Date().toISOString()))}>{({ good: '掌握', partial: '部分掌握', again: '不会' })[grade]}</button>)}</div></div>}
       {!sessionContext && round?.status === 'complete' && <div className="button-row"><button className="button secondary" disabled={!!busy || Boolean(error)} onClick={() => { void load(true); }}>重做本题</button><Link className="button secondary" to="/practice">选择下一题</Link></div>}
       {progress && <p className="source-note">建议下次复习：{new Date(progress.nextReviewAt).toLocaleString()} · 连续独立掌握 {progress.consecutiveSuccesses} 次</p>}
     </section>}
-    <RoundLearningGate round={round} disabled={!!busy || Boolean(error)} onReveal={() => change(r => revealAnswer(r, new Date().toISOString()))}>
+    {round && <GuidedPractice round={round} content={guide} disabled={!!busy || Boolean(error)} onStart={() => { if (guide) change(r => startGuidedPractice(r, guide, new Date().toISOString())); }} onAdvance={() => change(advanceGuidedPractice)} />}
+    {!guidePending && <RoundLearningGate round={round} disabled={!!busy || Boolean(error)} onReveal={() => change(r => revealAnswer(r, new Date().toISOString()))}>
     <ReferenceAnswer question={question} />
+    <GuidanceChecklist checks={round?.guidance?.checks ?? guide?.checks} />
     <section className="panel"><h2>个人笔记与纠错</h2><label htmlFor="personal-note">我的理解 / 为什么做错</label><textarea id="personal-note" rows={4} value={note} onChange={(e) => { setNote(e.target.value); autoSaveNote('notes', e.target.value); }} /><fieldset><legend>纠错类型</legend>{[["ambiguous_prompt", "题意有歧义"], ["suspected_wrong_answer", "答案疑似错误"], ["needs_diagram", "需要补图"], ["source_check_needed", "来源待核实"]].map(([flag, label]) => <label className="inline-check" key={flag}><input type="checkbox" checked={issueFlags.includes(flag)} onChange={() => { const flags = issueFlags.includes(flag) ? issueFlags.filter((item) => item !== flag) : [...issueFlags, flag]; setIssueFlags(flags); autoSaveNote("issues", { flags, comment: issue }, !flags.length && !issue.trim()); }} />{label}</label>)}</fieldset><label htmlFor="personal-issue">题目疑问（题意歧义、答案疑似错误、需要配图或来源待核）</label><textarea id="personal-issue" rows={2} value={issue} onChange={(e) => { setIssue(e.target.value); autoSaveNote('issues', { flags: issueFlags, comment: e.target.value }, !issueFlags.length && !e.target.value.trim()); }} /><div className="button-row"><button className="button secondary" onClick={() => { void saveNotes(); }}>保存笔记与纠错</button></div><p role="status">{noteMessage}</p></section>
-    <section className="panel"><h2>作答历史（{events.filter((e) => e.kind !== 'revealed_without_submission').length} 次正式提交 / 自评）</h2>{!events.length && <p>暂无历史。仅打开题目或保存草稿不会增加练习次数。</p>}{events.map((event) => <details className="history-entry" key={event.id}><summary>{new Date(event.at).toLocaleString()} · {event.kind === 'submitted' ? event.result.isCorrect ? '自动判分：正确' : '自动判分：错误' : event.kind === 'self_graded' ? `人工自评：${({ good: '掌握', partial: '部分掌握', again: '不会' })[event.effectiveGrade]}` : '辅助揭示'}</summary><pre>{answerText(event.kind === 'revealed_without_submission' ? event.draft : event.answer)}</pre>{'paperCompletedAt' in event && event.paperCompletedAt && <p>已声明纸笔独立完成。</p>}{(() => { const old = state.data.snapshots.find((s) => s.key === event.snapshotKey); return old ? <details><summary>查看当时题面与解析</summary><RichText text={old.question.promptMd} />{'options' in old.question && old.question.options.map((option) => <div key={option.id}><strong>{option.id}</strong><RichText text={option.textMd} /></div>)}<ReferenceAnswer question={old.question} /></details> : <p>历史题面不可用。</p>; })()}</details>)}</section>
+    <section className="panel"><h2>作答历史（{events.filter((e) => e.kind !== 'revealed_without_submission').length} 次正式提交 / 自评）</h2>{!events.length && <p>暂无历史。仅打开题目或保存草稿不会增加练习次数。</p>}{events.map((event) => <details className="history-entry" key={event.id}><summary>{new Date(event.at).toLocaleString()} · {event.kind === 'submitted' ? event.result.isCorrect ? '自动判分：正确' : '自动判分：错误' : event.kind === 'self_graded' ? `人工自评：${({ good: '掌握', partial: '部分掌握', again: '不会' })[event.effectiveGrade]}` : event.reason === 'guidance' ? '辅助引导' : '辅助揭示'}</summary><pre>{answerText(event.kind === 'revealed_without_submission' ? event.draft : event.answer)}</pre>{'paperCompletedAt' in event && event.paperCompletedAt && <p>已声明纸笔独立完成。</p>}{(() => { const old = state.data.snapshots.find((s) => s.key === event.snapshotKey); return old ? <details><summary>查看当时题面与解析</summary><RichText text={old.question.promptMd} />{'options' in old.question && old.question.options.map((option) => <div key={option.id}><strong>{option.id}</strong><RichText text={option.textMd} /></div>)}<ReferenceAnswer question={old.question} /></details> : <p>历史题面不可用。</p>; })()}</details>)}</section>
     <section className="panel"><h2>来源与参考资料</h2><SourceDetails question={question} /></section>
-    </RoundLearningGate>
+    </RoundLearningGate>}
     <section className="panel"><h2>复制题目</h2>{round?.status === 'complete' && <label className="inline-check"><input type="checkbox" checked={includeAnswer} onChange={(e) => setIncludeAnswer(e.target.checked)} />附上本次答案、参考答案与个人错因</label>}<button className="button secondary" onClick={() => { void copyQuestion(); }}>复制完整题面</button><span role="status"> {copied}</span></section>
   </>;
 }

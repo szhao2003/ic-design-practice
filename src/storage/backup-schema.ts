@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { questionSchema } from '../domain/question-schema';
 import { gradeAnswer } from '../domain/grading';
-import { createRound, revealAnswer, saveDraft, selfGrade, submitAutomatic } from '../domain/practice';
+import { advanceGuidedPractice, createRound, revealAnswer, saveDraft, selfGrade, startGuidedPractice, submitAutomatic } from '../domain/practice';
 import { canonical } from '../domain/snapshots';
 import { planBackupMerge, type BackupData } from '../domain/backup-merge';
 import { finishMock, mockReviewDraftId } from '../domain/mock-session';
@@ -16,14 +16,17 @@ const base = { id: text, roundId: text, questionId: text, snapshotKey: text, at:
 const snapshot = z.object({ key: text, question: questionSchema }).strict();
 export const eventSchema = z.discriminatedUnion('kind', [
   z.object({ ...base, kind: z.literal('submitted'), answer, result: z.object({ valid: z.literal(true), isCorrect: z.boolean(), normalizedValue: z.number().optional(), tolerance: z.number().nonnegative().optional() }).strict(), independent: z.literal(true) }).strict(),
-  z.object({ ...base, kind: z.literal('revealed_without_submission'), draft: answer.optional(), independent: z.literal(false) }).strict(),
+  z.object({ ...base, kind: z.literal('revealed_without_submission'), draft: answer.optional(), independent: z.literal(false), reason: z.literal('guidance').optional() }).strict(),
   z.object({ ...base, kind: z.literal('self_graded'), answer: z.string().optional(), paperCompletedAt: timestamp.optional(), requestedGrade: grade, effectiveGrade: grade, independent: z.boolean() }).strict(),
 ]);
 export const roundSchema = z.object({
   id: text, snapshot, startedAt: timestamp, status: z.enum(['answering', 'awaiting_self_grade', 'complete']),
   draft: answer.optional(), independentAnswer: z.string().optional(), paperCompletedAt: timestamp.optional(),
   revealedAt: timestamp.optional(), independent: z.boolean(), events: z.array(eventSchema),
-}).strict();
+  guidance: z.object({ steps: z.array(z.object({ title: text, promptMd: text }).strict()).min(1).max(5), checks: z.array(text).min(1).max(8), currentStep: z.number().int().nonnegative() }).strict().optional(),
+}).strict().superRefine((round, ctx) => {
+  if (round.guidance && (!round.revealedAt || round.independent || round.status === 'answering' || round.guidance.currentStep > round.guidance.steps.length)) ctx.addIssue({ code: 'custom', message: '引导轮次的状态、独立标记或步骤无效。' });
+});
 export const storedRoundSchema = z.object({ revision: z.number().int().nonnegative(), round: roundSchema }).strict();
 export type StoredRound = z.infer<typeof storedRoundSchema>;
 export const issueSchema = z.object({ flags: z.array(z.enum(['ambiguous_prompt', 'suspected_wrong_answer', 'needs_diagram', 'source_check_needed'])).refine((items) => new Set(items).size === items.length), comment: z.string() }).strict();
@@ -98,7 +101,10 @@ export function validateBackup(input: unknown): BackupData {
       if ((!inSession && !mockRound && item.id !== round.snapshot.question.id) || !data.snapshots.some((s) => canonical(s) === canonical(round.snapshot))) throw new Error('草稿与题面快照不匹配。');
       let replay = createRound(round.id, round.snapshot.question, round.startedAt);
       if (round.draft !== undefined) replay = saveDraft(replay, round.draft);
-      if (round.revealedAt) replay = revealAnswer(replay, round.revealedAt, round.independent, Boolean(round.paperCompletedAt));
+      if (round.guidance) {
+        replay = startGuidedPractice(replay, { steps: round.guidance.steps, checks: round.guidance.checks }, round.revealedAt!);
+        for (let step = 0; step < round.guidance.currentStep; step++) replay = advanceGuidedPractice(replay);
+      } else if (round.revealedAt) replay = revealAnswer(replay, round.revealedAt, round.independent, Boolean(round.paperCompletedAt));
       for (const event of round.events) {
         if (!data.events.some((stored) => canonical(stored) === canonical(event))) throw new Error('草稿引用缺失或不同的作答事件。');
         if (event.kind === 'submitted') replay = submitAutomatic(replay, event.at);

@@ -3,10 +3,11 @@ import type { Question } from './question-schema';
 import { assertTimestamp, snapshotQuestion, type QuestionSnapshot } from './snapshots';
 
 export type SelfGrade = 'good' | 'partial' | 'again';
+export type GuidanceContent = { steps: { title: string; promptMd: string }[]; checks: string[] };
 type EventBase = { id: string; roundId: string; questionId: string; snapshotKey: string; at: string };
 export type LearningEvent = EventBase & (
   | { kind: 'submitted'; answer: Answer; result: Extract<Grade, { valid: true }>; independent: true }
-  | { kind: 'revealed_without_submission'; draft?: Answer; independent: false }
+  | { kind: 'revealed_without_submission'; draft?: Answer; independent: false; reason?: 'guidance' }
   | { kind: 'self_graded'; answer?: string; paperCompletedAt?: string; requestedGrade: SelfGrade; effectiveGrade: SelfGrade; independent: boolean }
 );
 export type PracticeRound = {
@@ -20,6 +21,7 @@ export type PracticeRound = {
   revealedAt?: string;
   independent: boolean;
   events: LearningEvent[];
+  guidance?: GuidanceContent & { currentStep: number };
 };
 
 export function createRound(id: string, question: Question, at: string): PracticeRound {
@@ -74,6 +76,7 @@ export function revealAnswer(round: PracticeRound, at: string, independentlyComp
 export function selfGrade(round: PracticeRound, grade: SelfGrade, at: string): PracticeRound {
   if (round.status === 'complete') return round;
   if (round.status !== 'awaiting_self_grade' || !isManual(round.snapshot.question)) throw new Error('请先揭示参考答案。');
+  if (guidancePending(round)) throw new Error('请先完成分步引导，查看完整答案与自查清单。');
   if (!['good', 'partial', 'again'].includes(grade)) throw new Error('未知的自评分。');
   assertTime(round, at);
   const effectiveGrade = !round.independent && grade === 'good' ? 'partial' : grade;
@@ -82,4 +85,22 @@ export function selfGrade(round: PracticeRound, grade: SelfGrade, at: string): P
     paperCompletedAt: round.paperCompletedAt, requestedGrade: grade, effectiveGrade, independent: round.independent,
   };
   return { ...round, status: 'complete', events: [...round.events, event] };
+}
+
+export function guidancePending(round?: PracticeRound): boolean {
+  return Boolean(round?.guidance && round.guidance.currentStep < round.guidance.steps.length);
+}
+
+export function startGuidedPractice(round: PracticeRound, content: GuidanceContent, at: string): PracticeRound {
+  if (round.guidance) return round;
+  if (round.status !== 'answering' || !isManual(round.snapshot.question)) throw new Error('只能在人工自评题作答前开始引导。');
+  if (!content.steps.length || content.steps.length > 5 || !content.checks.length || content.checks.length > 8 || content.steps.some(s => !s.title.trim() || !s.promptMd.trim()) || content.checks.some(c => !c.trim())) throw new Error('解题引导内容无效。');
+  // Persist the assistance event before exposing any hint. The answer draft is retained.
+  const opened = revealAnswer(round, at);
+  return { ...opened, events: opened.events.map(event => event.kind === 'revealed_without_submission' ? { ...event, reason: 'guidance' as const } : event), guidance: { ...structuredClone(content), currentStep: 0 } };
+}
+
+export function advanceGuidedPractice(round: PracticeRound): PracticeRound {
+  if (!round.guidance || round.status !== 'awaiting_self_grade') throw new Error('当前轮次没有可继续的引导。');
+  return { ...round, guidance: { ...round.guidance, currentStep: Math.min(round.guidance.currentStep + 1, round.guidance.steps.length) } };
 }

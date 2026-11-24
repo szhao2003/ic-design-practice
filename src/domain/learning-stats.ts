@@ -47,7 +47,7 @@ export function buildLearningStats(bank: Question[], input: LearningEvent[], now
 
 export function learningEventLabel(event: LearningEvent): string {
   if (event.kind === 'submitted') return event.result.isCorrect ? '自动判分 · 正确' : '自动判分 · 错误';
-  if (event.kind === 'revealed_without_submission') return '辅助学习 · 直接揭示';
+  if (event.kind === 'revealed_without_submission') return event.reason === 'guidance' ? '辅助学习 · 分步引导' : '辅助学习 · 直接揭示';
   const grade = { good: '掌握', partial: '部分掌握', again: '不会' }[event.effectiveGrade];
   return `${event.independent ? '独立人工自评' : '辅助人工自评'} · ${grade}`;
 }

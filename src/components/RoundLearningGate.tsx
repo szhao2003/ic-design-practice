@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import type { PracticeRound } from '../domain/practice';
+import { guidancePending } from '../domain/practice';
 
 export function canViewRoundLearning(round?: PracticeRound): boolean {
-  return Boolean(round && (round.revealedAt || round.status === 'complete'));
+  return Boolean(round && !guidancePending(round) && (round.revealedAt || round.status === 'complete'));
 }
 
 export function RoundLearningGate({ round, disabled, onReveal, children }: { round?: PracticeRound; disabled: boolean; onReveal: () => void; children: ReactNode }) {
