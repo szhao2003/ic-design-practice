@@ -201,5 +201,190 @@
       "对L1 hit也加上L2的6 ns。",
       "把题定额外时间误作已包含前级的路径总时间。"
     ]
+  },
+  {
+    "id": "ADAPTED-ARCHTOOLS-ARCH-0001",
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "pipeline-hazard",
+    "title": "load-use仍需气泡：三条依赖指令逐周期排程",
+    "promptMd": "单发射顺序五级流水IF/ID/EX/MEM/WB，各级1周期。ALU结果在EX末可供下一周期EX转发；load数据在MEM末才能供下一周期EX转发。寄存器同周期先WB写后ID读，无其他结构/控制冒险。load-use冲突时冻结PC和IF/ID并向EX注入1个气泡，允许EX/MEM及MEM/WB转发。三条指令依次为I1:lw x1,0(x0)，I2:add x2,x1,x3，I3:sub x4,x2,x5。I1在C1取指。列各指令IF至WB周期及总完成周期，说明I2/I3是否都要停顿。",
+    "explanationMd": "**I3在C8完成，总8周期；只需一次load-use停顿。** I1各级在C1/C2/C3/C4/C5。I2在C2取指，C3译码，C4仍停在ID；C5进入EX、C6 MEM、C7 WB。I3在C3取指输出出现，C4取指保持，C5进入ID、C6 EX、C7 MEM、C8 WB。\n\nI1的数据到C4末才可用，所以I2不能在C4 EX使用，只能推迟到C5。I2的ALU结果在C5末生成，恰可转发给C6 EX的I3，因此第二个RAW依赖不再增加气泡。保持中的指令不是被重复执行，EX气泡也不是一条退休指令。无停顿3条五级流水需3+4=7周期，加这1个气泡为8；不能把所有依赖都机械停一拍。",
+    "commonMistakes": [
+      "以为有转发就能把load值倒送到同周期EX。",
+      "将保持的IF/ID当作重复指令。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "体系结构与脚本调试",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.cs.cornell.edu/courses/cs3410/2017sp/projects/p2/",
+      "note": "参考公开课程/技术文档中的相关任务或规则，条件与解析独立构造，非公司笔试原题，不用于证明考察频率。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**I3在C8完成，总8周期；只需一次load-use停顿。** I1各级在C1/C2/C3/C4/C5。I2在C2取指，C3译码，C4仍停在ID；C5进入EX、C6 MEM、C7 WB。I3在C3取指输出出现，C4取指保持，C5进入ID、C6 EX、C7 MEM、C8 WB。\n\nI1的数据到C4末才可用，所以I2不能在C4 EX使用，只能推迟到C5。I2的ALU结果在C5末生成，恰可转发给C6 EX的I3，因此第二个RAW依赖不再增加气泡。保持中的指令不是被重复执行，EX气泡也不是一条退休指令。无停顿3条五级流水需3+4=7周期，加这1个气泡为8；不能把所有依赖都机械停一拍。",
+    "rubric": [
+      "I1 WB C5、I2 WB C7、I3 WB C8。",
+      "load-use一拍，ALU转发无额外停顿。",
+      "区分气泡和退休指令。"
+    ]
+  },
+  {
+    "id": "ADAPTED-ARCHTOOLS-ARCH-0002",
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "pipeline-hazard",
+    "title": "分支误预测只对错误次数收费",
+    "promptMd": "稳态执行100条已退休指令，理想每条1周期；其中20条为分支，恰好5条误预测。题定每次误预测额外损失2周期，正确预测无开销。已排除流水填充/排空、数据与结构冒险，不重复统计被冲刷指令。求CPI。",
+    "explanationMd": "**CPI=1.10。** 基础100周期，只有5次误预测各罚2周期，额外10，总110周期；除以100条已退休指令得1.10。20条分支并不都罚时，也不能将错误路径上被冲刷的指令再次计入退休分母。\n\n这里的2周期是题目已经给定的增量，不需要再加一次分支本身的基础执行周期。若要分析有限流水的启动/收尾或其他冒险，应额外给条件，不能把那些开销暗中塞进本题。本题固定误预测次数，不把分支占比和误预测率混用。",
+    "commonMistakes": [
+      "把20条分支都算误预测。",
+      "把冲刷指令放进退休分母。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "体系结构与脚本调试",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.cs.cornell.edu/courses/cs3410/2017sp/projects/p2/",
+      "note": "参考公开课程/技术文档中的相关任务或规则，条件与解析独立构造，非公司笔试原题，不用于证明考察频率。"
+    },
+    "type": "numeric",
+    "expectedValue": 1.1,
+    "absoluteTolerance": 1e-06
+  },
+  {
+    "id": "ADAPTED-ARCHTOOLS-ARCH-0003",
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "cache",
+    "title": "组相联cache地址分解：容量不等于set数",
+    "promptMd": "32bit字节地址，cache数据容量64KiB，4-way，每line64byte，忽略tag/valid存储开销。index直接取紧接block offset之上的bit，无hash或虚拟索引。给定地址0x1234ABCD，求set index的无符号十进制值，并在解析说明offset/index/tag位数。",
+    "explanationMd": "**set index=175。** line64B需要6bit块内偏移；总line数65536/64=1024，4-way分为256个set，需要8bit index；tag剩32−6−8=18bit。index为(address>>6)&255，即0xAF=175。\n\noffset为最低6bit，这个地址offset=13；tag为高18bit，等于0x48D2。4-way表示每组有4条line，不是在地址中额外加2bit来直接选择way；way通过同组tag比较确定。64KiB明确是数据容量，不含tag等元数据，因此不能先扣tag存储再计算组数。",
+    "commonMistakes": [
+      "把1024条line误当1024个set。",
+      "给4-way再分配CPU地址中的2bit选路。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "体系结构与脚本调试",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.cs.cornell.edu/courses/cs3410/2026sp/notes/caches.html",
+      "note": "参考公开课程/技术文档中的相关任务或规则，条件与解析独立构造，非公司笔试原题，不用于证明考察频率。"
+    },
+    "type": "numeric",
+    "expectedValue": 175,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-ARCHTOOLS-ARCH-0004",
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "endian",
+    "title": "小端半字读取：先找字节地址，再谈对齐",
+    "promptMd": "抽象CPU使用小端字节序，允许非对齐无符号16bit load，且明确没有陷阱或访问副作用。内存0x100…0x105的byte依次是78、56、34、12、9A、BC（均十六进制）。读取地址0x101处的16bit无符号数，求十进制结果。此题不依赖任何具体ISA默认是否允许非对齐。",
+    "explanationMd": "**结果0x3456，即13398。** 地址0x101存低byte=0x56，下一地址0x102存高byte=0x34，小端组合为0x34×256+0x56=13398。不能从0x100开始取，也不能把两个byte按大端拼成0x5634。\n\n地址序列和数值大小端是两件事：先定位本次访问覆盖的两个具体byte，再按小端解释。实际处理器对非对齐可能有不同规定，本题已经明确允许且无副作用，因此不能以其他ISA会trap来拒绝题面。",
+    "commonMistakes": [
+      "从对齐基地址0x100读取。",
+      "小端被误解成整个地址反向排列。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "体系结构与脚本调试",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.python.org/3/library/stdtypes.html#int.from_bytes",
+      "note": "参考公开课程/技术文档中的相关任务或规则，条件与解析独立构造，非公司笔试原题，不用于证明考察频率。"
+    },
+    "type": "numeric",
+    "expectedValue": 13398,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-ARCHTOOLS-ARCH-0005",
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "dma",
+    "title": "非一致性DMA：写入RAM不代表CPU缓存自动更新",
+    "promptMd": "一个明确不支持硬件cache coherence的DMA系统。CPU有write-back cache，设备读写RAM；平台提供正确的DMA映射/同步API。讨论CPU把buffer交给设备和设备完成后CPU重新接管的边界，不要求写平台特定代码。哪些正确？",
+    "explanationMd": "**答案A、C。** CPU的dirty cache line可能尚未反映在RAM中，设备直接读RAM不一定看到最新CPU写值；设备写完RAM，CPU也可能仍持有旧cache副本。应按方向和所有权通过平台DMA API处理映射/同步，而非仅靠volatile。\n\nCPU虚拟地址、CPU物理地址与设备DMA地址也不保证相同，不能直接把普通指针强转后交设备。同步与所有权转移还须结合设备完成通知和屏障要求；不能在设备仍拥有buffer时任意让CPU修改。此题限定非一致性系统，不把结论外推为所有硬件都要手工flush。",
+    "commonMistakes": [
+      "把volatile当cache维护。",
+      "将CPU指针直接当DMA总线地址。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "体系结构与脚本调试",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.kernel.org/core-api/dma-api-howto.html",
+      "note": "参考公开课程/技术文档中的相关任务或规则，条件与解析独立构造，非公司笔试原题，不用于证明考察频率。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "设备不一定看到CPU尚未写回RAM的dirty数据。"
+      },
+      {
+        "id": "B",
+        "textMd": "volatile保证设备与CPU缓存自动一致。"
+      },
+      {
+        "id": "C",
+        "textMd": "设备完成后CPU重新访问前可能需要按平台API同步。"
+      },
+      {
+        "id": "D",
+        "textMd": "CPU虚拟指针数值必定等于设备DMA地址。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确，非一致性设备读RAM可能见旧值。",
+      "B": "错误，volatile不实现cache coherence。",
+      "C": "正确，方向和所有权决定同步操作。",
+      "D": "错误，地址空间可能经IOMMU或总线映射转换。"
+    }
   }
 ]

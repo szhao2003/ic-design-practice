@@ -4,7 +4,7 @@ import {gradeAnswer} from '../src/domain/grading';
 const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-BUSTIMING-${id}`)!;
 describe('总线响应与时钟时序',()=>{
  it('12题独立改编共186，不冒充公司原题',()=>{
-  expect(questions.filter(q=>!q.id.startsWith('ADAPTED-VERIFYPOWER-'))).toHaveLength(186);const batch=questions.filter(q=>q.id.startsWith('ADAPTED-BUSTIMING-'));expect(batch).toHaveLength(12);
+  expect(questions.filter(q=>!/^ADAPTED-(VERIFYPOWER|ARCHTOOLS)-/.test(q.id))).toHaveLength(186);const batch=questions.filter(q=>q.id.startsWith('ADAPTED-BUSTIMING-'));expect(batch).toHaveLength(12);
   for(const q of batch){expect(q.contentVersion).toBe(1);expect(q.source.company).toBeUndefined();expect(q.source.questionFidelity).toBe('topic_only_reconstruction');}
  });
  it('三种协议的有效完成沿不同',()=>{

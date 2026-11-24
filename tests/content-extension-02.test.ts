@@ -6,7 +6,7 @@ const correct=(id:string,raw:number)=>expect(gradeAnswer(get(id),{raw:String(raw
 describe('电路脚本与接口第二批：独立求解',()=>{
  it('新增8题，四专题各2，来源为考点改编，全部122题',()=>{
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-EXTENSION-'));
-  expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(CORE3|MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC|BUSTIMING|VERIFYPOWER)-/.test(q.id))).toHaveLength(122);
+  expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(CORE3|MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS)-/.test(q.id))).toHaveLength(122);
   for(const topic of ['07','11','13','15'])expect(batch.filter(q=>q.topicId===topic)).toHaveLength(2);
   for(const q of batch)expect(q).toMatchObject({contentVersion:1,source:{kind:'practice_collection',evidenceGrade:'C',questionFidelity:'topic_only_reconstruction',sourceClaimVerification:'checked'}});
  });

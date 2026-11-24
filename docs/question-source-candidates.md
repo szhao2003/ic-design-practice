@@ -148,3 +148,7 @@ N1570/GNU位移手册本次超时未采用；UW PDF无可读正文，使用同�
 2026-11-24：总线响应与时钟时序新增12题，明确传统AXI4 2bit响应、AMBA3 AHB-Lite v1.0及APB2/3/4范围；新增等待/错误逐沿任务及实际边沿预算，旧174题不改。技术依据与下一批安排见 [批次审核](CONTENT_BATCH_18_BUSTIMING.md)。
 
 2026-11-24：验证诊断与低功耗新增12题，资料为Arm握手、Verification Academy覆盖规则、Python deque、Siemens测试诊断及AMD隔离说明。不是新核验的公司笔试，不用技术文档证明常考频次；关电按明确抽象合同。见 [本批审核](CONTENT_BATCH_19_VERIFYPOWER.md)。
+
+## 2026-11-24 已完成：体系结构与脚本调试
+
+ADAPTED-ARCHTOOLS-10题已独立构造并核对，公开资料入口与任务差异见[批次审核](CONTENT_BATCH_20_ARCHTOOLS.md)。教学方向证据不提高招聘频次等级；132题号汇编覆盖状态保持原值。后续优先整理核心专题练习路径与重复度，再按公开任务补缺。

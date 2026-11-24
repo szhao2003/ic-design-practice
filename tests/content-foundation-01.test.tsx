@@ -8,7 +8,7 @@ const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-FOUNDATION-${id}`)!;
 describe('跨专题基础第一批：公式、枚举与采样模型',()=>{
   it('新增八题填补四个专题，来源与版本元数据完整',()=>{
     const batch=questions.filter(q=>q.id.startsWith('ADAPTED-FOUNDATION-'));
-    expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(TOOLSFPGA|CORE|SYSTEM|EXTENSION|CORE3|MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC|BUSTIMING|VERIFYPOWER)-/.test(q.id))).toHaveLength(90);
+    expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(TOOLSFPGA|CORE|SYSTEM|EXTENSION|CORE3|MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS)-/.test(q.id))).toHaveLength(90);
     for(const topic of ['08','09','10','12'])expect(batch.filter(q=>q.topicId===topic)).toHaveLength(2);
     for(const q of batch){
       expect(q.contentVersion).toBe(1);expect(q.source.questionFidelity).toBe('topic_only_reconstruction');

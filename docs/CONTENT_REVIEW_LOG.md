@@ -124,3 +124,7 @@
 2026-11-24：总线响应与时钟时序新增12题，明确传统AXI4 2bit响应、AMBA3 AHB-Lite v1.0及APB2/3/4范围；新增等待/错误逐沿任务及实际边沿预算，旧174题不改。技术依据与下一批安排见 [批次审核](CONTENT_BATCH_18_BUSTIMING.md)。
 
 2026-11-24：验证诊断与低功耗新增12题，资料为Arm握手、Verification Academy覆盖规则、Python deque、Siemens测试诊断及AMD隔离说明。不是新核验的公司笔试，不用技术文档证明常考频次；关电按明确抽象合同。见 [本批审核](CONTENT_BATCH_19_VERIFYPOWER.md)。
+
+## 2026-11-24 体系结构与脚本调试
+
+新增ADAPTED-ARCHTOOLS-共10题，体系结构/工具各5。来源、去重和逐项验证见[批次20](CONTENT_BATCH_20_ARCHTOOLS.md)。逐题确认流水转发可用时刻、退休CPI分母、cache数据容量、明确允许非对齐、非一致性DMA所有权、CSV方言、Bash状态、argv/退出码、排序键和严格负值去重。无公司归因；不将课程或技术文档作为考频证明。旧198题逐对象不变。

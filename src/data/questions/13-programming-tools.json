@@ -162,5 +162,194 @@
       "只遍历records一次，支持迭代器和空输入。",
       "不修改输入元素；value允许共享引用。"
     ]
+  },
+  {
+    "id": "ADAPTED-ARCHTOOLS-TOOLS-0001",
+    "contentVersion": 1,
+    "topicId": "13",
+    "subtopicId": "file-processing",
+    "title": "CSV字段含逗号：split会怎样破坏事务记录",
+    "promptMd": "合法CSV文本如下，首行为header，逗号分隔、双引号包围字段，quoted字段内逗号属于内容。解析为(path,slack_ns)记录，数值是普通十进制；求记录数、第一条path以及负slack记录数。为什么不能逐行split(',')？\n\n```text\npath,slack_ns\n\"core,alu\",-0.25\nctrl,0.10\n\"bus,rx\",-0.05\n```",
+    "explanationMd": "**3条记录，第一条path为core,alu，负slack共2条。** header不是数据记录。带引号字段中的逗号不能当列分隔；简单split会把第一条分成多个片段，导致path和slack列错位。\n\nPython可按已定义CSV方言用csv.reader/DictReader解析，文件打开时按文档使用newline=''。解析出字段后还要独立验证列数、header与数值规则；csv模块本身不会替你判断slack单位或事务字段是否合理。本题不含quoted多行字段，但真实CSV还可能跨物理行，不能把物理行号直接当记录数。",
+    "commonMistakes": [
+      "将header计为数据。",
+      "忽略字段引号直接split逗号。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "体系结构与脚本调试",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.python.org/3/library/csv.html",
+      "note": "参考公开课程/技术文档中的相关任务或规则，条件与解析独立构造，非公司笔试原题，不用于证明考察频率。"
+    },
+    "type": "short_answer",
+    "referenceAnswerMd": "**3条记录，第一条path为core,alu，负slack共2条。** header不是数据记录。带引号字段中的逗号不能当列分隔；简单split会把第一条分成多个片段，导致path和slack列错位。\n\nPython可按已定义CSV方言用csv.reader/DictReader解析，文件打开时按文档使用newline=''。解析出字段后还要独立验证列数、header与数值规则；csv模块本身不会替你判断slack单位或事务字段是否合理。本题不含quoted多行字段，但真实CSV还可能跨物理行，不能把物理行号直接当记录数。",
+    "rubric": [
+      "3条/core,alu/2条负值。",
+      "引号内逗号不分列。",
+      "CSV解析与字段业务验证分开。"
+    ]
+  },
+  {
+    "id": "ADAPTED-ARCHTOOLS-TOOLS-0002",
+    "contentVersion": 1,
+    "topicId": "13",
+    "subtopicId": "shell",
+    "title": "Bash pipefail取最右侧失败，而不是第一个失败",
+    "promptMd": "限定Bash同步执行三段pipeline，无!取反，无set -e导致的提前退出；三段最终退出状态依次为7、3、0。开启pipefail后，该pipeline退出状态是多少？解析同时给出关闭pipefail时的状态。只按明确状态推导，不执行真实工具。",
+    "explanationMd": "**开启pipefail为3，关闭为0。** 默认pipeline状态取最后一段，最后一段成功会掩盖前面失败。pipefail开启后取最右侧非零状态，因此不是第一个失败7，也不是把各退出码相加，而是第二段的3。\n\n所有段均成功时pipefail仍返回0；这个选项不自动说明哪一段失败，需要另行保存各段状态或日志。题面明确是Bash，不外推为PowerShell等shell的行为；也没有把set -e的上下文例外当成pipefail语义。",
+    "commonMistakes": [
+      "取最左侧非零7。",
+      "混同set -e与pipefail。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "体系结构与脚本调试",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.gnu.org/software/bash/manual/html_node/Pipelines.html",
+      "note": "参考公开课程/技术文档中的相关任务或规则，条件与解析独立构造，非公司笔试原题，不用于证明考察频率。"
+    },
+    "type": "numeric",
+    "expectedValue": 3,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-ARCHTOOLS-TOOLS-0003",
+    "contentVersion": 1,
+    "topicId": "13",
+    "subtopicId": "scripting",
+    "title": "启动工具时传argv：空格路径与非零退出码",
+    "promptMd": "Python 3程序要执行普通可执行文件tool，参数--input后是路径reports/run 1.csv。无shell语法或通配符需求，输入来源只作为一个文件路径。希望失败时保留stdout/stderr并明确识别非零返回码。哪些做法正确？",
+    "explanationMd": "**答案A、C。** 参数列表把带空格路径作为一个元素交给进程创建接口，shell=False时不需要手工把引号字符包进路径。capture_output只负责收集输出，不代表进程成功；仍需检查returncode，或使用check=True并处理CalledProcessError。\n\n启动进程失败、程序运行后返回非零、超时是不同情况，应分别报告。把整个命令拼成字符串再交shell会引入额外解析，不是本题需要的机制；本题只讨论普通可执行文件，不涉及Windows批处理的特殊行为。日志中出现成功字样也不能替代退出码与产物检查。",
+    "commonMistakes": [
+      "把路径拆成两个argv元素。",
+      "认为捕获输出就等同执行成功。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "体系结构与脚本调试",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.python.org/3/library/subprocess.html",
+      "note": "参考公开课程/技术文档中的相关任务或规则，条件与解析独立构造，非公司笔试原题，不用于证明考察频率。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "可传[\"tool\",\"--input\",\"reports/run 1.csv\"]并保持shell=False。"
+      },
+      {
+        "id": "B",
+        "textMd": "必须把路径字符串本身改成带双引号字符的文件名。"
+      },
+      {
+        "id": "C",
+        "textMd": "capture_output=True后仍应检查returncode或使用check=True。"
+      },
+      {
+        "id": "D",
+        "textMd": "stdout含PASS就可以忽略非零退出码。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确，路径作为单个argv元素。",
+      "B": "错误，列表参数不需要给路径再嵌入shell引号字符。",
+      "C": "正确，捕获输出与检查成功是两回事。",
+      "D": "错误，日志片段不能抹去进程失败。"
+    }
+  },
+  {
+    "id": "ADAPTED-ARCHTOOLS-TOOLS-0004",
+    "contentVersion": 1,
+    "topicId": "13",
+    "subtopicId": "scripting",
+    "title": "run2和run10谁在前：明确排序键才可复现",
+    "promptMd": "目录扫描已得到三个普通文件名run2.log、run10.log、run1.log，扫描顺序不作任何保证。先按Python字符串默认升序排序，再按明确提取run后、.log前的整数排序，分别列结果。文件名保证都符合run<正整数>.log，无相同数字。为什么不能把扫描返回的第一项当最新一次运行？",
+    "explanationMd": "**字符串序为run1.log、run10.log、run2.log；整数序为run1.log、run2.log、run10.log。** 默认字符串比较逐字符进行，run10在run2之前，因为第一个不同数字字符1小于2；它不会自动把连续数字解析成自然数。\n\n可复现处理要显式声明排序键，不能依赖目录枚举碰巧的顺序。编号排序也不等于真实修改时间排序，本题仅保证文件名格式和编号不同，没有保证编号对应最新时间。若业务真正按时间，应明确时间字段、时区和并列规则，而不是用文件名或glob第一项猜测。",
+    "commonMistakes": [
+      "以为sorted字符串自动自然排序。",
+      "目录枚举第一项被当最新。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "体系结构与脚本调试",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.python.org/3.12/library/pathlib.html",
+      "note": "参考公开课程/技术文档中的相关任务或规则，条件与解析独立构造，非公司笔试原题，不用于证明考察频率。"
+    },
+    "type": "short_answer",
+    "referenceAnswerMd": "**字符串序为run1.log、run10.log、run2.log；整数序为run1.log、run2.log、run10.log。** 默认字符串比较逐字符进行，run10在run2之前，因为第一个不同数字字符1小于2；它不会自动把连续数字解析成自然数。\n\n可复现处理要显式声明排序键，不能依赖目录枚举碰巧的顺序。编号排序也不等于真实修改时间排序，本题仅保证文件名格式和编号不同，没有保证编号对应最新时间。若业务真正按时间，应明确时间字段、时区和并列规则，而不是用文件名或glob第一项猜测。",
+    "rubric": [
+      "两种排序结果正确。",
+      "明确编号与修改时间不是同一语义。",
+      "扫描顺序不可当可靠业务顺序。"
+    ]
+  },
+  {
+    "id": "ADAPTED-ARCHTOOLS-TOOLS-0005",
+    "contentVersion": 1,
+    "topicId": "13",
+    "subtopicId": "file-processing",
+    "title": "统计违例路径还是违例记录：重复路径与负零",
+    "promptMd": "已成功解析并归一到ns的Decimal slack记录依次为(p0,-0.10)、(p0,-0.20)、(p1,-0.00)、(p2,0.05)、(p3,-0.01)。业务定义：以路径ID去重，一个路径至少出现一次严格负值才算违例路径；不是统计记录条数。求违例路径数，并说明若改为逐条负记录计数是多少。",
+    "explanationMd": "**违例路径2个：p0和p3；严格负记录3条。** p0出现两条负值，但去重后只贡献一个路径。p1的Decimal负零与0数值相等，不满足slack<0；p2为正，不是违例；p3贡献另一个违例路径。\n\n统计应先明确计数对象，再选择集合、计数器或聚合模型。若只看字符串首字符是否为减号，会把-0.00误算负值；若先按最后值覆盖再数，也可能在其他输入中丢掉此前的负记录，不符合“至少一次严格负”的合同。这里是已经解析的数据，不再叠加非法行、单位转换或重复header规则。",
+    "commonMistakes": [
+      "把负号当严格小于零。",
+      "违例记录数3错当去重路径数。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "体系结构与脚本调试",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 10,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.python.org/3/library/decimal.html",
+      "note": "参考公开课程/技术文档中的相关任务或规则，条件与解析独立构造，非公司笔试原题，不用于证明考察频率。"
+    },
+    "type": "numeric",
+    "expectedValue": 2,
+    "absoluteTolerance": 0
   }
 ]

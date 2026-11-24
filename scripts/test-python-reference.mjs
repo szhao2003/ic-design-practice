@@ -17,3 +17,7 @@ const python=process.platform==='win32'?'python':'python3';
 const result=spawnSync(python,['-B','tests/python_reference_test.py'],{stdio:'inherit',timeout:30000});
 if(result.error||result.status!==0)throw new Error(`Python 参考代码测试失败：${result.error?.message??result.status}`);
 console.log('Python references: 3 exact published functions + 18 runtime tests PASS.');
+
+const archtools=spawnSync(python,['-B','tests/archtools_reference_test.py'],{stdio:'inherit',timeout:30000});
+if(archtools.error||archtools.status!==0)throw new Error(`Architecture/tools runtime checks failed: ${archtools.error?.message??archtools.status}`);
+console.log('Architecture/tools: 4 additional Python runtime tests PASS (22 total).');
