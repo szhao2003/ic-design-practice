@@ -15,8 +15,8 @@ const make=(name=crypto.randomUUID(),fault?:()=>void)=>{const s=new LearningStor
 afterEach(async()=>{await Promise.all(stores.splice(0).map(s=>s.close()));});
 const finishGuide=(round:ReturnType<typeof createRound>)=>{while(guidancePending(round))round=advanceGuidedPractice(round);return round;};
 describe('分步引导的辅助学习与持久化',()=>{
- it('14个现有人工题版本匹配，题库仍218且不支持未知或不同版本',()=>{
-  expect(questions).toHaveLength(218);expect(questionGuidance).toHaveLength(14);expect(new Set(questionGuidance.map(g=>g.questionId)).size).toBe(14);
+ it('19个现有人工题版本匹配，题库仍218且不支持未知或不同版本',()=>{
+  expect(questions).toHaveLength(218);expect(questionGuidance).toHaveLength(19);expect(new Set(questionGuidance.map(g=>g.questionId)).size).toBe(19);
   for(const guide of questionGuidance){const q=questions.find(q=>q.id===guide.questionId)!;expect(['short_answer','rtl_coding','waveform_analysis']).toContain(q.type);expect(q.contentVersion).toBe(guide.contentVersion);expect(guidanceFor(q)?.steps).toHaveLength(3);expect(guide.checks.length).toBeGreaterThanOrEqual(4);expect(guidanceFor({...q,contentVersion:q.contentVersion+1})).toBeUndefined();}
   expect(guidanceFor(manual)).toBeUndefined();
  });

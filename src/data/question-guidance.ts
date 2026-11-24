@@ -73,6 +73,31 @@ export const questionGuidance: QuestionGuidance[] = [
     { title: '只在实际服务时推进起点', promptMd: '分别列valid/accept为0或1时是否发生服务。发生服务后应移到扫描起点后一位，还是实际获胜者后一位？检查获胜者处于最高索引时的回绕。' },
     { title: '用停顿和持续请求检验公平性', promptMd: '先跟踪持续全请求且连续服务，再插入accept=0的停顿。把成功服务次数与时钟周期数分开，说明持续请求和服务机会对公平性意味着什么；不要把组合候选误当必须锁住的总线payload。' },
   ], checks: ['组合扫描按(start+offset) mod 4，grant仅对应当前req中第一路，空请求grant/valid都为0。', '同步低有效复位将扫描起点设0，复位期间不计服务。', '仅accept&&valid更新，下一起点为实际获胜索引加1；winner=3时回0。', '全请求持续且连续accept时，前五次服务获胜索引为0/1/2/3/0；停顿与空闲不推进起点。', 'accept=0时起点保持，但req变化允许组合grant改变；本题没有事务锁定契约。', '公平性依赖请求持续与实际服务机会，以成功服务次数衡量；accept长期为0时不承诺有限时钟周期内获服务。'] },
+  { questionId: 'ORIGINAL-RTL-0001', contentVersion: 2, steps: [
+    { title: '先列复位、保持与正常计数', promptMd: '按优先级列出复位有效、使能关闭、使能打开三种情况。count什么时候保持，什么时候加1，什么时候回到起点？复位是沿触发还是异步断言？' },
+    { title: '把tick当成更新事件而非计数状态', promptMd: '先用旧count与本沿en判断是否真的发生回绕，再安排tick。紧跟一次回绕后插入en=0，count应保持，但tick是否也应保持？检查默认清零是否被使能挡住。' },
+    { title: '最后逐沿检查终值与复位优先级', promptMd: '推演终值前一拍、回绕拍、暂停拍，以及复位与en同时有效的拍。只满足题定合法计数序列，不擅自增加非法状态恢复或额外输出延迟。' },
+  ], checks: ['同步低有效复位仅在上升沿清count/tick，优先于en。', 'en=0保持count，en=1按0到9再回0的模十序列更新。', 'tick只在旧count=9且en=1的实际回绕沿后置1。', 'tick默认清零放在en判断外；回绕后的暂停拍count保持而tick清0。', '完整可综合非阻塞时序逻辑，不把同步复位改成异步，也不额外要求非法状态恢复。'] },
+  { questionId: 'ADAPTED-CODEC-DIV-0001', contentVersion: 1, steps: [
+    { title: '用接受沿而非墙上时间定义相位', promptMd: '先计算一个半周期需要多少个en=1的输入沿，再定义内部计数保存的相位。暂停时哪些寄存器保持、哪个输出仍是逐沿事件？不要把暂停后的实时频率当作连续使能的稳态频率。' },
+    { title: '在半周期终点区分翻高与翻低', promptMd: '用旧半周期计数与旧divided判断本沿是否翻转，以及翻转方向。完整周期tick在哪一类终点产生？终点之后插入暂停，检查事件是否被意外拉长。' },
+    { title: '检查最小参数、复位和使用方式', promptMd: '把参数代入最小合法分频值，检查HALF和计数位宽是否出现零位声明。最后区分把tick作为原时钟域使能，与真的把divided接到另一个时钟端口，各自还需要什么实现条件。' },
+  ], checks: ['DIVIDE为2到1024的偶数，HALF=DIVIDE/2，计数终点为HALF−1且en=1才翻转。', '旧divided=1的半周期终点翻低并报tick；其余非复位沿tick清0。', '暂停保持divided与内部相位，恢复后继续，tick仍每沿清0。', 'DIVIDE=2时HALF=1，计数至少分配1bit，不能直接声明零位宽。', '同步高有效rst优先清计数/divided/tick；只有连续使能稳态才承诺周期DIVIDE*T和50%占空比。', 'tick可用作原clk域clock enable；把divided当真实新时钟仍需时钟资源和generated-clock等实现约束。'] },
+  { questionId: 'ADAPTED-CODEC-DIV-0002', contentVersion: 1, steps: [
+    { title: '先单独列累计接受沿数', promptMd: '从复位后的零相位开始，逐沿只在en=1时增加累计接受数。把暂停沿单独标记，不让它们消耗半周期，也不要从恢复点重新计数。' },
+    { title: '再把半周期终点映射到输出', promptMd: '按题定每三个接受沿翻转一次，将累计接受数映射为divided；每次翻低才产生tick。分别检查暂停发生在未到终点和高电平期间时的保持。' },
+    { title: '最后比较接受计数与实际脉宽', promptMd: '圈出高电平开始和结束的真实输入沿，按沿间距离计算持续时间。连续使能时的3T半周期，能否直接套用到含暂停的这一段？同时检查tick在其他沿是否归零。' },
+  ], checks: ['E3/E7不增加接受数，暂停保持相位，E1到E14共12个接受沿。', 'divided在E4/E8/E11/E14依次翻高/翻低/翻高/翻低。', 'tick仅E8与E14为1，其余沿包括暂停沿均为0。', 'E4沿后到E8沿后高电平持续4T，不能仍按3T计算。', '任意暂停可拉长实时脉宽，不保证输出始终周期6T或50%占空比。'] },
+  { questionId: 'ADAPTED-BOUNDARY-DEBOUNCE-0001', contentVersion: 1, steps: [
+    { title: '先把毫秒配置变成连续样本阈值', promptMd: '用题定参数和cfg推导阈值N，明确计数保存的是已连续观察到多少个反向样本，而不是累计抖动次数。输入回到当前stable时，未完成连续段应如何处理？' },
+    { title: '先排优先级，再处理第N个样本', promptMd: '依次检查复位、配置变化、与stable相同、持续反向四类情况。配置变化的当沿是否属于新计数段？旧计数到什么值时，本沿反向样本会刚好完成阈值？' },
+    { title: '检查位宽、双方向和事件脉冲', promptMd: '用最大配置估算计数与阈值需要表示的范围，再检查稳定后继续同值是否会重复changed。复位时记录配置有什么作用？区分N个采样点与从第一到最后采样点的时间跨度。' },
+  ], checks: ['N=5*(cfg+1)*CYCLES_PER_MS；连续反向才累计，sample==stable立即清掉未完成计数。', '同步复位优先清stable/changed/计数并记录cfg；cfg变化次优先，清计数、保持stable并丢弃本沿样本。', '正常反向样本在旧计数N−1时更新stable、清计数并令changed=1，避免多等或少等一拍。', '配置变小也不继承旧连续段；次沿重新计数，不能立即用旧计数触发。', '默认最大N=1000000，计数0到999999和阈值N均可用20bit表示；参数缩小时仍按合法范围实现。', 'changed为单次事件，两个方向均适用；模块输入已同步，不把采样逻辑说成模拟滤波或CDC配置相干处理。'] },
+  { questionId: 'ADAPTED-BOUNDARY-DEBOUNCE-0003', contentVersion: 1, steps: [
+    { title: '先把配置变化沿从连续段中切开', promptMd: '标出所有cfg改变的沿，按契约清旧计数并丢弃当沿sample。将输入切成互不继承的连续段，再给每段标上新配置的阈值。' },
+    { title: '按新段的第一个有效样本重新编号', promptMd: '不要把配置变化沿编号为第一个样本。从它的次沿开始逐个数，找到第N个新样本；同时检查stable更新之后，未完成计数与changed下一沿怎样变化。' },
+    { title: '再推反方向并核对参数含义', promptMd: '对输入反向且配置同时改变的情形，用相同优先级重新推演。最后检查两次stable更新是否各只产生一个changed，并说明测试缩短参数为何不能直接解读成真实毫秒。' },
+  ], checks: ['E1到E3累计3次旧反向样本；E4改cfg时清0并丢弃该样本。', 'E5到E14是10个新1，E14沿后stable/changed=1/1且计数清0；E15的changed清0。', 'E16配置变化优先，保持stable=1、清计数且不计该0。', 'E17到E21是5个新0，E21沿后stable/changed=0/1且计数清0。', '旧配置计数不继承，changed不是stable电平；CYCLES_PER_MS=1仅为缩短测试，不是50MHz下真实每毫秒一个采样。'] },
 ];
 
 export function guidanceFor(question: Question): GuidanceContent | undefined {
