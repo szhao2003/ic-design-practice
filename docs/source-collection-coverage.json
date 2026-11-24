@@ -29,17 +29,20 @@
     },
     {
       "number": 4,
-      "status": "needs_conditions",
-      "localIds": [],
-      "note": "代码和两次观察位置缺失，不能从省略号唯一推导；需补完整调度条件。"
+      "status": "rewritten",
+      "localIds": [
+        "ADAPTED-SAMPLING-SV-0001"
+      ],
+      "note": "原省略代码/观察点不完整；改为完整单驱动程序，明确display、#0、strobe与两时间槽，独立仿真及stdout顺序核对。"
     },
     {
       "number": 5,
-      "status": "partial",
+      "status": "covered",
       "localIds": [
-        "ORIGINAL-SV-0003"
+        "ORIGINAL-SV-0003",
+        "ADAPTED-SAMPLING-SV-0001"
       ],
-      "note": "已有NBA逐沿题；尚未独立考display/strobe观察区域。"
+      "note": "补display与strobe的实际区域/输出顺序，不把#0当NBA完成屏障。"
     },
     {
       "number": 6,
@@ -67,11 +70,11 @@
     },
     {
       "number": 9,
-      "status": "partial",
+      "status": "rewritten",
       "localIds": [
-        "ADAPTED-FOCUSED-RTL-SEQ-0001"
+        "ADAPTED-SAMPLING-FSM-0001"
       ],
-      "note": "有状态转移和注册事件输出，但未完整比较一/二/三段式、Moore/Mealy，不能全算覆盖。"
+      "note": "重新构造一/二/三段式组织与实际输出逻辑的选择题，纠正数过程就能保证寄存/无毛刺的概括。"
     },
     {
       "number": 10,
@@ -89,11 +92,11 @@
     },
     {
       "number": 12,
-      "status": "partial",
+      "status": "covered",
       "localIds": [
-        "ADAPTED-FOCUSED-RTL-SEQ-0001"
+        "ADAPTED-SAMPLING-FSM-0001"
       ],
-      "note": "有状态转移和注册事件输出，但未完整比较一/二/三段式、Moore/Mealy，不能全算覆盖。"
+      "note": "明确Moore/Mealy函数依赖、注册输出与状态译码物理瞬态，不声称永远差一个状态/一拍。"
     },
     {
       "number": 13,
@@ -121,11 +124,11 @@
     },
     {
       "number": 16,
-      "status": "partial",
+      "status": "covered",
       "localIds": [
-        "ADAPTED-YHC-RTL-0005"
+        "ADAPTED-SAMPLING-EDGE-0001"
       ],
-      "note": "已有上升沿逐拍分析；完整上升/下降/双边沿接口尚未独立实现。"
+      "note": "完整上升/下降/任意边沿RTL，明确首样本建基线、有效样本与空泡；1024流三组停顿独立TB。"
     },
     {
       "number": 17,
@@ -664,9 +667,12 @@
     },
     {
       "number": 80,
-      "status": "needs_conditions",
-      "localIds": [],
-      "note": "同步复位是否更利于STA取决于实现/工具和信号条件，不沿用一律100%同步的断言。"
+      "status": "rewritten",
+      "localIds": [
+        "ADAPTED-SAMPLING-RESET-0001",
+        "ADAPTED-SAMPLING-RESET-0002"
+      ],
+      "note": "同步复位便于分析不等于自动通过STA；补短脉冲漏采、停钟、setup/hold及异步释放约束条件，不沿用绝对断言。"
     },
     {
       "number": 81,

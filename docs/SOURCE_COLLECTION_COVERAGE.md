@@ -1,6 +1,6 @@
 # 公开汇编132题号覆盖对照
 
-核对日期2026-11-24；对应本地162题。按实际考查任务对照，不按公司名或专题名认定覆盖。82个题号已有对应/修正任务（72+10），26部分覆盖，12需补条件，12暂缓。同一现有题可以承载多个重复考点，因此这些数量不是新增题数，也不是独立公司考察频次。
+核对日期2026-11-24；对应本地168题。按实际考查任务对照，不按公司名或专题名认定覆盖。88个题号已有对应/修正任务（75+13），21部分覆盖，11需补条件，12暂缓。同一现有题可以承载多个重复考点，因此这些数量不是新增题数，也不是独立公司考察频次。
 
 covered和rewritten均为考点重构，不是逐字原题；partial不计完整覆盖。机器可读来源及引用见 [JSON表](source-collection-coverage.json)。
 
@@ -9,19 +9,19 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q1 | 部分覆盖 | ORIGINAL-SV-0002 | 已有赋值时序语义，但不是原三段流水链的同一推演任务。 |
 | Q2 | 部分覆盖 | ORIGINAL-SV-0002 | 已有赋值时序语义，但不是原三段流水链的同一推演任务。 |
 | Q3 | 已有对应任务 | ADAPTED-YHC-SV-0001 | 独立构造交叉进程竞争题，保留任务。 |
-| Q4 | 需补条件 | — | 代码和两次观察位置缺失，不能从省略号唯一推导；需补完整调度条件。 |
-| Q5 | 部分覆盖 | ORIGINAL-SV-0003 | 已有NBA逐沿题；尚未独立考display/strobe观察区域。 |
+| Q4 | 已修正改编 | ADAPTED-SAMPLING-SV-0001 | 原省略代码/观察点不完整；改为完整单驱动程序，明确display、#0、strobe与两时间槽，独立仿真及stdout顺序核对。 |
+| Q5 | 已有对应任务 | ORIGINAL-SV-0003、ADAPTED-SAMPLING-SV-0001 | 补display与strobe的实际区域/输出顺序，不把#0当NBA完成屏障。 |
 | Q6 | 已有对应任务 | ORIGINAL-SV-0004 | 四态比较任务已覆盖，条件与选项独立构造。 |
 | Q7 | 已有对应任务 | ADAPTED-YHC-SV-0002 | 合并赋值完备性与敏感列表；纠正遗漏敏感项必然推断锁存器的表述。 |
 | Q8 | 已有对应任务 | ADAPTED-YHC-SV-0002 | 合并赋值完备性与敏感列表；纠正遗漏敏感项必然推断锁存器的表述。 |
-| Q9 | 部分覆盖 | ADAPTED-FOCUSED-RTL-SEQ-0001 | 有状态转移和注册事件输出，但未完整比较一/二/三段式、Moore/Mealy，不能全算覆盖。 |
+| Q9 | 已修正改编 | ADAPTED-SAMPLING-FSM-0001 | 重新构造一/二/三段式组织与实际输出逻辑的选择题，纠正数过程就能保证寄存/无毛刺的概括。 |
 | Q10 | 已有对应任务 | ADAPTED-FOCUSED-RTL-SEQ-0001 | 合并为1101完整RTL，增加有效空泡与重叠契约；不机械增加不同模式字符串。 |
 | Q11 | 暂缓 | — | 本轮未建立完整等价任务；不计已覆盖，后续按招聘证据与价值排序。 |
-| Q12 | 部分覆盖 | ADAPTED-FOCUSED-RTL-SEQ-0001 | 有状态转移和注册事件输出，但未完整比较一/二/三段式、Moore/Mealy，不能全算覆盖。 |
+| Q12 | 已有对应任务 | ADAPTED-SAMPLING-FSM-0001 | 明确Moore/Mealy函数依赖、注册输出与状态译码物理瞬态，不声称永远差一个状态/一拍。 |
 | Q13 | 已有对应任务 | ADAPTED-FOCUSED-RTL-SEQ-0001 | 合并为1101完整RTL，增加有效空泡与重叠契约；不机械增加不同模式字符串。 |
 | Q14 | 部分覆盖 | ADAPTED-FOCUSED-RTL-SEQ-0001 | 序列检测已实现；出现次数统计未加入，不能算完整计数任务。 |
 | Q15 | 已有对应任务 | ADAPTED-YHC-RTL-0002 | 改为模五递推并保留无限流余数FSM任务，不照搬模三参数。 |
-| Q16 | 部分覆盖 | ADAPTED-YHC-RTL-0005 | 已有上升沿逐拍分析；完整上升/下降/双边沿接口尚未独立实现。 |
+| Q16 | 已有对应任务 | ADAPTED-SAMPLING-EDGE-0001 | 完整上升/下降/任意边沿RTL，明确首样本建基线、有效样本与空泡；1024流三组停顿独立TB。 |
 | Q17 | 已有对应任务 | ADAPTED-YHC-RTL-0005 | 已覆盖上升沿检测与旧值/NBA；下降与双沿可由同一思想解释，不另凑题。 |
 | Q18 | 已有对应任务 | ORIGINAL-FIFO-0001 | 二进制到Gray计算已覆盖。 |
 | Q19 | 已有对应任务 | ADAPTED-YHC-FIFO-0001 | 解码/回绕/重新编码完整任务。 |
@@ -85,7 +85,7 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q77 | 部分覆盖 | ADAPTED-ADVANCED-FIFO-0002 | 异步FIFO指针部分已覆盖，但未给完整异步乒乓buffer任务。 |
 | Q78 | 已有对应任务 | ADAPTED-ADVANCED-FIFO-0002 | Gray指针用于跨域相干条件，不能直接等同省功耗。 |
 | Q79 | 已有对应任务 | ORIGINAL-CDC-0005 | 完整reset RTL/TB及recovery/removal独立题，不能说绝对消除风险。 |
-| Q80 | 需补条件 | — | 同步复位是否更利于STA取决于实现/工具和信号条件，不沿用一律100%同步的断言。 |
+| Q80 | 已修正改编 | ADAPTED-SAMPLING-RESET-0001、ADAPTED-SAMPLING-RESET-0002 | 同步复位便于分析不等于自动通过STA；补短脉冲漏采、停钟、setup/hold及异步释放约束条件，不沿用绝对断言。 |
 | Q81 | 已有对应任务 | ORIGINAL-CDC-0005 | 完整reset RTL/TB及recovery/removal独立题，不能说绝对消除风险。 |
 | Q82 | 已有对应任务 | ORIGINAL-CDC-0005 | 完整reset RTL/TB及recovery/removal独立题，不能说绝对消除风险。 |
 | Q83 | 已有对应任务 | ADAPTED-INTEGRATION-FIFO-0001、ADAPTED-INTEGRATION-FIFO-0002 | 完整参数化双时钟FIFO、注册Gray双级同步、next空满、寄存读valid与协调复位；独立队列TB，未宣称任意深度或单域独立复位支持。 |
@@ -139,4 +139,4 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q131 | 部分覆盖 | ADAPTED-TOOLSFPGA-CMOS-0001、ORIGINAL-STA-0001 | 基础语义与时序已覆盖，来源题组的Maxpooling RTL仍未实现。 |
 | Q132 | 部分覆盖 | ADAPTED-FOCUSED-MEM-CAP-0001、ADAPTED-EXTENSION-TOOLS-0001 | 容量和字节解释已有，偶校验及内存布局仍可补，不把整个题组都计覆盖。 |
 
-本轮补完整Q113及修正重构Q127。FIFO深度新增明确相位/双向同步模型，但Q88–93原条件不全，各题仍保留需补条件，不批量改成已完成。后续可补复位实现与STA条件（Q80）、完整双边沿检测接口（Q16），仍优先核心任务，不追求所有题号变绿。
+本轮补完整边沿检测、观察区域、复位条件与状态机输出判断，提升Q4/Q5/Q9/Q12/Q16/Q80。后续仍可补Gray双向转换RTL（Q22）、偶分频完整接口（Q24）或RAM引脚/容量条件（Q128），先按价值与重复性筛选，不追求全部题号变绿。

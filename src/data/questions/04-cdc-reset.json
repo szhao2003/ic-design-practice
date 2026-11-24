@@ -638,5 +638,100 @@
       "指出边沿来自选择变化。",
       "区分同步控制与时钟脉宽保证。"
     ]
+  },
+  {
+    "id": "ADAPTED-SAMPLING-RESET-0001",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "rdc-reset",
+    "title": "夹在两个时钟沿之间的复位脉冲：同步复位会漏采吗",
+    "difficulty": "medium",
+    "tags": [
+      "采样复位与状态机",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q80/Q81/Q82 的考查方向；具体代码、参数、观察时刻和解析独立重构，非公司原题，不继承公司或届别归因。"
+    },
+    "promptMd": "理想二值RTL模型，clk上升沿在5、15、25、35…ns。rst高有效，初始为0；7ns拉高、9ns拉低，22ns再次拉高、28ns拉低；其余时刻为0。只有下列两个进程驱动各自寄存器，5ns沿已正常使两输出为1。观察点均在相关NBA完成之后，无门级延时或模拟时序检查。\n\n```systemverilog\nalways @(posedge clk)\n  if (rst) q_sync <= 1'b0;\n  else q_sync <= 1'b1;\n\nalways @(posedge clk or posedge rst)\n  if (rst) q_async <= 1'b0;\n  else q_async <= 1'b1;\n```\n\n列6、8、10、16、26、30、36ns的q_sync/q_async，解释两次脉冲和释放的效果。能否仅凭此RTL表格证明实际芯片复位释放时序安全？",
+    "explanationMd": "**短复位7…9ns只清异步复位寄存器；覆盖25ns沿的22…28ns复位使两者都清0。** 异步释放不在敏感列表内，因此释放本身不会装载1。\n\n| 观察时刻ns | q_sync | q_async | 解释 |\n|---:|---:|---:|---|\n| 6 | 1 | 1 | 5ns上升沿正常装载1 |\n| 8 | 1 | 0 | 7ns异步断言已清async，sync未见有效时钟沿 |\n| 10 | 1 | 0 | 9ns释放不触发重新装载 |\n| 16 | 1 | 1 | 15ns上升沿正常装载1 |\n| 26 | 0 | 0 | 25ns沿采到rst=1，sync也复位 |\n| 30 | 0 | 0 | 28ns释放后，尚未到下一上升沿 |\n| 36 | 1 | 1 | 35ns上升沿正常装载1 |\n\n同步复位只在时钟沿被采样，7…9ns的脉冲完全夹在5/15ns之间，所以它不会因为“被写进RTL”就自动生效。异步复位可在时钟之外断言，但实际器件仍要求合法最小脉宽、释放时序及复位分布。\n\n本题是无模拟延时的RTL模型，不能由这张表宣称实际9ns或28ns的释放已完成recovery/removal签核。时钟停住且同步复位没有任何有效沿时，也不能靠它完成寄存器清零。",
+    "commonMistakes": [
+      "认为同步复位只要出现过高电平就必定清寄存器。",
+      "异步复位释放一发生，就把else分支当事件执行。",
+      "把无延时RTL结果当恢复/移除时间已经满足的证据。"
+    ],
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**短复位7…9ns只清异步复位寄存器；覆盖25ns沿的22…28ns复位使两者都清0。** 异步释放不在敏感列表内，因此释放本身不会装载1。\n\n| 观察时刻ns | q_sync | q_async | 解释 |\n|---:|---:|---:|---|\n| 6 | 1 | 1 | 5ns上升沿正常装载1 |\n| 8 | 1 | 0 | 7ns异步断言已清async，sync未见有效时钟沿 |\n| 10 | 1 | 0 | 9ns释放不触发重新装载 |\n| 16 | 1 | 1 | 15ns上升沿正常装载1 |\n| 26 | 0 | 0 | 25ns沿采到rst=1，sync也复位 |\n| 30 | 0 | 0 | 28ns释放后，尚未到下一上升沿 |\n| 36 | 1 | 1 | 35ns上升沿正常装载1 |\n\n同步复位只在时钟沿被采样，7…9ns的脉冲完全夹在5/15ns之间，所以它不会因为“被写进RTL”就自动生效。异步复位可在时钟之外断言，但实际器件仍要求合法最小脉宽、释放时序及复位分布。\n\n本题是无模拟延时的RTL模型，不能由这张表宣称实际9ns或28ns的释放已完成recovery/removal签核。时钟停住且同步复位没有任何有效沿时，也不能靠它完成寄存器清零。",
+    "rubric": [
+      "七组q_sync/q_async数值正确。",
+      "短脉冲未覆盖有效沿而被sync漏采。",
+      "两次释放自身不装载1，需后续有效沿。",
+      "区分RTL采样结果与实际复位脉宽/释放时序检查。"
+    ]
+  },
+  {
+    "id": "ADAPTED-SAMPLING-RESET-0002",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "rdc-reset",
+    "title": "同步复位方便分析，不代表可以忽略时序",
+    "difficulty": "medium",
+    "tags": [
+      "采样复位与状态机",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q80/Q81 的考查方向；具体代码、参数、观察时刻和解析独立重构，非公司原题，不继承公司或届别归因。"
+    },
+    "promptMd": "目标是带明确时序库的同步数字设计。同步复位被当作寄存器采样控制或数据选择逻辑；异步复位连接具有recovery/removal和最小脉宽要求的复位引脚。时钟、复位以及库模型均已定义，不讨论特殊器件的无时钟初始化功能。哪些结论成立？",
+    "explanationMd": "**答案A、B。** 是否同步只说明复位如何作用，不能替代对功能采样和实际路径的检查。\n\n同步复位仍需在有效采样沿满足相应setup/hold要求，且复位脉冲要覆盖能被采样的沿；如果时钟停住或短脉冲完全落在相邻有效沿之间，就可能没有清零。它通常便于纳入同步时序流程，但是否达到目标频率还受扇出、实现和约束影响。\n\n异步复位可以在时钟停住时断言，只要实际库的有效电平、最小脉宽等条件满足；这不代表释放任意时刻都安全。释放相对时钟的recovery/removal以及复位跨域、分布一致性仍需检查。异步断言/同步释放结构是控制释放风险的方法，其物理路径和使用前提也要正确。\n\n因此不能说“同步复位100%保证STA通过”，也不能说“异步复位都不用时序检查”。本题仅判断题定模型的规则，不推荐对所有FPGA或ASIC统一选一种复位。",
+    "commonMistakes": [
+      "把易于纳入STA理解成自动满足所有时序。",
+      "只检查复位断言，不检查释放。",
+      "只看RTL能置零，就忽略实际复位脉冲宽度与时钟是否运行。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "同步复位路径仍需满足相关采样时序，且复位须覆盖可采样的有效沿。"
+      },
+      {
+        "id": "B",
+        "textMd": "异步复位在时钟停住时也可断言清零，但仍要满足库要求的复位脉宽等条件。"
+      },
+      {
+        "id": "C",
+        "textMd": "只要使用同步复位，就能保证所有时序路径100%通过STA。"
+      },
+      {
+        "id": "D",
+        "textMd": "异步复位既然不等时钟，释放也完全不需要recovery/removal检查。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "正确。同步复位要被有效沿采到，相关控制/数据路径仍有采样时序要求。",
+      "B": "正确。异步断言不依赖时钟沿；实际最小脉宽等器件要求仍存在。",
+      "C": "错误。实现延迟、扇出和约束仍决定时序，复位类型不是通过证明。",
+      "D": "错误。异步释放相对时钟需检查恢复/移除，不能把异步断言性质推广到释放。"
+    }
   }
 ]

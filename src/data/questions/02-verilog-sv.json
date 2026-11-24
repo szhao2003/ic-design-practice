@@ -719,5 +719,42 @@
       "解释input在进入时取值。",
       "解释output在返回时拷回，区分ref。"
     ]
+  },
+  {
+    "id": "ADAPTED-SAMPLING-SV-0001",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "event-scheduling",
+    "title": "display、strobe和#0：同一时间槽不等于同一观察值",
+    "difficulty": "medium",
+    "tags": [
+      "采样复位与状态机",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q4/Q5 的考查方向；具体代码、参数、观察时刻和解析独立重构，非公司原题，不继承公司或届别归因。"
+    },
+    "promptMd": "仅有下面这个进程修改a、b，整数初值明确，无其他时钟、并发驱动或X/Z；时间单位1ns、精度1ps。写出四行打印的实际先后顺序与每行a、b的十进制值，说明#0是否已经跨过NBA。$strobe行标签S0，其他行为普通$display。\n\n```systemverilog\nmodule observer;\n  timeunit 1ns;\n  timeprecision 1ps;\n  integer a = 0, b = 0;\n  initial begin\n    #1;\n    a <= 5;\n    b = a;\n    $display(\"D0 a=%0d b=%0d\", a, b);\n    $strobe(\"S0 a=%0d b=%0d\", a, b);\n    #0;\n    $display(\"D1 a=%0d b=%0d\", a, b);\n    #1;\n    $display(\"D2 a=%0d b=%0d\", a, b);\n  end\nendmodule\n```",
+    "explanationMd": "**输出顺序D0、D1、S0、D2，对应(0,0)、(0,0)、(5,0)、(5,0)。** #0仍在1ns时间槽，不是等待NBA结束的通用办法。\n\n| 实际顺序 | 标签 | 时间ns | a | b | 原因 |\n|---:|---|---:|---:|---:|---|\n| 1 | D0 | 1 | 0 | 0 | a的非阻塞更新尚未应用 |\n| 2 | D1 | 1 | 0 | 0 | #0续执行在Inactive，仍先于本例NBA更新 |\n| 3 | S0 | 1 | 5 | 0 | Postponed观察到本时间槽NBA完成后的值 |\n| 4 | D2 | 2 | 5 | 0 | 已进入后一个时间槽，无新赋值 |\n\na<=5安排稍后更新，b=a立即读取旧a，所以b只被赋成0；a之后变5不会自动重新执行b=a。$strobe虽然在D1语句前调用，却把打印安排到本时间槽末尾观察，因此它实际晚于D1输出。\n\n这里说的是这个单驱动、无反馈的具体例子，不把事件调度简化成任何仿真都只走一次固定队列。用#0“等非阻塞赋值完成”会在此例读到旧值；测试台要选择明确观察区域或足够明确的采样机制。",
+    "commonMistakes": [
+      "以为#0已经等待NBA，所以D1看到a=5。",
+      "按代码调用顺序把S0排在D1前。",
+      "a变5后自动把b也改成5，混淆赋值语句与连续赋值。"
+    ],
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**输出顺序D0、D1、S0、D2，对应(0,0)、(0,0)、(5,0)、(5,0)。** #0仍在1ns时间槽，不是等待NBA结束的通用办法。\n\n| 实际顺序 | 标签 | 时间ns | a | b | 原因 |\n|---:|---|---:|---:|---:|---|\n| 1 | D0 | 1 | 0 | 0 | a的非阻塞更新尚未应用 |\n| 2 | D1 | 1 | 0 | 0 | #0续执行在Inactive，仍先于本例NBA更新 |\n| 3 | S0 | 1 | 5 | 0 | Postponed观察到本时间槽NBA完成后的值 |\n| 4 | D2 | 2 | 5 | 0 | 已进入后一个时间槽，无新赋值 |\n\na<=5安排稍后更新，b=a立即读取旧a，所以b只被赋成0；a之后变5不会自动重新执行b=a。$strobe虽然在D1语句前调用，却把打印安排到本时间槽末尾观察，因此它实际晚于D1输出。\n\n这里说的是这个单驱动、无反馈的具体例子，不把事件调度简化成任何仿真都只走一次固定队列。用#0“等非阻塞赋值完成”会在此例读到旧值；测试台要选择明确观察区域或足够明确的采样机制。",
+    "rubric": [
+      "四行顺序D0/D1/S0/D2正确。",
+      "四组数值及1ns/2ns时间正确。",
+      "解释b只读取一次旧a、之后不自动联动。",
+      "区分Inactive与Postponed，不能用#0保证读NBA新值。"
+    ]
   }
 ]

@@ -7,7 +7,7 @@ import {ReferenceAnswer} from '../src/components/QuestionContent';
 const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-BOUNDARY-${id}`)!;
 describe('协议与计数边界',()=>{
  it('6道新增共162，来源只支持考点且无公司原题归因',()=>{
-  expect(questions).toHaveLength(162);
+  expect(questions.filter(q=>!q.id.startsWith('ADAPTED-SAMPLING-'))).toHaveLength(162);
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-BOUNDARY-'));
   expect(batch).toHaveLength(6);
   for(const q of batch){expect(q.contentVersion).toBe(1);expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.company).toBeUndefined();expect(q.tags).toContain('协议与计数边界');}
@@ -71,6 +71,6 @@ describe('协议与计数边界',()=>{
   const audit=JSON.parse(readFileSync('docs/source-collection-coverage.json','utf8'));
   expect(audit.entries[112].status).toBe('covered');expect(audit.entries[126].status).toBe('rewritten');
   for(let n=88;n<=93;n++)expect(audit.entries[n-1].status).toBe('needs_conditions');
-  expect(audit.entries.filter((r:{status:string})=>['covered','rewritten'].includes(r.status))).toHaveLength(82);
+  expect(audit.entries.filter((r:{status:string})=>['covered','rewritten'].includes(r.status))).toHaveLength(88);
  });
 });

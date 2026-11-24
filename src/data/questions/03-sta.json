@@ -695,5 +695,43 @@
       "ps": 0.001
     },
     "absoluteTolerance": 0.001
+  },
+  {
+    "id": "ADAPTED-SAMPLING-RESET-0003",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "setup-hold",
+    "title": "复位释放允许窗口：recovery和removal分开算",
+    "difficulty": "medium",
+    "tags": [
+      "采样复位与状态机",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q81/Q82 的考查方向；具体代码、参数、观察时刻和解析独立重构，非公司原题，不继承公司或届别归因。"
+    },
+    "promptMd": "高有效异步复位rst在10ns上升沿时仍为1，准备在10ns与20ns两个相邻有效上升沿之间从1释放到0；直到后续都保持0。已换算到同一时间基准：前后有效时钟沿到达复位寄存器的时间精确为10ns、20ns。\n\n库要求释放距前一个有效沿至少removal=0.80ns，并距下一个有效沿至少recovery=1.50ns。本题额外为两个边界各增加0.20ns保守裕量，直接加到各自要求上，不另算skew、CPPR或其他不确定度。允许等号。\n\n问满足这两个边界的最晚释放时刻（ns，容差0.001ns）。解析中同时给出最早时刻及窗口宽度，不能把recovery与removal都从20ns向前减。此题只验证这两个指定边界，不代替整个复位网的时序签核。",
+    "explanationMd": "**最晚18.30ns；最早11.00ns，允许窗口[11.00,18.30]ns，宽7.30ns。** 两种检查分别约束释放不能太靠近前沿或后沿。\n\nremoval要求释放在前一有效沿之后至少0.80+0.20=1.00ns，所以t_release>=10+1.00=11.00ns。recovery要求释放在后一有效沿之前至少1.50+0.20=1.70ns，所以t_release<=20−1.70=18.30ns。\n\n求交集得到11.00<=t_release<=18.30。窗口宽18.30−11.00=7.30ns；若下界超过上界才表示这组条件下无合法窗口，不能把负宽度当可用裕量。0.20ns在本题是明确分配给每个边界的额外量，不应再重复扣一次。\n\n实际寄存器检查依赖正确的边沿、库弧、复位网络和约束；这里按已给定的同一时基独立求界。异步断言无须等待时钟，并不意味着这种释放窗口可以忽略。",
+    "commonMistakes": [
+      "recovery和removal都只参照后一个20ns沿。",
+      "给两个边界各加裕量后又重复扣同一个额外量。",
+      "只算最晚时刻而不确认它仍晚于最早允许时刻。"
+    ],
+    "type": "numeric",
+    "expectedValue": 18.3,
+    "unit": "ns",
+    "defaultUnit": "ns",
+    "acceptedUnits": {
+      "ns": 1,
+      "ps": 0.001
+    },
+    "absoluteTolerance": 0.001
   }
 ]

@@ -928,5 +928,107 @@
       "E15清事件，计数更新后复零。",
       "测试加速参数与真实采样频率区分清楚。"
     ]
+  },
+  {
+    "id": "ADAPTED-SAMPLING-EDGE-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "serial-parallel",
+    "title": "完整双向边沿检测：首个有效样本只建立基线",
+    "difficulty": "medium",
+    "tags": [
+      "采样复位与状态机",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 18,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q16/Q17 的考查方向；具体代码、参数、观察时刻和解析独立重构，非公司原题，不继承公司或届别归因。"
+    },
+    "promptMd": "实现sample_edges：输入clk、同步高有效rst、sample_valid、sample，输出寄存rise、fall、any_edge。sample及sample_valid已经属于clk域且满足采样时序，不要求跨域同步或去抖。\n\n按上升沿接受sample_valid=1的样本，只与前一个已接受样本比较：0→1报rise，1→0报fall，任意变化报any_edge；输出在本次接受沿NBA后更新。无效周期不消费sample，也不改变历史，但三个事件输出必须清0。复位优先清历史有效标记和三个输出；复位后第一个有效样本只建立基线，无论0或1均不报事件。复位期间出现的电平不是已接受的历史样本。\n\n三个事件每沿重新决定；若相邻有效沿持续0/1交替，any_edge可连续高多个周期，表示每沿都有新事件，不要求事件间强制插0。给完整可综合RTL，解释为什么简单把previous复位成0还不足以避免首次高电平的假上升沿。",
+    "explanationMd": "**保留“是否已有基线”与“前一个有效样本”两份状态。** 第一个有效样本不能与人为的复位0比较，否则启动时输入已经为1也会误报上升。have_history把“真的接受过0”和“从未接受任何样本”区分开。\n\n| 条件 | 历史更新 | rise/fall/any_edge |\n|---|---|---|\n| rst | 清有效标记 | 全0 |\n| sample_valid=0 | 保持 | 全0 |\n| 首个有效样本 | 保存sample，标记有历史 | 全0 |\n| 后续有效样本 | 保存sample | 按旧previous与本沿sample计算 |\n\n比较式rise=!previous&&sample，fall=previous&&!sample，any_edge=previous^sample。时序块中的NBA使比较读取旧previous，不能在比较前用阻塞赋值把previous改成新sample。空泡清输出但保留基线；因此有效0、空泡中任意变化、有效1只报一次上升。\n\n本模块检测的是有效采样序列中的变化，不保证观察到两个接受沿之间的所有物理跳变。它没有把异步输入变同步，也没有过滤机械抖动。any_edge在相邻交替样本中可连续为1，接收者应按每个时钟沿计事件，而不是再对any_edge做一次上升沿检测。",
+    "commonMistakes": [
+      "把复位0当真实采样历史，复位后首次高输入误报rise。",
+      "无效周期更新previous，改变有效样本间的比较。",
+      "先阻塞更新previous再比较，导致三个事件总为0。"
+    ],
+    "type": "rtl_coding",
+    "referenceAnswerMd": "```systemverilog\nmodule sample_edges (\n  input logic clk, rst, sample_valid, sample,\n  output logic rise, fall, any_edge\n);\n  logic have_history, previous;\n  always_ff @(posedge clk) begin\n    if (rst) begin\n      have_history <= 1'b0;\n      previous <= 1'b0;\n      rise <= 1'b0;\n      fall <= 1'b0;\n      any_edge <= 1'b0;\n    end else begin\n      // Invalid cycles clear events but do not consume a sample.\n      rise <= 1'b0;\n      fall <= 1'b0;\n      any_edge <= 1'b0;\n      if (sample_valid) begin\n        if (have_history) begin\n          rise <= !previous && sample;\n          fall <= previous && !sample;\n          any_edge <= previous ^ sample;\n        end\n        // The first valid sample establishes a baseline, not an event.\n        previous <= sample;\n        have_history <= 1'b1;\n      end\n    end\n  end\nendmodule\n```\n\nhave_history防止启动假边沿；previous只随有效样本更新。每拍先清三个输出，有历史且本拍有效时才根据旧previous计算事件。首个有效样本无条件建立基线；rst优先使此前样本失效。三个输出都是同沿NBA后的注册结果，空泡期间为0。",
+    "rubric": [
+      "完整接口与同步复位，三个输出寄存。",
+      "首个有效样本只建立历史，输入1也无假上升。",
+      "只在sample_valid时推进历史，空泡事件清0。",
+      "rise/fall互斥且any_edge等于二者或。",
+      "说明连续事件、采样序列与异步/去抖边界。"
+    ]
+  },
+  {
+    "id": "ADAPTED-SAMPLING-FSM-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "fsm",
+    "title": "Moore、Mealy和三段式：过程数量不能证明无毛刺",
+    "difficulty": "medium",
+    "tags": [
+      "采样复位与状态机",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 8,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q9/Q12 的考查方向；具体代码、参数、观察时刻和解析独立重构，非公司原题，不继承公司或届别归因。"
+    },
+    "promptMd": "讨论可综合同步FSM：state为当前状态寄存器，x为输入；组合译码可能有真实不同路径延迟，注册输出只在指定时钟沿更新。这里“一/二/三段式”指代码组织，不把过程数本身当作输出逻辑定义；不涉及异步复位触发输出的例外。以下哪些判断正确？",
+    "explanationMd": "**答案A、C、E。** Moore/Mealy按输出函数的依赖关系区分，过程分几段则是编码组织方式；输出是否寄存要检查具体赋值与敏感事件。\n\n常见一段式把状态更新与输出赋值放进一个时序进程；二段式常分状态寄存和组合逻辑；三段式常再分离输出逻辑。但输出进程可能是组合也可能是时序，不能仅数always就推导完整行为。\n\nMoore逻辑输出只依赖当前状态，Mealy组合输出依赖当前状态和输入。把输出写进always_ff能切断输入到输出的组合直通，但仍必须满足输入采样时序，并核对输出属于当前状态还是转移后的状态，不能凭“注册”自动决定功能延迟。\n\nMoore也不自动物理无毛刺：例如state从01变10，两位路径延迟不同可短暂经过00；组合y=(state==00)便可能在两个稳定端点y都为0时短暂变1。输出寄存可避免把这类组合译码瞬态直接暴露到端口，但寄存输入仍需满足时序。Mealy是否省状态、是否更早输出取决于实际功能与实现，不能保证永远少一个状态或快一拍。",
+    "commonMistakes": [
+      "按always块数量直接判断Moore/Mealy及输出是否寄存。",
+      "把仅依赖state误当物理译码没有路径延迟差。",
+      "把常见例子的状态数/延迟差当所有FSM的定理。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "Moore输出函数只依赖当前状态；Mealy组合输出函数还可依赖输入。"
+      },
+      {
+        "id": "B",
+        "textMd": "只要写成三个always过程，输出就必定经过寄存器且没有组合译码毛刺。"
+      },
+      {
+        "id": "C",
+        "textMd": "把输出独立写进always_ff能切断输入到输出的组合直通，但仍需检查采样时序和输出对齐。"
+      },
+      {
+        "id": "D",
+        "textMd": "相同功能的Mealy总比Moore恰好少一个状态，输出也总恰好早一拍。"
+      },
+      {
+        "id": "E",
+        "textMd": "仅由多bit状态组合译码的Moore输出，不自动保证真实电路无毛刺。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C",
+      "E"
+    ],
+    "optionExplanations": {
+      "A": "正确。分类依据是输出函数的逻辑依赖，而非进程数量。",
+      "B": "错误。第三个过程也可能是组合过程；是否寄存及是否会译码毛刺须看实际代码。",
+      "C": "正确。寄存器阻断组合直通，但输入要满足采样时序且设计仍需明确定义延迟。",
+      "D": "错误。状态数与响应时刻取决于功能、编码与是否额外寄存，不能给固定差值。",
+      "E": "正确。状态位到达时间不同可产生瞬态译码，逻辑Moore定义不消除物理延迟差。"
+    }
   }
 ]
