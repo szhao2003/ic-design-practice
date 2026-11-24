@@ -10,11 +10,11 @@ module seq1101_valid (
     next_state = state;
     hit = 1'b0;
     case (state)
-      NONE: next_state = din ? P1 : NONE;
-      P1: next_state = din ? P11 : NONE;
-      P11: next_state = din ? P11 : P110;
+      NONE: if (din) next_state = P1; else next_state = NONE;
+      P1: if (din) next_state = P11; else next_state = NONE;
+      P11: if (din) next_state = P11; else next_state = P110;
       P110: begin
-        next_state = din ? P1 : NONE;
+        if (din) next_state = P1; else next_state = NONE;
         hit = din;
       end
       default: next_state = NONE;
