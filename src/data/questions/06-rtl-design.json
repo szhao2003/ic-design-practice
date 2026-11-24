@@ -595,5 +595,42 @@
       "valid=1 但 accept=0 时仍推进，消耗了没有发生的服务。",
       "把公平性解释成后级永远不接收时也必须完成服务。"
     ]
+  },
+  {
+    "id": "ADAPTED-CORE3-RTL-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "counter",
+    "title": "4位饱和credit计数器：同时增减与端点优先级",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://hdlbits.01xz.net/wiki/Cs450/counter_2bc",
+      "note": "参考公开教学/技术资料的考点方向，题面、参数、选项及参考实现独立构造，非公司原题。本次实际核对链接与相关主题，不继承公司或原参数归因。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "RTL与协议第三批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 12,
+    "reviewStatus": "verified",
+    "promptMd": "编写完整SystemVerilog模块saturating_credit4，输入clk/rst/inc/dec均1 bit，输出logic [3:0] credit。所有输入在上升沿前稳定，仅讨论0/1。rst为同步高有效，上升沿采到rst=1时credit=0，优先于所有请求。复位至少在一个上升沿有效。\n\n非复位时：inc=1且dec=0，credit加1但最多15；inc=0且dec=1，减1但最少0；两者均0或均1时保持。特别规定：credit=0或15时，inc=dec=1也保持，不执行“先加后减”或根据可接受请求重新判断。输出为寄存器当前值，不额外加拍。\n\n给完整模块并说明端点及同时请求行为。不是异步FIFO或可透传credit分配器。",
+    "explanationMd": "**按请求组合决定唯一动作，再检查该动作是否会越界。**\n\n| rst | inc dec | 下一状态 |\n|---:|---|---|\n| 1 | 任意 | 0 |\n| 0 | 10 | min(credit+1,15) |\n| 0 | 01 | max(credit−1,0) |\n| 0 | 00或11 | credit |\n\n同时请求在所有状态都保持，是题目契约，不依赖单个动作能否执行。因此在credit=0时不能先拒绝dec再单独接受inc；在15时也不能只接受dec。计数器满时不绕回0，空时不绕回15。\n\n代码仅在posedge clk执行，rst变化本身不触发，因此是同步复位。时序进程使用非阻塞赋值；在本进程不赋值表示FF保持，不是组合逻辑缺省赋值导致的latch。真实credit系统若要报告overflow/underflow或定义拒绝事件，需要扩展接口。",
+    "commonMistakes": [
+      "用普通4bit加减而不检查边界，出现15→0或0→15。",
+      "inc和dec分别写两个if，导致同时请求依赖代码先后。",
+      "将同步复位写进敏感列表，改变题定时序。"
+    ],
+    "type": "rtl_coding",
+    "referenceAnswerMd": "```systemverilog\nmodule saturating_credit4 (\n    input  logic       clk,\n    input  logic       rst,\n    input  logic       inc,\n    input  logic       dec,\n    output logic [3:0] credit\n);\n    // Synchronous active-high reset has priority over both requests.\n    always_ff @(posedge clk) begin\n        if (rst)\n            credit <= 4'd0;\n        else begin\n            case ({inc, dec})\n                2'b10: if (credit != 4'd15) credit <= credit + 4'd1;\n                2'b01: if (credit != 4'd0)  credit <= credit - 4'd1;\n                default: ; // Neither request, or both: keep the stored value.\n            endcase\n        end\n    end\nendmodule\n```\n\ncase对请求组合互斥处理；边界检查只影响单向请求，11保持。同步rst在下个上升沿优先清零。",
+    "rubric": [
+      "完整接口和posedge时序过程，rst同步且优先。",
+      "单增15保持，单减0保持，其余各改变1。",
+      "inc=dec时所有状态保持，包括0和15。",
+      "时序非阻塞赋值，输出不另加流水级。"
+    ]
   }
 ]

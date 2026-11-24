@@ -2,6 +2,7 @@ import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 const mapping = {
+  saturating_credit4: 'ADAPTED-CORE3-RTL-0001',
   pulse_toggle_cdc: 'ADAPTED-RK26-CDC-0001', reset_release: 'ORIGINAL-CDC-0005',
   pipeline_adder: 'ADAPTED-RK26-RTL-0001', mod10_counter: 'ORIGINAL-RTL-0001',
   priority_arbiter: 'ORIGINAL-RTL-0002', prefix_mod5: 'ADAPTED-YHC-RTL-0002', popcount8: 'ADAPTED-YHC-RTL-0004',

@@ -442,5 +442,96 @@
       "把二进制环绕位比较规则照搬成只反 Gray 的一位。",
       "认为真实读端已移动，写端就能在同一瞬间解除满。"
     ]
+  },
+  {
+    "id": "ADAPTED-CORE3-MEM-0001",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "sram-bram",
+    "title": "双口BRAM碰撞：两个写口没有默认赢家",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://docs.amd.com/r/en-US/ug573-ultrascale-memory-resources/Address-Collision",
+      "note": "参考公开教学/技术资料的考点方向，题面、参数、选项及参考实现独立构造，非公司原题。本次实际核对链接与相关主题，不继承公司或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "RTL与协议第三批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "按AMD UltraScale UG573描述的true dual-port BRAM，两个端口共用同一时钟，写使能为整字；读位置已初始化，所有时序约束满足。不加外部仲裁，不依赖某次仿真偶然结果。哪些说法正确？仅讨论下面列出的访问，不分析独立时钟碰撞。",
+    "explanationMd": "**答案：A、C、D。**\n\n| 访问 | 题定判断 |\n|---|---|\n| 两口同地址读 | 可以读出该位置数据 |\n| 两口异地址写 | 不构成同地址写碰撞，可分别写 |\n| 两口同地址写不同数据 | 不能指定某口必胜，最终内容不确定 |\n\n两口同地址同时写不同数据不是软件语句执行顺序问题，不能规定“后一个always”或“A端口”天然优先。需要在架构上避免、仲裁或明确禁止这种请求。\n\nREAD_FIRST/WRITE_FIRST/NO_CHANGE配置涉及读写输出行为，不能凭一个端口的模式就推出同地址冲突写有确定赢家。本题不给出read-during-write的跨端口配置组合，因而不要求推断那类碰撞的读输出。结论限定在所引架构及题设，不代表所有存储IP。",
+    "commonMistakes": [
+      "根据TB先后赋值顺序猜某写口永远获胜。",
+      "把异地址访问也当作同地址冲突。",
+      "把READ_FIRST等输出模式误当成写冲突仲裁优先级。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "两个端口同时读取同一已初始化地址，可以各自完成读。"
+      },
+      {
+        "id": "B",
+        "textMd": "两个端口同时向同一地址写不同数据，A端口必然覆盖B端口。"
+      },
+      {
+        "id": "C",
+        "textMd": "两个端口在同沿写不同地址，不属于同地址写碰撞。"
+      },
+      {
+        "id": "D",
+        "textMd": "不能仅靠端口的READ_FIRST模式，给同地址冲突写指定一个可靠赢家。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "共同时钟、满足时序、已初始化的双读是合法访问。",
+      "B": "UG573不给冲突写指定A必胜；不能依赖仿真偶然结果。",
+      "C": "地址不同，两个端口可访问各自位置。",
+      "D": "输出读模式不等于写碰撞的确定优先仲裁。"
+    }
+  },
+  {
+    "id": "ADAPTED-CORE3-MEM-0002",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "sram-bram",
+    "title": "交错bank调度：四个bank不代表八请求两拍完成",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://capra.cs.cornell.edu/seashell/docs/banking.html",
+      "note": "参考公开教学/技术资料的考点方向，题面、参数、选项及参考实现独立构造，非公司原题。本次实际核对链接与相关主题，不继承公司或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "RTL与协议第三批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "4个单端口memory bank，字地址a映射bank=a mod 4。每个bank每拍最多接受1个读请求，不同bank可同拍并行。8个请求在第1拍前全部就绪，字地址依次为0、4、8、1、5、2、6、3；无依赖，允许自由重排。没有全局发射宽度限制，也不要求保持原队列顺序。\n\n只统计把全部请求发到bank所需的最少拍数，不计返回延迟。",
+    "explanationMd": "**答案：3拍。**\n\n按a mod 4分组：bank0有0/4/8三个请求，bank1有1/5两个，bank2有2/6两个，bank3有3一个。bank0每拍只能接一个，所以不论怎么调度都至少3拍。\n\n| 拍 | bank0 | bank1 | bank2 | bank3 |\n|---:|---:|---:|---:|---:|\n| 1 | 0 | 1 | 2 | 3 |\n| 2 | 4 | 5 | 6 | — |\n| 3 | 8 | — | — | — |\n\n上述构造达到下界，因此最优3。ceil(8/4)=2只是假设每拍四bank都能均衡利用时的容量下界，未计本组地址的bank冲突。若不能重排或有队首阻塞，完成时间可能更长；题设已排除这些限制。",
+    "commonMistakes": [
+      "只用总数8除以bank数4，忽略地址分布。",
+      "把字地址误当字节地址再除字长，改变bank映射。",
+      "把返回延迟也计入发射拍数。"
+    ],
+    "type": "numeric",
+    "expectedValue": 3,
+    "absoluteTolerance": 0
   }
 ]

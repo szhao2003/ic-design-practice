@@ -536,5 +536,94 @@
       "把某一 ASIC 流程的限制推广到全部 FPGA。",
       "把上电初始化当作运行中复位。"
     ]
+  },
+  {
+    "id": "ADAPTED-CORE3-SV-0001",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "sv-basics",
+    "title": "Indexed part-select：加号指定索引方向，不是加数值",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://verificationacademy.com/forums/t/indexed-part-select-referencing-different-width-expr-values/33180",
+      "note": "参考公开教学/技术资料的考点方向，题面、参数、选项及参考实现独立构造，非公司原题。本次实际核对链接与相关主题，不继承公司或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "RTL与协议第三批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "SystemVerilog中logic [15:0] word=16'hD39A。所有位已知。表达式word[5 +: 4]得到的4 bit无符号值是多少？填十进制。这里word按[15:0]递减声明；5是base，4是固定width。",
+    "explanationMd": "**答案：12，即4'hC。**\n\n对递减声明word[15:0]，word[5 +: 4]选择索引5、6、7、8，结果按高位到低位等价于word[8:5]。D39A的二进制为1101 0011 1001 1010，bit8…5为1100，十进制12。\n\n还可用整数位权核对：(0xD39A >> 5) & 0xF = 12。\n\n+:不是把word的值加4，也不是选择4个byte；它指定以base向更大的索引取固定width位。base可以是运行时整数表达式，width必须是正的常量表达式；声明若是[0:15]，结果位序应按对应规则重新分析，不能机械照抄word[8:5]。本题不涉及越界或X/Z。",
+    "commonMistakes": [
+      "把[5 +: 4]看成bit5到bit4，或把4看成终止索引。",
+      "按读到索引5、6、7、8的顺序反写结果位序。",
+      "把part-select当成加法运算。"
+    ],
+    "type": "numeric",
+    "expectedValue": 12,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-CORE3-SV-0002",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "signed-width",
+    "title": "同样是>>>：左操作数unsigned时会补符号吗？",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://chromium.googlesource.com/external/github.com/google/styleguide/+/HEAD/verilogguide.md",
+      "note": "参考公开教学/技术资料的考点方向，题面、参数、选项及参考实现独立构造，非公司原题。本次实际核对链接与相关主题，不继承公司或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "RTL与协议第三批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "以下SystemVerilog语句依次在同一initial过程用阻塞赋值执行，右移后读结果。s和u位模式相同。\n\n```systemverilog\nlogic signed [7:0] s;\nlogic [7:0] u;\nlogic signed [7:0] a,b;\ns = -8'sd40;\nu = 8'hD8;\na = s >>> 2;\nb = u >>> 2;\n```\n\na、b按signed十进制打印时分别是多少？",
+    "explanationMd": "**答案：A，a=−10，b=54。**\n\ns与u初始都是11011000，但s为signed、u为unsigned。s >>> 2复制符号位1，得到11110110，作为8bit补码是−10；u >>> 2在左侧补0，得到00110110，即54。\n\n>>>并非无条件符号扩展。右移的填充值取决于左操作数的signed属性；把结果接到signed目标b，不会把u在移位前自动变成signed。若明确先用$signed(u)转换左操作数，再右移，结果才会按符号扩展。\n\n这里移位结果宽度和目标均8bit，无额外宽度混合；若换成更宽的表达式或拼接，应重新分析表达式的尺寸与符号规则。",
+    "commonMistakes": [
+      "看到>>>就认为总会复制最高位。",
+      "认为signed目标会把unsigned源在所有运算前自动转为signed。",
+      "把右移的位模式结果按无符号打印，忽略a的声明。"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "a=−10，b=54"
+      },
+      {
+        "id": "B",
+        "textMd": "a=−10，b=−10"
+      },
+      {
+        "id": "C",
+        "textMd": "a=54，b=54"
+      },
+      {
+        "id": "D",
+        "textMd": "a=−40，b=216"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "s为signed时符号扩展；u为unsigned时零扩展。",
+      "B": "b的目标类型不改变u本身的unsigned移位填充规则。",
+      "C": "s已声明signed，其算术右移不是零扩展。",
+      "D": "没有保持原值；移位运算确实改变了两者位模式。"
+    }
   }
 ]

@@ -473,5 +473,136 @@
       "C": "2700超过上限，tr约343.157 ns，超过300 ns。",
       "D": "4700超过上限，tr约597.347 ns；低电流不能弥补上升慢。"
     }
+  },
+  {
+    "id": "ADAPTED-CORE3-APB-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "apb",
+    "title": "APB4字节写使能：PSTRB如何合并寄存器",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://documentation-service.arm.com/static/63fe2c1356ea36189d4e79f3?token=",
+      "note": "参考公开教学/技术资料的考点方向，题面、参数、选项及参考实现独立构造，非公司原题。本次实际核对链接与相关主题，不继承公司或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "RTL与协议第三批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "APB4的32 bit普通读写寄存器原值0x89ABCDEF。一次合法、已完成且无错误的对齐写传输，PWDATA=0x12345678，PSTRB[3:0]=4'b1010。寄存器明确支持字节写，PSTRB[n]=1才用PWDATA[8n+7:8n]替换对应byte，其他byte保持。没有W1C或其他副作用。最终寄存器值为多少？",
+    "explanationMd": "**答案：A，0x12AB56EF。**\n\n| byte lane | 原值 | 写数据 | PSTRB | 新值 |\n|---:|---|---|---:|---|\n| 3（31:24） | 89 | 12 | 1 | 12 |\n| 2（23:16） | AB | 34 | 0 | AB |\n| 1（15:8） | CD | 56 | 1 | 56 |\n| 0（7:0） | EF | 78 | 0 | EF |\n\n按byte3到byte0拼成12 AB 56 EF。PSTRB为位掩码，每bit对应一个byte lane，不表示写入byte的数量，也不反转数据字节序。\n\n这个寄存器是否支持部分写由题目明确定义，不能因为APB接口存在PSTRB就推断所有外设寄存器都实现同样副作用。本题已确认传输完成且无错，不需再次判断PREADY或PSLVERR。",
+    "commonMistakes": [
+      "把1010按低位到高位的文字顺序对应到错误byte。",
+      "忽略PSTRB，将整个32bit数据覆盖。",
+      "把接口字节strobe与寄存器W1C语义混为一谈。"
+    ],
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "0x12AB56EF"
+      },
+      {
+        "id": "B",
+        "textMd": "0x8934CD78"
+      },
+      {
+        "id": "C",
+        "textMd": "0x12345678"
+      },
+      {
+        "id": "D",
+        "textMd": "0x89ABCDEF"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "lane3和lane1更新，lane2和lane0保持，结果12AB56EF。",
+      "B": "该结果更新了lane2和lane0，恰好把strobe反选。",
+      "C": "全覆盖需要四个lane均允许写，本题只有1010。",
+      "D": "有效lane的值不同且传输已完成，不能全部保持旧值。"
+    }
+  },
+  {
+    "id": "ADAPTED-CORE3-UART-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "uart",
+    "title": "UART累计采样漂移：周期误差上界不等于器件容差",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://onlinedocs.microchip.com/oxy/GUID-D364745C-8255-47AE-9528-9EB17646EE19-en-US-18/GUID-2966F8A6-816E-45CF-87A6-FB4C876E377D.html",
+      "note": "参考公开教学/技术资料的考点方向，题面、参数、选项及参考实现独立构造，非公司原题。本次实际核对链接与相关主题，不继承公司或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "RTL与协议第三批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "题定理想8N1 UART：发送端每bit周期T，start占[0,T)，8个data占[T,9T)，stop占[9T,10T)，随后下一帧start可能立即在10T到来。接收端准确在t=0检测到start下降沿，不计量化误差；自己的bit周期Tr=(1+ε)T，ε≥0。start中心在0.5Tr，data中心依次1.5Tr…8.5Tr，stop中心9.5Tr。要求每个采样点严格落在相应发送bit内部。\n\n问正周期误差ε的临界上界：stop采样恰落在10T时ε是多少？填百分数。这个临界点本身不算安全，只求边界值；不分析实际过采样、投票或抖动。",
+    "explanationMd": "**答案：约5.26316%；安全条件是ε<该边界。**\n\n接收周期较长，采样点越来越向右漂。第k个bit中心时间为(k+0.5)(1+ε)T，其右边界为(k+1)T；ε<(0.5)/(k+0.5)。k越大条件越严格，最后的stop对应k=9。\n\n令9.5(1+ε)T=10T，得ε=10/9.5−1=1/19≈0.05263158，即5.263158%。在这一临界处，采样恰撞下一帧start边界，不能称作可靠采样。\n\n这里定义的是接收bit周期误差，正ε意味着接收波特率更低；相应波特率误差为1/(1+ε)−1，不能直接把周期百分比照抄为波特率百分比。理想起始检测、无抖动等假设刻意排除了实际预算项，不能据此宣称某UART器件允许±5.263%。",
+    "commonMistakes": [
+      "把正周期误差理解成接收频率更快。",
+      "仅检查首个data中心，漏掉后续累计漂移。",
+      "把临界点当安全值，或把理想结果当真实器件保证。"
+    ],
+    "type": "numeric",
+    "expectedValue": 5.2631578947368425,
+    "absoluteTolerance": 0.0001,
+    "unit": "%",
+    "defaultUnit": "%",
+    "acceptedUnits": {
+      "%": 1
+    }
+  },
+  {
+    "id": "ADAPTED-CORE3-SPI-0001",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "spi",
+    "title": "SPI Mode 3：首个下降沿后才准备首位",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://onlinedocs.microchip.com/oxy/GUID-6F1B86DC-C230-43D1-A405-0CC2E7EDF7EE-en-US-2/GUID-EAC2D943-F395-4D47-98C8-4EEBC798BFA2.html",
+      "note": "参考公开教学/技术资料的考点方向，题面、参数、选项及参考实现独立构造，非公司原题。本次实际核对链接与相关主题，不继承公司或原参数归因。"
+    },
+    "difficulty": "medium",
+    "tags": [
+      "RTL与协议第三批",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "promptMd": "SPI Mode3，CPOL=1、CPHA=1，SCK空闲高。CS在首个下降沿前已有效，直到第4个上升沿采样完成后才撤销；本题只传4 bit，MSB先行。发送方在各下降沿之后更新MISO，四次依次准备1、0、1、1，均在随后上升沿前满足setup/hold。CS有效前MISO为0。接收器在正确边沿采样，并执行4bit移位q_next={q[2:0],MISO}，初始q=0000。\n\n列出四次采样边沿、MISO和更新后的q；最终接收到什么数值？不要把最初的MISO=0算作首位。",
+    "explanationMd": "**在每个上升沿采样，q依次0001、0010、0101、1011，最终0xB。**\n\nMode3中首个边沿是从空闲高到低的下降沿，用于准备数据；其后的上升沿是本周期采样沿。\n\n| 周期 | 下降沿后准备MISO | 上升沿采样值 | 采样后q |\n|---:|---:|---:|---|\n| 1 | 1 | 1 | 0001 |\n| 2 | 0 | 0 | 0010 |\n| 3 | 1 | 1 | 0101 |\n| 4 | 1 | 1 | 1011 |\n\n首个下降沿前的0是无效占位，不能按CPHA=0的方式提前采样。这里下降沿的更新要在随后上升沿前稳定，不分析同沿采样竞争或器件传播延迟。若改变CPOL/CPHA，应重新确定leading/trailing对应的上升下降关系。",
+    "commonMistakes": [
+      "把空闲高误解为下降沿采样，忽略CPHA=1。",
+      "把CS有效前的MISO占位0当第一位。",
+      "把MSB-first与左移过程的最终位序混淆。"
+    ],
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "四个上升沿分别采到1、0、1、1；q依次0001、0010、0101、1011。最终十进制11，即0xB。首个下降沿用于准备首位。",
+    "rubric": [
+      "Mode3下降沿准备、上升沿采样。",
+      "不采CS前占位0。",
+      "按四次采样列出0001/0010/0101/1011。",
+      "最终1011=11=0xB。"
+    ]
   }
 ]

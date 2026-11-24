@@ -111,3 +111,20 @@ Python参考代码实际运行、其他独立模型与未执行的物理实现�
 | ADAPTED-EXTENSION-PROB-0002 | 最多三次重试：完成时间不能直接套无限几何分布 | [技术/教学来源](https://ocw.mit.edu/courses/6-436j-fundamentals-of-probability-fall-2018/f6a391ad22d454dea0903bb72eb58728_MIT6_436JF18_lec06.pdf) |
 
 N1570/GNU位移手册本次超时未采用；UW PDF无可读正文，使用同校公开HTML课程。范围与去重见 [本批审核](CONTENT_BATCH_10_EXTENSION.md)。
+
+## RTL与协议第三批实际采用（2026-11-23）
+
+下列链接本次实际访问，仅支持方向；不继承原参数或公司归因。
+
+| ID | 任务 | URL |
+|---|---|---|
+| ADAPTED-CORE3-SV-0001 | Indexed part-select：加号指定索引方向，不是加数值 | [公开技术/教学来源](https://verificationacademy.com/forums/t/indexed-part-select-referencing-different-width-expr-values/33180) |
+| ADAPTED-CORE3-SV-0002 | 同样是>>>：左操作数unsigned时会补符号吗？ | [公开技术/教学来源](https://chromium.googlesource.com/external/github.com/google/styleguide/+/HEAD/verilogguide.md) |
+| ADAPTED-CORE3-MEM-0001 | 双口BRAM碰撞：两个写口没有默认赢家 | [公开技术/教学来源](https://docs.amd.com/r/en-US/ug573-ultrascale-memory-resources/Address-Collision) |
+| ADAPTED-CORE3-MEM-0002 | 交错bank调度：四个bank不代表八请求两拍完成 | [公开技术/教学来源](https://capra.cs.cornell.edu/seashell/docs/banking.html) |
+| ADAPTED-CORE3-RTL-0001 | 4位饱和credit计数器：同时增减与端点优先级 | [公开技术/教学来源](https://hdlbits.01xz.net/wiki/Cs450/counter_2bc) |
+| ADAPTED-CORE3-APB-0001 | APB4字节写使能：PSTRB如何合并寄存器 | [公开技术/教学来源](https://documentation-service.arm.com/static/63fe2c1356ea36189d4e79f3?token=) |
+| ADAPTED-CORE3-UART-0001 | UART累计采样漂移：周期误差上界不等于器件容差 | [公开技术/教学来源](https://onlinedocs.microchip.com/oxy/GUID-D364745C-8255-47AE-9528-9EB17646EE19-en-US-18/GUID-2966F8A6-816E-45CF-87A6-FB4C876E377D.html) |
+| ADAPTED-CORE3-SPI-0001 | SPI Mode 3：首个下降沿后才准备首位 | [公开技术/教学来源](https://onlinedocs.microchip.com/oxy/GUID-6F1B86DC-C230-43D1-A405-0CC2E7EDF7EE-en-US-2/GUID-EAC2D943-F395-4D47-98C8-4EEBC798BFA2.html) |
+
+独立模型、RTL/SV原生验证及限制见 [本批审核](CONTENT_BATCH_11_CORE.md)。MIT托管IEEE标准PDF过大，未作为完整读取来源。
