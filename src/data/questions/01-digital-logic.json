@@ -455,5 +455,69 @@
     "type": "numeric",
     "expectedValue": 28,
     "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-CODEC-PARITY-0001",
+    "contentVersion": 1,
+    "topicId": "01",
+    "subtopicId": "boolean-kmap",
+    "title": "偶校验能检出什么：校验通过不代表数据没错",
+    "difficulty": "medium",
+    "tags": [
+      "编码分频与存储接口",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 9,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q132 的考查方向；接口、参数、条件与解析独立重构，非公司原题，不继承其公司/届别归因。"
+    },
+    "promptMd": "发送8bit二值data和1bit偶校验p，使9bit码字中1的总数为偶数；规定p=^data，接收端syndrome=^{received_p,received_data}，1表示检测到校验错误，0表示校验通过。信道只会将指定位置翻转0↔1，9个位置包含校验位本身；不讨论X/Z、丢帧或位插入。对于data=8'hB3及这种校验规则，哪些判断正确？",
+    "explanationMd": "**答案A、C、E。** 0xB3=10110011，共5个1，所以p=1，完整9bit码字共6个1。偶校验不是校正码，也不是数据无错证明。\n\nXOR归约把每一个1的贡献相加模2。原合法码字归约为0，接收码字等于原码字异或翻转掩码，因此syndrome等于翻转掩码中1的个数模2：奇数个位置翻转会报错，偶数个位置翻转会漏检。\n\n只翻校验位也是1个位置，syndrome会变1；校验位没有特殊免疫。任意两个不同位置各翻一次属于偶数翻转，即使两个数据位都错也会通过。syndrome只有1bit，不能从它唯一判断哪一位出错并纠正。\n\n例如数据位0和3一起翻转，0xB3变0xBA，原p仍为1，两份数据都含5个1，校验仍通过。这里讨论的是最终改变了多少个不同位置；同一位翻两次会恢复原值，不能把过程中的跳变次数与最终错误掩码混淆。",
+    "commonMistakes": [
+      "把偶校验生成位一律设0，不检查数据1的奇偶。",
+      "认为所有双bit错误都能检出。",
+      "syndrome=1就声称已经知道哪个位置并能纠正。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "data=0xB3时，为满足偶校验p应为1。"
+      },
+      {
+        "id": "B",
+        "textMd": "任意两个不同位置各翻一次，一定会报错。"
+      },
+      {
+        "id": "C",
+        "textMd": "若最终翻转的不同位置数为奇数，syndrome为1。"
+      },
+      {
+        "id": "D",
+        "textMd": "syndrome=1本身足以唯一定位并纠正出错位。"
+      },
+      {
+        "id": "E",
+        "textMd": "只翻转p、不改8bit数据，也会被检测到。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C",
+      "E"
+    ],
+    "optionExplanations": {
+      "A": "正确。B3有5个1，加p=1后为6个。",
+      "B": "错误。偶数个位置翻转不改变总奇偶，两个位置错误会漏检。",
+      "C": "正确。合法码字归约为0，异或奇数重量掩码后归约为1。",
+      "D": "错误。1bit syndrome无法区分9个单bit位置，更不能唯一纠正一般错误。",
+      "E": "正确。p本身也在9bit归约中，单独翻它会使syndrome为1。"
+    }
   }
 ]

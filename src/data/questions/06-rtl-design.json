@@ -1030,5 +1030,80 @@
       "D": "错误。状态数与响应时刻取决于功能、编码与是否额外寄存，不能给固定差值。",
       "E": "正确。状态位到达时间不同可产生瞬态译码，逻辑Moore定义不消除物理延迟差。"
     }
+  },
+  {
+    "id": "ADAPTED-CODEC-DIV-0001",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "divider",
+    "title": "完整偶分频与tick：暂停保持相位，不延长事件",
+    "difficulty": "medium",
+    "tags": [
+      "编码分频与存储接口",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 18,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q24 的考查方向；接口、参数、条件与解析独立重构，非公司原题，不继承其公司/届别归因。"
+    },
+    "promptMd": "实现even_divider，参数DIVIDE为2…1024的偶整数；输入clk、同步高有效rst、en，输出寄存divided和tick。rst优先使divided=0、计数=0、tick=0。以复位后被en=1接受的输入上升沿为计数序列：每DIVIDE/2个接受沿翻转divided一次；第DIVIDE、2*DIVIDE…个接受沿（divided从1翻0）令tick=1，其余沿tick=0。所有输入满足本域采样要求。\n\nen=0保持divided及内部相位计数，但tick仍必须清0；恢复en后接着未完成的半周期继续，不重新开始。DIVIDE=2必须合法，不能声明零位计数器。连续en=1的稳态输出周期DIVIDE*T、高低各DIVIDE*T/2；允许复位或暂停破坏实时脉宽，此时不宣称仍为固定频率50%占空比。\n\n只允许posedge clk时序逻辑，不使用#延时或组合反馈。给完整参数化RTL；说明tick作为原clk域的clock enable与把divided当新时钟的实现区别。",
+    "explanationMd": "**半周期计数器在终点翻转divided，只有原divided=1时的终点产生tick。** HALF=DIVIDE/2，旧半周期计数等于HALF−1并且en=1，当前接受沿正好完成半周期。\n\n| 本沿条件 | divided | 半周期计数 | tick |\n|---|---|---|---|\n| rst | 0 | 0 | 0 |\n| en=0 | 保持 | 保持 | 0 |\n| en=1且未到半周期终点 | 保持 | 加1 | 0 |\n| en=1且终点，旧divided=0 | 翻为1 | 清0 | 0 |\n| en=1且终点，旧divided=1 | 翻为0 | 清0 | 1 |\n\ntick每拍默认清0，避免终点后的暂停把事件保持成高电平。DIVIDE=2时HALF=1，终点恒为0，每个接受沿翻转；计数器仍显式分配至少1bit，防止clog2(1)=0造成非法声明。\n\n连续使能时半周期恰好HALF个输入周期，输出为目标分频方波。暂停只冻结相位，已为高的输出可能延长，因此不能承诺任意en变化仍维持实时占空比。若下游仍由clk驱动，应把tick作为其同步使能；若真实使用divided作时钟，则要单独处理时钟资源、generated clock、暂停/复位语义等实现要求，不能把功能RTL当物理时钟签核。",
+    "commonMistakes": [
+      "tick只在en分支更新，暂停时把上次事件保持为1。",
+      "DIVIDE=2用clog2(HALF)声明出零宽计数器。",
+      "把停止接受沿后的保持相位，误说成整个时间轴仍固定占空比。"
+    ],
+    "type": "rtl_coding",
+    "referenceAnswerMd": "```systemverilog\nmodule even_divider #(\n  parameter integer DIVIDE = 10\n) (\n  input logic clk, rst, en,\n  output logic divided, tick\n);\n  // Contract: even DIVIDE, 2 <= DIVIDE <= 1024.\n  localparam integer HALF = DIVIDE / 2;\n  localparam integer BITS = (HALF <= 1) ? 1 : $clog2(HALF);\n  logic [BITS-1:0] half_count;\n  always_ff @(posedge clk) begin\n    if (rst) begin\n      half_count <= '0;\n      divided <= 1'b0;\n      tick <= 1'b0;\n    end else begin\n      // A stopped divider holds its phase; events never extend over a stall.\n      tick <= 1'b0;\n      if (en) begin\n        if (half_count == HALF - 1) begin\n          half_count <= '0;\n          divided <= !divided;\n          // The falling transition completes one full DIVIDE-edge period.\n          tick <= divided;\n        end else begin\n          half_count <= half_count + 1'b1;\n        end\n      end\n    end\n  end\nendmodule\n```\n\nhalf_count保存本半周期已经接受的沿数；比较HALF−1后翻转并清零。tick使用旧divided，在翻落沿完成一个完整DIVIDE计数周期。无效周期保持内部相位与输出波形，只清事件；同步复位仍需输入时钟有效沿生效。",
+    "rubric": [
+      "完整接口、偶数参数范围与同步复位。",
+      "DIVIDE=2的非零计数位宽。",
+      "每HALF接受沿翻转，每DIVIDE接受沿在落沿报tick。",
+      "en暂停保留相位而tick清0，恢复继续。",
+      "明确steady enable、clock-enable与真实新时钟的区别。"
+    ]
+  },
+  {
+    "id": "ADAPTED-CODEC-DIV-0002",
+    "contentVersion": 1,
+    "topicId": "06",
+    "subtopicId": "divider",
+    "title": "暂停分频器的逐沿波形：高电平会被拉长吗",
+    "difficulty": "medium",
+    "tags": [
+      "编码分频与存储接口",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 9,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q24 的考查方向；接口、参数、条件与解析独立重构，非公司原题，不继承其公司/届别归因。"
+    },
+    "promptMd": "使用本批even_divider，DIVIDE=6。输入时钟周期T，E0为rst=1的上升沿，其后rst=0；en在E3和E7上升沿采样为0，E1…E14其余沿均为1。所有输入满足采样条件。输出只在上升沿NBA后变化，题定实现每3个接受沿翻转divided，第6、12…个接受沿在翻低时产生tick；暂停保留相位但tick清0。\n\n列E0…E14沿后的divided和tick，指出首次/下一次高低翻转。E4至E8间的高电平持续多少输入周期？是否仍能说任意暂停下输出一直为50%占空比、周期6T？",
+    "explanationMd": "**首次翻高在E4，首次翻低并报tick在E8；下一翻高E11、翻低并报tick E14。** 两个暂停沿不增加接受计数。\n\n| 沿 | en | 累计接受沿数 | divided | tick |\n|---|---:|---:|---:|---:|\n| E0（复位） | 任意 | 0 | 0 | 0 |\n| E1 | 1 | 1 | 0 | 0 |\n| E2 | 1 | 2 | 0 | 0 |\n| E3 | 0 | 2 | 0 | 0 |\n| E4 | 1 | 3 | 1 | 0 |\n| E5 | 1 | 4 | 1 | 0 |\n| E6 | 1 | 5 | 1 | 0 |\n| E7 | 0 | 5 | 1 | 0 |\n| E8 | 1 | 6 | 0 | 1 |\n| E9 | 1 | 7 | 0 | 0 |\n| E10 | 1 | 8 | 0 | 0 |\n| E11 | 1 | 9 | 1 | 0 |\n| E12 | 1 | 10 | 1 | 0 |\n| E13 | 1 | 11 | 1 | 0 |\n| E14 | 1 | 12 | 0 | 1 |\n\nE4沿后到E8沿后的高电平持续4T，而不是连续使能时的3T；E7暂停使高相位延长一拍。事件只在接受终点的E8/E14出现；若E9也暂停，tick仍应清0而不是保持。这里保留的是接受沿序列中的分频相位，不是保证墙上时间每6T完成一周期。",
+    "commonMistakes": [
+      "把E3/E7也计入接受沿数。",
+      "恢复使能就清相位重新计数，改变题定暂停契约。",
+      "暂停延长实时脉宽后仍套用固定6T/50%的稳态结论。"
+    ],
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**首次翻高在E4，首次翻低并报tick在E8；下一翻高E11、翻低并报tick E14。** 两个暂停沿不增加接受计数。\n\n| 沿 | en | 累计接受沿数 | divided | tick |\n|---|---:|---:|---:|---:|\n| E0（复位） | 任意 | 0 | 0 | 0 |\n| E1 | 1 | 1 | 0 | 0 |\n| E2 | 1 | 2 | 0 | 0 |\n| E3 | 0 | 2 | 0 | 0 |\n| E4 | 1 | 3 | 1 | 0 |\n| E5 | 1 | 4 | 1 | 0 |\n| E6 | 1 | 5 | 1 | 0 |\n| E7 | 0 | 5 | 1 | 0 |\n| E8 | 1 | 6 | 0 | 1 |\n| E9 | 1 | 7 | 0 | 0 |\n| E10 | 1 | 8 | 0 | 0 |\n| E11 | 1 | 9 | 1 | 0 |\n| E12 | 1 | 10 | 1 | 0 |\n| E13 | 1 | 11 | 1 | 0 |\n| E14 | 1 | 12 | 0 | 1 |\n\nE4沿后到E8沿后的高电平持续4T，而不是连续使能时的3T；E7暂停使高相位延长一拍。事件只在接受终点的E8/E14出现；若E9也暂停，tick仍应清0而不是保持。这里保留的是接受沿序列中的分频相位，不是保证墙上时间每6T完成一周期。",
+    "rubric": [
+      "接受计数排除E3/E7，四次翻转E4/E8/E11/E14。",
+      "tick仅E8/E14，其他沿0。",
+      "E4至E8高相位4T，暂停可以拉长脉宽。",
+      "不能将连续使能稳态指标外推到任意暂停。"
+    ]
   }
 ]

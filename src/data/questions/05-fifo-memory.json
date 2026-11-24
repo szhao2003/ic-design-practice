@@ -715,5 +715,133 @@
     "acceptedUnits": {
       "字": 1
     }
+  },
+  {
+    "id": "ADAPTED-CODEC-GRAY-0001",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "gray-code",
+    "title": "参数化Gray双向转换：解码不是再异或右移一次",
+    "difficulty": "medium",
+    "tags": [
+      "编码分频与存储接口",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 18,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q18/Q19/Q21/Q22 的考查方向；接口、参数、条件与解析独立重构，非公司原题，不继承其公司/届别归因。"
+    },
+    "promptMd": "实现纯组合模块gray_codec，参数WIDTH>=1。两组相互独立的输入binary_in[WIDTH-1:0]、gray_in[WIDTH-1:0]，输出gray_out[WIDTH-1:0]、binary_out[WIDTH-1:0]。采用二进制反射Gray映射G=B^(B>>1)，无符号逻辑右移补0。gray_out编码binary_in，binary_out解码gray_in；不能假定两个输入互相对应。\n\n所有位为0/1；不需要时钟、复位、valid或存储。WIDTH=1也须可编译且输入输出相等，不得产生负位号或零宽切片。给完整可综合RTL和逐位推导；说明这个组合转换器为什么不能单独保证跨域相干，也不能因为输出叫Gray就认为输入任意跳变只改变1bit。",
+    "explanationMd": "**编码用相邻二进制位异或；解码用从最高位到当前位的前缀异或。** 最高位g[W−1]=b[W−1]，其余g[i]=b[i+1]^b[i]。因此b[i]=g[W−1]^g[W−2]^…^g[i]，中间二进制项两两抵消，只剩b[i]。\n\nRTL用generate为每一个常量位号生成一个归约异或切片。WIDTH=1时切片是gray_in[0:0]，有效且等于自身，不需要访问[-1]。两个方向独立驱动，组合赋值覆盖所有位，不会因漏分支形成锁存。\n\n不能把解码写成gray_in^(gray_in>>1)：这个操作是编码关系，通常不是自身的逆。也不能只证明encode后decode能还原就忽略独立gray_in路径；测试要覆盖全部编码输入和全部Gray位模式。\n\n跨域安全另有条件：组合binary_in多位同时翻转时，路径延迟差可能在组合Gray输出形成瞬态；即使数学相邻码只差1bit，也要按架构注册发布、满足相邻推进和CDC物理约束。这个模块只转换码值，不包含同步器或相干协议。",
+    "commonMistakes": [
+      "把编码公式再套一次当解码。",
+      "WIDTH=1时引用binary[-1]或生成空切片。",
+      "只做回环测试或默认两个输入相等，遗漏独立解码通路。"
+    ],
+    "type": "rtl_coding",
+    "referenceAnswerMd": "```systemverilog\nmodule gray_codec #(\n  parameter integer WIDTH = 8\n) (\n  input logic [WIDTH-1:0] binary_in, gray_in,\n  output logic [WIDTH-1:0] gray_out, binary_out\n);\n  // Contract: WIDTH >= 1. This is a combinational codec, not a CDC circuit.\n  assign gray_out = binary_in ^ (binary_in >> 1);\n  for (genvar bit_index = 0; bit_index < WIDTH; bit_index = bit_index + 1) begin : decode\n    // Each binary bit is the parity of the Gray prefix down to that bit.\n    assign binary_out[bit_index] = ^gray_in[WIDTH-1:bit_index];\n  end\nendmodule\n```\n\ngray_out直接按反射Gray定义编码；binary_out每位是gray_in高位前缀的归约异或。generate的bit_index在展开时为常量，所以切片可综合。模块没有寄存器，不能用它替代异步FIFO中的注册Gray发布和同步链。",
+    "rubric": [
+      "两个输入方向独立，接口位宽和纯组合要求完整。",
+      "编码右移补0，解码前缀异或正确。",
+      "WIDTH=1安全，无负下标/空位宽。",
+      "所有位都有驱动，无隐含锁存。",
+      "区分数学码值转换和真实CDC安全条件。"
+    ]
+  },
+  {
+    "id": "ADAPTED-CODEC-MEM-0001",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "sram-bram",
+    "title": "SRAM引脚计数：双向DQ和电源脚如何算",
+    "difficulty": "medium",
+    "tags": [
+      "编码分频与存储接口",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 9,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q128 的考查方向；接口、参数、条件与解析独立重构，非公司原题，不继承其公司/届别归因。"
+    },
+    "promptMd": "一个抽象异步SRAM芯片，组织为32Ki字×16bit（Ki=1024），地址与数据不复用。封装恰好包含：所需的独立地址引脚；16个双向DQ引脚（读写共用同一组）；5个独立控制引脚CE_n、OE_n、WE_n、BLE_n、BHE_n；1个VDD和1个VSS。无时钟、奇偶校验、模式、测试、NC或其他引脚，电源引脚只按给定数量计。\n\n求此抽象芯片的总封装引脚数（整数）。解析同时给出地址线数和字节容量。不是询问某个真实厂商封装；不能把输出/输入的双向DQ重复算两组。",
+    "explanationMd": "**总引脚38个，地址线15根，容量64KiB。** 32Ki字=32768个可寻址字，独立地址线需log2(32768)=15；每个地址选一个16bit字，不是选一个byte。\n\n双向DQ共有16根物理引脚，读时驱动输出、写时作为输入，共用不意味着16输入+16输出。5个控制脚和2个电源脚都已明确指定，所以总计15+16+5+2=38。\n\n容量32768×16bit=524288bit=65536byte=64KiB。若把地址当字节地址，会错误多加一根；芯片给出的是字地址，系统字节地址如何映射须由控制器决定。\n\n真实SRAM可能有更多电源/地、NC、额外片选或模式脚，不能从容量公式唯一推出实际封装脚数。本题已排除这些差异，38仅为给定抽象封装结果。",
+    "commonMistakes": [
+      "16bit双向DQ被当作32个独立物理脚。",
+      "32Ki字误当32KiB，从而地址/容量混算。",
+      "没有先确认控制与电源数量，就断言所有同容量SRAM封装相同。"
+    ],
+    "type": "numeric",
+    "expectedValue": 38,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-CODEC-MEM-0002",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "sram-bram",
+    "title": "SRAM扩展到32bit总线：先分byte、片内地址和bank",
+    "difficulty": "medium",
+    "tags": [
+      "编码分频与存储接口",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 9,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q128/Q132 的考查方向；接口、参数、条件与解析独立重构，非公司原题，不继承其公司/届别归因。"
+    },
+    "promptMd": "用8Ki字×8bit、独立13bit字地址的SRAM芯片组成一个2MiB、32bit数据总线的存储区。Mi=2^20，Ki=2^10。CPU给相对本存储区的21bit字节地址A[20:0]，所有32bit访问都4byte对齐；写操作另有4bit byte_mask控制各byte lane。忽略控制译码延迟和其他引脚，不含ECC或存储冗余。\n\n每组并联芯片共同提供一个32bit字，各组按深度扩展。以下判断哪些正确？",
+    "explanationMd": "**答案A、C。** 一组需要4片8bit芯片并联成32bit；每组容量8Ki×4byte=32KiB，2MiB/32KiB=64组，所以总256片。\n\n| 地址/控制部分 | 含义 |\n|---|---|\n| A[1:0] | 32bit字内byte偏移；本题对齐访问时为00 |\n| A[14:2] | 13bit片内字地址，送给当前组的每片 |\n| A[20:15] | 6bit组号，选择64组之一 |\n| byte_mask[3:0] | 控制被选组内的四个8bit lane写入 |\n\n片内SRAM的每个地址选一个8bit单元，但四片并联后四个同地址单元组成32bit字，因此系统每前进4个byte地址，片内字地址才加1。不能把CPU A[12:0]原样送入片内：最低两位在对齐访问中恒0，并且漏掉正确的高两位，会造成错误映射。\n\nbank组选择来自高6bit，与byte写掩码不是同一层次。只选中一组后，各lane还按mask决定是否写；不能用字内偏移替代组号，也不能用一个8bit芯片承担32条并行数据线。",
+    "commonMistakes": [
+      "把总芯片数只按深度计算，漏掉4片的位宽扩展。",
+      "直接将CPU字节地址低13位当SRAM字地址。",
+      "混淆bank片组选择与四个byte lane的写使能。"
+    ],
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "每组4片，共64组，总256片。"
+      },
+      {
+        "id": "B",
+        "textMd": "每组只用1片，就能在同一访问中提供完整32bit数据。"
+      },
+      {
+        "id": "C",
+        "textMd": "片内地址取A[14:2]，片组号取A[20:15]。"
+      },
+      {
+        "id": "D",
+        "textMd": "CPU A[1:0]就是选择64个bank的编号。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确。位宽4倍并联、深度64组，总4×64=256。",
+      "B": "错误。单片只有8bit数据宽度，同一字需4片并联。",
+      "C": "正确。先移除2bit字内byte偏移，再取13bit片内地址，剩6bit选组。",
+      "D": "错误。2bit不足以选64组，而且它表示字内byte偏移，本题对齐访问时恒00。"
+    }
   }
 ]

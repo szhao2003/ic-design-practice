@@ -2,6 +2,7 @@ import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 const mapping = {
+  gray_codec:'ADAPTED-CODEC-GRAY-0001', even_divider:'ADAPTED-CODEC-DIV-0001',
   sample_edges:'ADAPTED-SAMPLING-EDGE-0001',
   debounce_cfg:'ADAPTED-BOUNDARY-DEBOUNCE-0001',
   async_fifo_gray:'ADAPTED-INTEGRATION-FIFO-0001', axil_regs2:'ADAPTED-INTEGRATION-AXIL-0001',
@@ -35,6 +36,7 @@ if (!available) {
   await mkdir('.rtl-build',{recursive:true});
   const cases=Object.keys(mapping).map(module=>({module,sources:[`rtl/reference/${module}.sv`,`rtl/tb/${module}_tb.sv`]}));
   cases.push({module:'source_review_rules',sources:['rtl/tb/source_review_rules_tb.sv']});
+  cases.push({module:'parity_review',sources:['rtl/tb/parity_review_tb.sv']});
   cases.push({module:'event_reset_review',sources:['rtl/tb/event_reset_review_tb.sv']});
   cases.push({module:'fifo_capacity_review',sources:['rtl/reference/async_fifo_gray.sv','rtl/tb/fifo_capacity_review_tb.sv']});
   for (const {module,sources} of cases) {
@@ -51,5 +53,5 @@ if (!available) {
       if(result.error || result.status!==0) throw new Error(`${module}: ${tool} 失败 (${result.error?.message ?? result.status})`);
     }
   }
-  console.log(`RTL simulation: ${count}/${count} references + language, reset/event observation, and FIFO capacity checks PASS (digital functional checks; not CDC/STA/silicon sign-off).`);
+  console.log(`RTL simulation: ${count}/${count} references + language, parity, reset/event observation, and FIFO capacity checks PASS (digital functional checks; not CDC/STA/silicon sign-off).`);
 }

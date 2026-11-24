@@ -172,11 +172,11 @@
     },
     {
       "number": 22,
-      "status": "partial",
+      "status": "covered",
       "localIds": [
-        "ADAPTED-YHC-FIFO-0001"
+        "ADAPTED-CODEC-GRAY-0001"
       ],
-      "note": "数学转换已覆盖，尚未单独要求参数化双向转换RTL。"
+      "note": "完整参数化双向组合转换，前缀异或解码，WIDTH=1及独立输入路径；五种位宽穷举TB，不把组合码值转换当CDC同步。"
     },
     {
       "number": 23,
@@ -188,11 +188,13 @@
     },
     {
       "number": 24,
-      "status": "partial",
+      "status": "covered",
       "localIds": [
-        "ORIGINAL-RTL-0004"
+        "ORIGINAL-RTL-0004",
+        "ADAPTED-CODEC-DIV-0001",
+        "ADAPTED-CODEC-DIV-0002"
       ],
-      "note": "已有计数值计算；无参数化完整偶分频RTL。"
+      "note": "完整偶分频与原clk域tick，DIVIDE=2边界、暂停保持相位/清事件及恢复波形，四参数独立累计沿模型TB。"
     },
     {
       "number": 25,
@@ -1052,11 +1054,12 @@
     },
     {
       "number": 128,
-      "status": "partial",
+      "status": "rewritten",
       "localIds": [
-        "ADAPTED-FOCUSED-MEM-CAP-0001"
+        "ADAPTED-CODEC-MEM-0001",
+        "ADAPTED-CODEC-MEM-0002"
       ],
-      "note": "容量拼接已练；引脚总数须明确控制/电源/双向线是否计入，不能直接等同容量题。"
+      "note": "重构明确字地址、双向DQ、5控制+2电源的抽象封装，38脚非真实型号结论；另补位宽/深度片组和byte/row/bank地址拆分。"
     },
     {
       "number": 129,
@@ -1084,9 +1087,11 @@
       "status": "partial",
       "localIds": [
         "ADAPTED-FOCUSED-MEM-CAP-0001",
-        "ADAPTED-EXTENSION-TOOLS-0001"
+        "ADAPTED-EXTENSION-TOOLS-0001",
+        "ADAPTED-CODEC-PARITY-0001",
+        "ADAPTED-CODEC-MEM-0002"
       ],
-      "note": "容量和字节解释已有，偶校验及内存布局仍可补，不把整个题组都计覆盖。"
+      "note": "偶校验生成/奇偶错误掩码、容量及片组译码已补；大小端目前主要为Python字节解释，未重建完整内存读写任务组，仍保留部分覆盖。"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # 公开汇编132题号覆盖对照
 
-核对日期2026-11-24；对应本地168题。按实际考查任务对照，不按公司名或专题名认定覆盖。88个题号已有对应/修正任务（75+13），21部分覆盖，11需补条件，12暂缓。同一现有题可以承载多个重复考点，因此这些数量不是新增题数，也不是独立公司考察频次。
+核对日期2026-11-24；对应本地174题。按实际考查任务对照，不按公司名或专题名认定覆盖。91个题号已有对应/修正任务（77+14），18部分覆盖，11需补条件，12暂缓。同一现有题可以承载多个重复考点，因此这些数量不是新增题数，也不是独立公司考察频次。
 
 covered和rewritten均为考点重构，不是逐字原题；partial不计完整覆盖。机器可读来源及引用见 [JSON表](source-collection-coverage.json)。
 
@@ -27,9 +27,9 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q19 | 已有对应任务 | ADAPTED-YHC-FIFO-0001 | 解码/回绕/重新编码完整任务。 |
 | Q20 | 部分覆盖 | ADAPTED-YHC-FIFO-0002 | 相邻单位变化与跳步边界已练，反射性质等完整原选项未全部重建。 |
 | Q21 | 已有对应任务 | ADAPTED-COLLECTION-FIFO-0001 | 最低位归约异或任务已覆盖。 |
-| Q22 | 部分覆盖 | ADAPTED-YHC-FIFO-0001 | 数学转换已覆盖，尚未单独要求参数化双向转换RTL。 |
+| Q22 | 已有对应任务 | ADAPTED-CODEC-GRAY-0001 | 完整参数化双向组合转换，前缀异或解码，WIDTH=1及独立输入路径；五种位宽穷举TB，不把组合码值转换当CDC同步。 |
 | Q23 | 已有对应任务 | ADAPTED-YHC-FIFO-0002 | 跳步计数破坏单位变化条件，已独立改编。 |
-| Q24 | 部分覆盖 | ORIGINAL-RTL-0004 | 已有计数值计算；无参数化完整偶分频RTL。 |
+| Q24 | 已有对应任务 | ORIGINAL-RTL-0004、ADAPTED-CODEC-DIV-0001、ADAPTED-CODEC-DIV-0002 | 完整偶分频与原clk域tick，DIVIDE=2边界、暂停保持相位/清事件及恢复波形，四参数独立累计沿模型TB。 |
 | Q25 | 已有对应任务 | ADAPTED-FOCUSED-RTL-DIV-0001 | 完整固定三分频与50%占空比TB，明确双边沿、输入占空比和复位边界。 |
 | Q26 | 部分覆盖 | ADAPTED-YHC-RTL-0003 | 仅覆盖平均clock-enable间隔，不冒充固定波形、占空比或低抖动分数时钟。 |
 | Q27 | 需补条件 | — | 运行时切换/2.5分频需补切换生效、相位、占空比及脉宽契约，暂不移植简略答案。 |
@@ -133,10 +133,10 @@ covered和rewritten均为考点重构，不是逐字原题；partial不计完整
 | Q125 | 已修正改编 | ADAPTED-FOCUSED-LOGIC-MUX-0001 | 明确基本器件为1bit 2选1并计树结点，舍弃输入bit数当MUX个数的混淆。 |
 | Q126 | 已有对应任务 | ADAPTED-FOCUSED-RTL-MIN-0001 | 补完整流式不同值定义、次数继承和start/valid契约，独立直方图TB。 |
 | Q127 | 已修正改编 | ADAPTED-FOCUSED-RTL-DEBOUNCE-0001、ADAPTED-BOUNDARY-DEBOUNCE-0001、ADAPTED-BOUNDARY-DEBOUNCE-0002、ADAPTED-BOUNDARY-DEBOUNCE-0003 | 补50MHz下5/10/15/20ms可配置去抖、20bit计数与配置变更清段契约；默认25万/100万样本终点及缩短参数独立TB。阈值按连续采样数量定义，原模拟按键条件重新明确。 |
-| Q128 | 部分覆盖 | ADAPTED-FOCUSED-MEM-CAP-0001 | 容量拼接已练；引脚总数须明确控制/电源/双向线是否计入，不能直接等同容量题。 |
+| Q128 | 已修正改编 | ADAPTED-CODEC-MEM-0001、ADAPTED-CODEC-MEM-0002 | 重构明确字地址、双向DQ、5控制+2电源的抽象封装，38脚非真实型号结论；另补位宽/深度片组和byte/row/bank地址拆分。 |
 | Q129 | 暂缓 | — | 题源有具体任务，但当前集中数字IC核心设计，智力题暂不增加。 |
 | Q130 | 暂缓 | — | 题源有具体任务，但当前集中数字IC核心设计，智力题暂不增加。 |
 | Q131 | 部分覆盖 | ADAPTED-TOOLSFPGA-CMOS-0001、ORIGINAL-STA-0001 | 基础语义与时序已覆盖，来源题组的Maxpooling RTL仍未实现。 |
-| Q132 | 部分覆盖 | ADAPTED-FOCUSED-MEM-CAP-0001、ADAPTED-EXTENSION-TOOLS-0001 | 容量和字节解释已有，偶校验及内存布局仍可补，不把整个题组都计覆盖。 |
+| Q132 | 部分覆盖 | ADAPTED-FOCUSED-MEM-CAP-0001、ADAPTED-EXTENSION-TOOLS-0001、ADAPTED-CODEC-PARITY-0001、ADAPTED-CODEC-MEM-0002 | 偶校验生成/奇偶错误掩码、容量及片组译码已补；大小端目前主要为Python字节解释，未重建完整内存读写任务组，仍保留部分覆盖。 |
 
-本轮补完整边沿检测、观察区域、复位条件与状态机输出判断，提升Q4/Q5/Q9/Q12/Q16/Q80。后续仍可补Gray双向转换RTL（Q22）、偶分频完整接口（Q24）或RAM引脚/容量条件（Q128），先按价值与重复性筛选，不追求全部题号变绿。
+本轮提升Q22/Q24/Q128；Q132仍保留部分覆盖。后续可评估APB版本区别（Q96）、AXI响应码（Q104/105）、明确版本的AHB错误响应（Q101/102），仍按常见任务价值筛选，不追求全部题号变绿。
