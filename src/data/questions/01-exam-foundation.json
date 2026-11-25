@@ -1,0 +1,115 @@
+[
+  {
+    "id": "ADAPTED-EXAMBASE-DECODE-0001",
+    "contentVersion": 1,
+    "topicId": "01",
+    "subtopicId": "mux-decoder",
+    "title": "带使能的2到4译码器：有效低输出也要数对",
+    "promptMd": "二值输入en和a[1:0]。输出y_n[3:0]为有效低译码：en=0时全部为1；en=1时只有编号等于a的那一位为0，其余为1。例如a=0选中y_n[0]。以下哪些描述正确？不考虑X/Z、延迟和毛刺。",
+    "explanationMd": "**答案：A、D。**\n\n先明确使能极性，再明确数据输出极性。en=0表示没有选中项，因此y_n=1111；en=1时a选中的那位为0，而非为1。\n\n| en | a | y_n[3:0] |\n|---|---|---|\n|0|任意二值|1111|\n|1|00|1110|\n|1|01|1101|\n|1|10|1011|\n|1|11|0111|\n\n只要组合实现覆盖全部输入，就无需记住过去的输出。one-hot常指恰有一位为1，这里的有效输出更准确是one-cold；禁用时则没有有效项。此表只规定稳定逻辑关系，并不承诺真实多位地址变化期间无毛刺。",
+    "commonMistakes": [
+      "把有效低输出当成one-hot高有效，写成0100。",
+      "把禁用状态1111误判成四个输出均被选中。"
+    ],
+    "tags": [
+      "笔试基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "easy",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://yueanic.com/ic-interview/c/written-2024-xiaomi-digital-ic",
+      "note": "第三方公开题目目录列出参数、HDL与译码器等基础方向，公司和年份归属未追溯到原始考生记录。本题代码、条件、选项和解析独立构造，非原题；不关联公司，不证明招聘频率。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "en=1、a=2时y_n=4'b1011。"
+      },
+      {
+        "id": "B",
+        "textMd": "en=0时y_n=4'b0000。"
+      },
+      {
+        "id": "C",
+        "textMd": "每个输出bit都必须用一个触发器保存，因为y_n有4位。"
+      },
+      {
+        "id": "D",
+        "textMd": "这是纯组合映射；规定完整的输入输出关系不要求存储元件。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "正确。编号2对应从右数第三位y_n[2]，该位拉低，其余保持高。",
+      "B": "错误。禁用时无选中输出，按有效低定义必须全为1。",
+      "C": "错误。输出位数不等于触发器数；无历史依赖的组合译码可以不用触发器。",
+      "D": "正确。每个二值输入组合已规定唯一输出，稳定输出不依赖过去状态。"
+    }
+  },
+  {
+    "id": "ADAPTED-EXAMBASE-DECODE-0002",
+    "contentVersion": 1,
+    "topicId": "01",
+    "subtopicId": "flip-flop-latch",
+    "title": "logic声明不等于触发器：分别数边沿存储和透明存储",
+    "promptMd": "按下面RTL的行为推断，在优化前逐bit统计所需存储。不考虑扫描、冗余复制、常量传播和库的多bit单元封装，所有端口均可观察；问存储行为是哪项？初始q/h未规定，不将未知初值算成额外存储。\n\n```systemverilog\nmodule exam_storage (\n  input logic clk, en, gate,\n  input logic [3:0] d,\n  input logic [2:0] x,\n  output logic [3:0] q,\n  output logic [2:0] h,\n  output wire [3:0] inv\n);\n  // 时钟使能：没有使能时保留q。\n  always_ff @(posedge clk)\n    if (en) q <= d;\n  // 高电平透明锁存；gate为0时保存h。\n  always_latch\n    if (gate) h <= x;\n  assign inv = ~d;\nendmodule\n```\n\n",
+    "explanationMd": "**答案：B。**\n\nq的4个bit只在clk上升沿且en=1时接收d，因此对应4bit边沿触发存储；en=0保持是时钟使能语义，不会把它变成透明锁存器。h的3个bit在gate=1期间跟随x，gate=0保持，属于3bit透明锁存。inv在输入变化后由反相关系决定，不需要历史状态。\n\n所以行为级需求是4bit触发器加3bit锁存器，共7bit存储，而不是7个库实例的保证。实际映射可以用带使能触发器或反馈MUX等结构实现q；logic只是变量类型，不能根据声明关键字判断电路是否有存储。本题不要求综合后的精确面积。",
+    "commonMistakes": [
+      "见到时序if缺少else就一律判为锁存器。",
+      "把logic输出声明数量当成触发器数量。"
+    ],
+    "tags": [
+      "笔试基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://yueanic.com/ic-interview/c/written-2024-xiaomi-digital-ic",
+      "note": "第三方公开题目目录列出参数、HDL与译码器等基础方向，公司和年份归属未追溯到原始考生记录。本题代码、条件、选项和解析独立构造，非原题；不关联公司，不证明招聘频率。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "7bit触发器，没有锁存器。"
+      },
+      {
+        "id": "B",
+        "textMd": "4bit触发器和3bit锁存器；inv不需要存储。"
+      },
+      {
+        "id": "C",
+        "textMd": "4bit锁存器和3bit触发器。"
+      },
+      {
+        "id": "D",
+        "textMd": "q、h、inv总共11bit，所以需要11bit触发器。"
+      }
+    ],
+    "correctOptionIds": [
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "错误。h在gate高电平期间透明，并非仅在时钟边沿更新，需区分锁存行为。",
+      "B": "正确。q对应4bit边沿存储，h对应3bit电平敏感存储，inv只是组合反相。",
+      "C": "错误。q的posedge决定边沿触发；h的always_latch与条件保持决定透明锁存。",
+      "D": "错误。inv的4bit不保存历史，输出宽度与存储bit数不能直接相加。"
+    }
+  }
+]

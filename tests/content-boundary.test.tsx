@@ -7,7 +7,7 @@ import {ReferenceAnswer} from '../src/components/QuestionContent';
 const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-BOUNDARY-${id}`)!;
 describe('协议与计数边界',()=>{
  it('6道新增共162，来源只支持考点且无公司原题归因',()=>{
-  expect(questions.filter(q=>!/^ADAPTED-(SAMPLING|CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC)-/.test(q.id))).toHaveLength(162);
+  expect(questions.filter(q=>!/^ADAPTED-(SAMPLING|CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC|EXAMBASE)-/.test(q.id))).toHaveLength(162);
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-BOUNDARY-'));
   expect(batch).toHaveLength(6);
   for(const q of batch){expect(q.contentVersion).toBe(1);expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.company).toBeUndefined();expect(q.tags).toContain('协议与计数边界');}

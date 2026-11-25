@@ -1,0 +1,72 @@
+[
+  {
+    "id": "ADAPTED-EXAMBASE-PULSE-0001",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "pulse-toggle",
+    "title": "展宽能保事件吗：两个脉冲为何合成一个高电平",
+    "promptMd": "所有信号同属clk域，周期10ns。异步复位曾拉低并已安全释放，t=0以前d1=d2=0、event_in=0。event_in只在下降沿改变：在[5,15)ns和[25,35)ns为1，其余为0；clk上升沿为10、20、30、40、50ns。忽略传播延迟；只观察各沿NBA及组合逻辑稳定之后的值，不统计零时间调度瞬态。\n\n填写五个上升沿后的(d1,d2,wide)，并判断接收端只在wide的稳定0→1变化记事件能否得到两个事件。\n\n```systemverilog\nmodule exam_stretch (\n  input logic clk, rst_n, event_in,\n  output logic wide\n);\n  logic d1, d2;\n  // 在本域记录前两拍样本，组合或出三拍窗口。\n  always_ff @(posedge clk or negedge rst_n) begin\n    if (!rst_n) begin\n      d1 <= 1'b0;\n      d2 <= 1'b0;\n    end else begin\n      d1 <= event_in;\n      d2 <= d1;\n    end\n  end\n  assign wide = event_in | d1 | d2;\nendmodule\n```\n\n",
+    "explanationMd": "**答案：五行依次为(1,0,1)、(0,1,1)、(1,0,1)、(0,1,1)、(0,0,0)；接收端只能数到一次稳定上升变化。**\n\nNBA右侧读取沿前旧值，所以d2得到的是旧d1，而不是本沿刚更新的d1。输出还组合包含当前event_in，第一次在5ns拉高。20ns之后d2继续支撑高电平，25ns第二个输入到来时wide尚未回低，30ns后又由d1支撑。因此两个事件的高电平区间合并成[5,50)ns，不能从一次持续高电平还原事件数量。\n\n这是信息合并问题：输出保持更久不等于事件被逐个保存。本题全部同域，不能把该电路当作解决亚稳态的CDC同步器；若后续跨域，还必须单独满足跨域采样与事件速率约束。",
+    "commonMistakes": [
+      "把d2更新为本沿的新d1，错误跳过一拍。",
+      "认为只要延长高电平，任意密集事件都能分别计数。"
+    ],
+    "tags": [
+      "笔试基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "interview_recall",
+      "evidenceGrade": "B",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/feed/main/detail/ce7e025f55534bd59be2276841b81faf",
+      "note": "公开面经提及脉冲展宽电路诊断与画波形，但笔试回顾和面试提问边界不清。来源只支持任务形式，本题完整电路、时序、初值与解答独立重构，非原题，也不认定为已核实笔试题。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**参考答案**\n\n| 上升沿/ns | 沿前event_in | 沿后d1 | 沿后d2 | 稳定wide |\n|---|---:|---:|---:|---:|\n|10|1|1|0|1|\n|20|0|0|1|1|\n|30|1|1|0|1|\n|40|0|0|1|1|\n|50|0|0|0|0|\n\nwide从5ns持续高到50ns，第二个输入脉冲没有产生新的稳定上升变化。因此只能记一次，丢失“共发生两次”的信息。",
+    "rubric": [
+      "逐沿用旧d1更新d2，五行均正确。",
+      "指出5–50ns之间没有稳定低间隔，不能按输入脉冲数推断输出上升次数。",
+      "明确这是同域展宽的事件合并，不是已验证的CDC方案。"
+    ]
+  },
+  {
+    "id": "ADAPTED-EXAMBASE-PULSE-0002",
+    "contentVersion": 1,
+    "topicId": "04",
+    "subtopicId": "pulse-toggle",
+    "title": "脉冲展宽的修复契约：间隔至少要留出什么",
+    "promptMd": "继续分析下列同域展宽电路。周期T，上升沿位于kT，下降沿位于(k+1/2)T。每个event_in脉冲严格从一个下降沿开始，持续一个周期T，到下一个下降沿结束；相邻脉冲不重叠。复位已释放且初始d1=d2=0。接收端仍只记录wide的稳定0→1变化。忽略传播延迟，不统计零时间调度瞬态。\n\n①若不改电路，为保证相邻事件之间wide有正时长低电平，输入脉冲起点的最小间隔是多少个T？②若上游无法保证该间隔，“再多串两个延迟寄存器”是否能保证不丢事件？给出可执行的接口改法和容量条件。\n\n```systemverilog\nmodule exam_stretch (\n  input logic clk, rst_n, event_in,\n  output logic wide\n);\n  logic d1, d2;\n  // 在本域记录前两拍样本，组合或出三拍窗口。\n  always_ff @(posedge clk or negedge rst_n) begin\n    if (!rst_n) begin\n      d1 <= 1'b0;\n      d2 <= 1'b0;\n    end else begin\n      d1 <= event_in;\n      d2 <= d1;\n    end\n  end\n  assign wide = event_in | d1 | d2;\nendmodule\n```\n\n",
+    "explanationMd": "**答案：最小起点间隔为3T；继续加长展宽不能保证事件逐个传送。**\n\n设第一个脉冲起于0.5T，在1.5T结束；1T沿d1=1，2T沿d2=1，直到3T沿后wide才稳定回0。脉冲起点只能在下降沿，间隔2T时下个起点是2.5T，早于回低，必然合并；间隔3T时下个起点为3.5T，留下[3T,3.5T)的0.5T低电平。因此在规定网格上最小为3T。\n\n增加延迟级会延长高电平窗口，反而可能扩大合并范围。若允许反压，可将event改为valid/ready事件接口，源端只在握手时交付一件，未接受时保持请求及载荷稳定，禁止把持续valid误当多个已接受事件。若源端不能等待，需要计数器或队列保存待处理数量，并给出最大突发、服务速率和容量界限；任何有限队列都不能保证无限超额到达不丢失。若跨域，再采用具有明确确认和复位契约的跨域传送机制。",
+    "commonMistakes": [
+      "只要求输入脉冲互不重叠，未检查展宽输出是否已经回低。",
+      "提出有限队列却不规定到达上界、服务能力或溢出行为。"
+    ],
+    "tags": [
+      "笔试基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "interview_recall",
+      "evidenceGrade": "B",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/feed/main/detail/ce7e025f55534bd59be2276841b81faf",
+      "note": "公开面经提及脉冲展宽电路诊断与画波形，但笔试回顾和面试提问边界不清。来源只支持任务形式，本题完整电路、时序、初值与解答独立重构，非原题，也不认定为已核实笔试题。"
+    },
+    "type": "waveform_analysis",
+    "referenceAnswerMd": "**参考答案**\n\n以首脉冲起点0.5T为参考，wide在3T才回低。相邻起点间隔2T时，第二次在2.5T到来，合并；间隔3T时第二次在3.5T到来，得到0.5T低间隔，故最小3T。\n\n优先改为可反压的valid/ready：仅在握手时接受一个事件，源在被接受前保存事件。无法反压则用有界计数/队列，必须证明峰值积压不超过容量并规定溢出处理。单纯加延迟级或无限速toggle不能无条件修复。",
+    "rubric": [
+      "推导首脉冲在3T回低，并给出2T反例与3T可行间隔。",
+      "说明更多延迟级并未保存事件次数。",
+      "提出握手或计数/队列，并明确源端保存、接受条件及速率/容量边界。"
+    ]
+  }
+]

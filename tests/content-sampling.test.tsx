@@ -7,7 +7,7 @@ import {ReferenceAnswer} from '../src/components/QuestionContent';
 const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-SAMPLING-${id}`)!;
 describe('采样复位与状态机',()=>{
  it('6道新增共168，独立改编不声明公司原题',()=>{
-  expect(questions.filter(q=>!/^ADAPTED-(CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC)-/.test(q.id))).toHaveLength(168);
+  expect(questions.filter(q=>!/^ADAPTED-(CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC|EXAMBASE)-/.test(q.id))).toHaveLength(168);
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-SAMPLING-'));
   expect(batch).toHaveLength(6);
   for(const q of batch){expect(q.contentVersion).toBe(1);expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.company).toBeUndefined();expect(q.tags).toContain('采样复位与状态机');}

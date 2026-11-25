@@ -164,3 +164,7 @@ ADAPTED-ARCHTOOLS-10题已独立构造并核对，公开资料入口与任务差
 ## 2026-11-25 已完成：SV运算符优先级
 
 8题ADAPTED-OPPREC-按用户明确需求优先补入，以IEEE标准规则为依据独立构造。新子专题、等价括号/反例、24次严格仿真流程及去重范围见[批次23](CONTENT_BATCH_23_OPPREC.md)。技术规则依据不等于招聘频率证据；之后继续筛选公开汇编剩余独立任务。
+
+## 2026-11-25：笔试基础补缺已落实
+
+按[调研报告](TARGET_COMPANY_RESEARCH_2026_11_25.md)补8题；明确firsthand_recall、interview_recall和未追溯的past_paper_compilation，全部为考点重构，不提高132题汇编覆盖。逐题能力差异、技术复核及下一步见[批次24](CONTENT_BATCH_24_EXAMBASE.md)。

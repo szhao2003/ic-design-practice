@@ -160,3 +160,7 @@ STA/CDC/FIFO六道现有题补3步提示与具体自查点，题库218题逐对�
 ## 2026-11-25 SV运算符优先级（1.25.0）
 
 按用户需求新增ADAPTED-OPPREC-8题，总226。核对IEEE 1800-2017第11.3.2节/表11-2；完整类型固定的原始模块、等价分组和反例分组加入严格仿真。子专题与速查表、题目范围及技术来源边界见[批次23](CONTENT_BATCH_23_OPPREC.md)。原218题不变，不提升公司原题或招聘频率声明。
+
+## 2026-11-25：笔试基础补缺已落实
+
+按[调研报告](TARGET_COMPANY_RESEARCH_2026_11_25.md)补8题；明确firsthand_recall、interview_recall和未追溯的past_paper_compilation，全部为考点重构，不提高132题汇编覆盖。逐题能力差异、技术复核及下一步见[批次24](CONTENT_BATCH_24_EXAMBASE.md)。

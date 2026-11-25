@@ -1,0 +1,115 @@
+[
+  {
+    "id": "ADAPTED-EXAMBASE-PARAM-0001",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "sv-basics",
+    "title": "覆盖DEPTH之后，localparam地址宽度会不会重算",
+    "promptMd": "下面模块约定DEPTH≥2。上层实例写为 `exam_width #(.DEPTH(17)) u();`。问实例u的AW及参数规则，哪些正确？\n\n```systemverilog\nmodule exam_width #(parameter integer DEPTH = 8) ();\n  // 地址宽度在展开时由最终DEPTH计算；DEPTH约定至少为2。\n  localparam integer AW = $clog2(DEPTH);\n  logic [AW-1:0] addr;\nendmodule\n```\n\n",
+    "explanationMd": "**答案：B、C。**\n\n实例覆盖先确定DEPTH=17，随后由这一实例的最终参数求出派生常量。16个地址只够编码16项，17项需5位，因此AW=ceil(log2(17))=5，addr范围为[4:0]。\n\nlocalparam的含义是不能由上层直接覆盖，并不表示它必须保留模块默认参数对应的数值。它依赖的parameter被覆盖后，表达式要按新值求解。这些量在展开阶段确定，不会随仿真运行而变化；DEPTH不是时钟周期计数信号。用localparam保护派生宽度，可避免调用者独立覆盖AW造成接口和存储深度不一致。",
+    "commonMistakes": [
+      "把localparam不可直接覆盖误解为它不依赖被覆盖的parameter。",
+      "17项仍取4位地址，忘记向上取整。"
+    ],
+    "tags": [
+      "笔试基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "easy",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://yueanic.com/ic-interview/c/written-2024-xiaomi-digital-ic",
+      "note": "第三方公开题目目录列出参数、HDL与译码器等基础方向，公司和年份归属未追溯到原始考生记录。本题代码、条件、选项和解析独立构造，非原题；不关联公司，不证明招聘频率。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "AW保持默认值3，因为localparam不能被覆盖。"
+      },
+      {
+        "id": "B",
+        "textMd": "AW为5，addr有5个bit。"
+      },
+      {
+        "id": "C",
+        "textMd": "上层不能通过命名参数赋值直接覆盖localparam AW。"
+      },
+      {
+        "id": "D",
+        "textMd": "AW在仿真运行过程中随addr的数值改变。"
+      }
+    ],
+    "correctOptionIds": [
+      "B",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "错误。不可直接覆盖不等于固定使用默认DEPTH；最终DEPTH=17使AW重新求值为5。",
+      "B": "正确。2⁴=16不足以覆盖17项，2⁵=32足够；[AW-1:0]共AW位。",
+      "C": "正确。AW是localparam，上层可覆盖DEPTH，但不能把AW当作可覆盖parameter传入。",
+      "D": "错误。AW是展开期常量；addr是运行期信号，它的当前值不会重新配置声明宽度。"
+    }
+  },
+  {
+    "id": "ADAPTED-EXAMBASE-PARAM-0002",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "sv-basics",
+    "title": "generate-for是三组并行逻辑，还是三拍循环",
+    "promptMd": "实例设LANES=3，输入din=12'hA35。不考虑X/Z和传播延迟，等待组合逻辑稳定。下面哪项正确？\n\n```systemverilog\nmodule exam_lanes #(parameter integer LANES = 2) (\n  input wire [4*LANES-1:0] din,\n  output wire [4*LANES-1:0] dout\n);\n  // 每个生成实例并行连接一个4bit切片。\n  for (genvar g = 0; g < LANES; g = g + 1) begin : lane\n    assign dout[4*g +: 4] = ~din[4*g +: 4];\n  end\nendmodule\n```\n\n",
+    "explanationMd": "**答案：C。**\n\nLANES=3在展开时产生lane[0]、lane[1]、lane[2]三组连接，依次处理[3:0]、[7:4]、[11:8]。每组是4位逐位取反，因此12位输出为~12'hA35=12'h5CA。\n\n这里没有时钟、没有事件等待，也没有状态寄存器，三组逻辑并行存在，不是每拍只运行一次循环体。genvar用于展开，不是每拍递增的硬件计数器。`+: 4`规定宽度恒为4，起点4*g随生成实例而不同；它不会把输入的四位数值加4。综合器仍可能优化等效逻辑，本题数的是生成实例而非布局后的门数。",
+    "commonMistakes": [
+      "将generate-for当作软件循环，认为LANES决定延迟拍数。",
+      "把indexed part-select的宽度4误解为对切片数值加4。"
+    ],
+    "tags": [
+      "笔试基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://yueanic.com/ic-interview/c/written-2024-xiaomi-digital-ic",
+      "note": "第三方公开题目目录列出参数、HDL与译码器等基础方向，公司和年份归属未追溯到原始考生记录。本题代码、条件、选项和解析独立构造，非原题；不关联公司，不证明招聘频率。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "只有一组4bit逻辑，三拍后输出5CA。"
+      },
+      {
+        "id": "B",
+        "textMd": "产生三个运行期计数器，用g选择当前处理通道。"
+      },
+      {
+        "id": "C",
+        "textMd": "展开出三组并行切片连接，稳定输出12'h5CA，没有题定寄存延迟。"
+      },
+      {
+        "id": "D",
+        "textMd": "只处理最低4bit，高8bit保持先前输出值。"
+      }
+    ],
+    "correctOptionIds": [
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "错误。生成循环复制结构，代码没有时钟或寄存器，不能凭迭代次数推导三拍延迟。",
+      "B": "错误。genvar是展开期索引；不会因此推断三个运行期计数器。",
+      "C": "正确。A、3、5分别逐位取反为5、C、A；三个切片覆盖全部12bit。",
+      "D": "错误。g=0、1、2覆盖[3:0]、[7:4]、[11:8]，高位不是未赋值的存储状态。"
+    }
+  }
+]

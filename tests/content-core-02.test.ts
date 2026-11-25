@@ -5,7 +5,7 @@ const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-CORE-${id}`)!;
 describe('核心进阶第二批：独立边界及状态模型',()=>{
   it('新增8题，来源明确，旧98题保留',()=>{
     const batch=questions.filter(q=>q.id.startsWith('ADAPTED-CORE-'));
-    expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(SYSTEM|EXTENSION|CORE3|MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC)-/.test(q.id))).toHaveLength(106);
+    expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(SYSTEM|EXTENSION|CORE3|MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC|EXAMBASE)-/.test(q.id))).toHaveLength(106);
     for(const q of batch){expect(q.contentVersion).toBe(1);expect(q.source).toMatchObject({kind:'practice_collection',evidenceGrade:'C',questionFidelity:'topic_only_reconstruction',sourceClaimVerification:'checked'});}
   });
   it('级间重分配用下界与允许范围枚举核对最优点',()=>{

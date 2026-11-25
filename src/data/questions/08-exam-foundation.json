@@ -1,0 +1,115 @@
+[
+  {
+    "id": "ADAPTED-EXAMBASE-FLOW-0001",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "synthesis",
+    "title": "从RTL到布线：阶段排序与产物对应",
+    "promptMd": "采用题定的标准单元实现主流程：①逻辑综合，②布局规划，③标准单元放置，④时钟树综合，⑤详细布线。忽略中间优化迭代，比较主阶段先后；不把此简化顺序当成所有工具的唯一脚本顺序。哪些判断正确？",
+    "explanationMd": "**答案：A、C。**\n\n先把行为描述变为目标库单元连接关系，再为这些单元安排物理位置和连线。\n\n| 主阶段 | 此题关注的结果 |\n|---|---|\n| 综合 | 映射后的门级网表 |\n| 布局规划 | 核心区、宏与布局资源规划 |\n| 放置 | 标准单元位置 |\n| CTS | 时钟缓冲/分支网络 |\n| 详细布线 | 具体走线与连接实现 |\n\n因此主链为①②③④⑤。CTS需要考虑时钟端点位置；布线之后还需基于相应模型检查时序和物理规则，不能由“生成了版图”直接推出签核通过。实际流程会在多处优化和重新分析，此题只考主阶段与产物，不要求背工具命令。",
+    "commonMistakes": [
+      "把网表当成已经包含所有精确物理走线的版图。",
+      "将一次主流程的阶段顺序误认为工具不允许迭代。"
+    ],
+    "tags": [
+      "笔试基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "easy",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "firsthand_recall",
+      "evidenceGrade": "B",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/feed/main/detail/0573203d8efc404dabce457464a460e6",
+      "note": "公开个人笔经只提及数字IC流程方向。本题阶段、材料和选项独立构造，非原题；技术顺序另据OpenROAD官方流程核对，不证明所有公司高频。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "本题主阶段顺序可写成①→②→③→④→⑤。"
+      },
+      {
+        "id": "B",
+        "textMd": "逻辑综合的主要产物是已完成详细布线的GDS版图。"
+      },
+      {
+        "id": "C",
+        "textMd": "CTS重点建立时钟分发网络，并利用端点物理位置。"
+      },
+      {
+        "id": "D",
+        "textMd": "详细布线完成就足以证明所有时序角和物理规则均通过。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确。按题定简化流程，先得到逻辑连接，再规划、放置、建立时钟网络并布线。",
+      "B": "错误。综合主要得到映射网表；GDS等版图交付在物理实现之后，不能跳过放置和连线。",
+      "C": "正确。时钟网络的拓扑、缓冲和负载与端点位置有关；CTS不是再执行一遍RTL功能仿真。",
+      "D": "错误。流程执行完成与检查合格是两回事；仍需查看目标角、寄生、约束以及物理规则检查结果。"
+    }
+  },
+  {
+    "id": "ADAPTED-EXAMBASE-FLOW-0002",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "timing-closure",
+    "title": "综合网表有了，能否判断布线后时序",
+    "promptMd": "团队已有映射后的门级网表和目标工艺库，尚未完成物理布线。现在要评估“布线完成后的真实连线RC对setup/hold的影响”。以下哪组材料和分析最直接对应这个目标？假定功能已另行验证，问题只问时序分析所需信息。",
+    "explanationMd": "**答案：B。**\n\n时序路径由单元延迟和互连延迟共同组成。工艺库提供单元时序模型，SDC等约束说明时钟、IO和例外，布线提取的寄生信息描述题目关心的互连RC；这些应与当前网表、分析角和设计版本匹配，再进行STA。\n\n早期也能用估算互连做时序评估，但它不能冒充布线后的提取结果。功能波形主要回答激励下逻辑行为是否正确，LEF主要描述物理抽象；两者均不能单独取代题目要求的寄生时序分析。本题没有运行真实STA，也不声称有上述文件就自动签核通过。",
+    "commonMistakes": [
+      "认为RTL仿真无错就证明布线后没有setup/hold违例。",
+      "混用旧网表的寄生文件与新网表，忽略版本和分析角的一致性。"
+    ],
+    "tags": [
+      "笔试基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "firsthand_recall",
+      "evidenceGrade": "B",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/feed/main/detail/0573203d8efc404dabce457464a460e6",
+      "note": "公开个人笔经只提及数字IC流程方向。本题阶段、材料和选项独立构造，非原题；技术顺序另据OpenROAD官方流程核对，不证明所有公司高频。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "只要RTL仿真波形和测试平台，不需要约束。"
+      },
+      {
+        "id": "B",
+        "textMd": "当前网表、匹配的单元时序库、时序约束及布线提取寄生，再执行STA。"
+      },
+      {
+        "id": "C",
+        "textMd": "只看逻辑等价检查通过的结论。"
+      },
+      {
+        "id": "D",
+        "textMd": "只统计标准单元数量，就能得到所有路径的setup/hold裕量。"
+      }
+    ],
+    "correctOptionIds": [
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "错误。功能仿真波形不包含完整路径约束和布线寄生；有限激励也不会自动枚举所有时序路径。",
+      "B": "正确。题目问互连RC对路径的影响，因此需要匹配的寄生、库与约束进行时序分析。",
+      "C": "错误。逻辑等价关注规定模型下的行为对应，不直接给出布线后的路径延迟或setup/hold裕量。",
+      "D": "错误。同样数量的单元可以有不同拓扑、负载、线长和时钟关系，数量不足以求裕量。"
+    }
+  }
+]
