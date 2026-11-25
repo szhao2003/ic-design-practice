@@ -1,13 +1,13 @@
 [
   {
     "id": "ADAPTED-EXAMSV-CLASS-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "type": "multiple_choice",
     "topicId": "02",
     "subtopicId": "sv-basics",
     "title": "复制类句柄后修改对象：置null会不会清掉另一份",
-    "promptMd": "在SystemVerilog仿真中执行完整程序。只讨论普通类句柄，未执行浅拷贝、clone或自定义复制函数。以下哪些判断正确？\n\n```systemverilog\nclass Item;\n  int value;\nendclass\nmodule tb;\n  Item first, second;\n  initial begin\n    // 只创建一个对象，再复制句柄。\n    first = new;\n    first.value = 6;\n    second = first;\n    second.value = 14;\n    second = null;\n    $display(\"RESULT=%0d %0d\", first.value, second == null);\n    $finish;\n  end\nendmodule\n```\n\n",
-    "explanationMd": "**答案：A、C。**\n\n`new`只执行一次，因此只有一个Item对象。`second = first`复制的是对象句柄，两者指向同一对象；通过second把value改为14，也会从first看到14。最后second=null只改变second这一个变量，不会把对象内容清零，也不会修改first。\n\n| 操作之后 | first指向 | second指向 | 对象value |\n|---|---|---|---:|\n|first=new|对象X|null|默认0|\n|second=first|对象X|对象X|6|\n|second.value=14|对象X|对象X|14|\n|second=null|对象X|null|14|\n\n最终打印`RESULT=14 1`。别名与独立拷贝必须分开：要获得独立对象，必须真正创建/复制对象，并进一步考虑其中嵌套对象的句柄是否仍共享。本题不讨论垃圾回收的具体时机。",
+    "promptMd": "在SystemVerilog仿真中执行完整程序。只讨论普通类句柄，未执行浅拷贝、clone或自定义复制函数。以下哪些判断正确？\n\n```systemverilog\nclass Item;\n  int value = 0;\nendclass\nmodule tb;\n  Item first, second;\n  initial begin\n    // 只创建一个对象，再复制句柄。\n    first = new;\n    first.value = 6;\n    second = first;\n    second.value = 14;\n    second = null;\n    $display(\"RESULT=%0d %0d\", first.value, second == null);\n    $finish;\n  end\nendmodule\n```\n\n",
+    "explanationMd": "**答案：A、C。**\n\n`new`只执行一次，因此只有一个Item对象。`second = first`复制的是对象句柄，两者指向同一对象；通过second把value改为14，也会从first看到14。最后second=null只改变second这一个变量，不会把对象内容清零，也不会修改first。\n\n| 操作之后 | first指向 | second指向 | 对象value |\n|---|---|---|---:|\n|first=new|对象X|null|声明显式初始化为0|\n|second=first|对象X|对象X|6|\n|second.value=14|对象X|对象X|14|\n|second=null|对象X|null|14|\n\n最终打印`RESULT=14 1`。别名与独立拷贝必须分开：要获得独立对象，必须真正创建/复制对象，并进一步考虑其中嵌套对象的句柄是否仍共享。本题不讨论垃圾回收的具体时机。",
     "commonMistakes": [
       "把句柄赋值当成对象深拷贝。",
       "认为将一个句柄置null就会销毁所有别名所指的对象。"
