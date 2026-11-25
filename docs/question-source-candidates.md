@@ -168,3 +168,7 @@ ADAPTED-ARCHTOOLS-10题已独立构造并核对，公开资料入口与任务差
 ## 2026-11-25：笔试基础补缺已落实
 
 按[调研报告](TARGET_COMPANY_RESEARCH_2026_11_25.md)补8题；明确firsthand_recall、interview_recall和未追溯的past_paper_compilation，全部为考点重构，不提高132题汇编覆盖。逐题能力差异、技术复核及下一步见[批次24](CONTENT_BATCH_24_EXAMBASE.md)。
+
+## 2026-11-25：公开笔试SV与流程候选已落实
+
+重新读取燧原与芯海往届公开汇编，按能力去重后新增8道EXAMSV题。CSDN原入口仍不可访问，不提升公司/考次归属等级；保留汇编性质。未采用条件不足的FIFO和存疑答案。原132项映射不变，逐题任务、技术来源和复核见[批次25](CONTENT_BATCH_25_EXAMSV.md)。后续优先库表延迟/IO题及直接笔经追溯。

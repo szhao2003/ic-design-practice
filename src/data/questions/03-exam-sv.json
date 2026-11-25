@@ -1,0 +1,59 @@
+[
+  {
+    "id": "ADAPTED-EXAMSV-SDC-0001",
+    "contentVersion": 1,
+    "type": "multiple_choice",
+    "topicId": "03",
+    "subtopicId": "sdc",
+    "title": "create_clock的边沿偏移是不是时钟源延迟",
+    "promptMd": "明确时间单位为ns。约束为：\n\n```tcl\ncreate_clock -name CORE -period 12 -waveform {2 5} [get_ports clk]\n```\n\n只根据这一行，哪些结论正确？waveform给出每周期内一个上升沿和一个下降沿；不假设已经做过CTS或设置过其他latency/uncertainty约束。",
+    "explanationMd": "**答案：A、B。**\n\n-period给出周期12ns，频率为1/(12ns)=83⅓MHz。waveform说明上升沿在2ns、14ns、26ns等时刻，下降沿在5ns、17ns、29ns等时刻。每周期高电平宽度为5−2=3ns，低电平为12−3=9ns，占空比3/12=25%。\n\n这里的2ns定义理想周期波形的边沿位置；它不是set_clock_latency命令给出的源延迟，也不代表时钟树插入延迟。真实时钟偏斜需要比较端点的到达时间；单条理想时钟定义无法证明所有端点零偏斜。题目特意规定单位，不能把周期12误读成12MHz或默认任意单位。",
+    "commonMistakes": [
+      "把waveform首个边沿2ns直接当成source latency。",
+      "用下降沿时间5除以周期12求占空比，漏掉上升沿2。"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "tags": [
+      "笔试SV与流程补充",
+      "公开资料考点改编"
+    ],
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/discuss/481041431860092928",
+      "note": "公开往届笔试汇编支持本题知识方向；公司、届别和原卷归属未独立追溯。本题代码、条件、选项与解析独立重构，非原题，不继承汇编参考答案。技术规则另按规范及运行检查核对。 页面显示2023-04-27编辑，本轮重新核对公开正文。"
+    },
+    "options": [
+      {
+        "id": "A",
+        "textMd": "周期为12ns，频率为83⅓MHz。"
+      },
+      {
+        "id": "B",
+        "textMd": "高电平宽3ns，占空比25%。"
+      },
+      {
+        "id": "C",
+        "textMd": "这条命令已经将source latency设为2ns。"
+      },
+      {
+        "id": "D",
+        "textMd": "这条命令足以证明所有触发器的实际clock skew为0。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "正确。周期与频率互为倒数；1ns的倒数是GHz，1/12GHz等于83⅓MHz。",
+      "B": "正确。高电平从2ns延续到5ns，宽3ns，相对12ns周期为25%。",
+      "C": "错误。波形边沿位置与源延迟是不同建模量，不能仅从-waveform推断latency约束。",
+      "D": "错误。实际端点到达时间还受物理时钟网络等影响，单条create_clock没有给出这些信息。"
+    }
+  }
+]

@@ -2,7 +2,7 @@
 
 面向数字 IC、ASIC RTL、DV 与 FPGA 的专题练习工具，中文界面。
 
-当前为 **1.27.0：导航简化与图片附件**。已有 15 个专题及子专题、234 道完整题（原创 44、资料考点改编 190；按来源性质分为亲历笔经 8、题目汇编 5、面经 2、教学/练习资料 175）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。新增8题可搜索“笔试基础补缺”，见[本批来源与验证](docs/CONTENT_BATCH_24_EXAMBASE.md)。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
+当前为 **1.28.0：笔试SV与流程补充**。已有 15 个专题及子专题、242 道完整题（原创 44、资料考点改编 198；按来源性质分为亲历笔经 8、题目汇编 13、面经 2、教学/练习资料 175）、七种题型、组合筛选、随机不重复组题、连续练习与位置恢复、完整解析、历史/草稿/笔记/收藏、错题复习、JSON 备份恢复、真实学习概览及模拟考试。新增8题可搜索“笔试SV与流程补充”，见[本批来源与验证](docs/CONTENT_BATCH_25_EXAMSV.md)。完整实现进度见 [开发进度](docs/DEVELOPMENT_STATUS.md)。
 
 知识专题集中展示专题目录；题库统一承担筛选、组题和连续练习。主观题练习与个人笔记支持图片上传、截图粘贴、放大预览和本地保存，随JSON备份恢复；题目内分步引导继续保留。详见[本轮功能与验收](docs/UI_IMAGE_ATTACHMENTS.md)。
 
@@ -25,7 +25,7 @@ npm run dev
 npm run typecheck
 npm run validate:questions
 npm run test
-npm run test:rtl # 需要 iverilog/vvp
+npm run test:rtl # 需要 iverilog/vvp、Verilator、Bash
 npm run test:python # 需要 Python 3；只测试维护侧参考代码
 npm run build
 npm run preview

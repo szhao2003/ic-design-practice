@@ -16,7 +16,7 @@
 
 解析先说答案或设计思路，再写当前条件下的推导。每个错误选项给出明确规则或反例，易错点不能使用泛化占位句。数值题解释符号、单位、公式及结果意义；波形逐沿区分采样值与 NBA 更新；简答给可直接写下来的回答及自评点。
 
-RTL 需要完整、可综合、带功能注释的 SystemVerilog 模块，2 空格缩进，明确接口/复位/位宽/valid/空泡；代码之后用中文解释数据流与边界。维护侧文件放在 `rtl/reference/`，必须与页面代码完全一致，独立 Testbench 放在 `rtl/tb/`。`npm run test:rtl` 严格要求安装 iverilog/vvp；`-- --if-available` 只供缺工具的本机检查使用，跳过不能写成仿真通过。CI 不得用跳过模式。网页仍为人工自评，不执行用户代码。
+RTL 需要完整、可综合、带功能注释的 SystemVerilog 模块，2 空格缩进，明确接口/复位/位宽/valid/空泡；代码之后用中文解释数据流与边界。维护侧文件放在 `rtl/reference/`，必须与页面代码完全一致，独立 Testbench 放在 `rtl/tb/`。`npm run test:rtl` 严格要求安装 iverilog/vvp、Verilator 和 Bash（类语义案例使用 Verilator）；`-- --if-available` 只供缺工具的本机检查使用，跳过不能写成仿真通过。CI 不得用跳过模式。网页仍为人工自评，不执行用户代码。
 
 检查命令：`npm run typecheck`、`npm run validate:questions -- --release`、`npm test`、`npm run test:rtl`、`npm run build`。教学校验检查占位、围栏、图形和代码完整性；短/重复解析仅发 review warning，仍需人工确认技术正确性。至少验收选择、STA、RTL、波形、重做隐藏及手机横向代码滚动。用 `node scripts/generate-teaching-diagrams.mjs` 重建四份确定性图，保持源数据与逐沿答案一致。
 

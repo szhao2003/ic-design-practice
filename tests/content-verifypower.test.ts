@@ -4,7 +4,7 @@ import {gradeAnswer} from '../src/domain/grading';
 const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-VERIFYPOWER-${id}`)!;
 describe('验证诊断与低功耗',()=>{
  it('12题共198，资料只支持技术方向且不归因公司',()=>{
-  expect(questions.filter(q=>!/^ADAPTED-(ARCHTOOLS|STARTER|TIMINGSTART|OPPREC|EXAMBASE)-/.test(q.id))).toHaveLength(198);
+  expect(questions.filter(q=>!/^ADAPTED-(ARCHTOOLS|STARTER|TIMINGSTART|OPPREC|EXAMBASE|EXAMSV)-/.test(q.id))).toHaveLength(198);
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-VERIFYPOWER-'));expect(batch).toHaveLength(12);
   for(const q of batch){expect(q.contentVersion).toBe(1);expect(q.reviewStatus).toBe('verified');expect(q.source.company).toBeUndefined();expect(q.source.questionFidelity).toBe('topic_only_reconstruction');}
  });

@@ -22,6 +22,6 @@ describe('路径目录展示',()=>{
   const html=render();expect(html).toContain('继续理解规则3题');expect(html).toContain('继续本阶段 · 第 2 / 3 题');expect(html).toContain('独立练过 1 / 3 · 待巩固 1');expect(html).toContain('重新开始本阶段');
  });
  it('保留真实难度和现有题数，不把路径当新增题',()=>{
-  mock.state={progress:[],data:{practiceSessions:[]}};expect(questions).toHaveLength(234);const html=render();expect(html).toContain('困难');expect(html).toContain('中等');expect(html).toContain('简单');expect(html).toContain('45 道精选题');expect((html.match(/先练这2题/g)??[])).toHaveLength(5);expect(html).toContain('不计入9题路径进度');
+  mock.state={progress:[],data:{practiceSessions:[]}};expect(questions).toHaveLength(242);const html=render();expect(html).toContain('困难');expect(html).toContain('中等');expect(html).toContain('简单');expect(html).toContain('45 道精选题');expect((html.match(/先练这2题/g)??[])).toHaveLength(5);expect(html).toContain('不计入9题路径进度');
  });
 });

@@ -1,0 +1,59 @@
+[
+  {
+    "id": "ADAPTED-EXAMSV-SHELL-0001",
+    "contentVersion": 1,
+    "type": "multiple_choice",
+    "topicId": "13",
+    "subtopicId": "shell",
+    "title": "脚本参数里有空格：shift后怎样保持原来的参数边界",
+    "promptMd": "以下文件名为forward.sh，以Bash执行，不涉及csh。运行命令为 `bash forward.sh \"run dir\" -top \"cpu core\"`。哪些判断正确？\n\n```bash\n#!/usr/bin/env bash\nprintf 'first=<%s>\\n' \"$1\"\nshift\nprintf 'n=%s\\n' \"$#\"\nprintf 'arg=<%s>\\n' \"$@\"\n```\n\n",
+    "explanationMd": "**答案：A、D。**\n\n调用者的双引号先确定三个位置参数：$1是整个run dir，$2是-top，$3是整个cpu core。第一行打印first=<run dir>。shift删除第一个位置参数并将余下参数左移，所以$#变为2。\n\n`\"$@\"`把每个剩余参数分别扩展为一个参数，即-top与cpu core。printf按格式重复输出，最终为：\n\n```text\nfirst=<run dir>\nn=2\narg=<-top>\narg=<cpu core>\n```\n\n双引号中的`\"$*\"`会把所有位置参数连成一个参数（本题默认IFS），而未加引号的$@还可能发生单词拆分和文件名展开。本题没有执行csh，不能把汇编中脚本扩展名当成Bash语法的证明。",
+    "commonMistakes": [
+      "认为shift会改变脚本名$0，或只删除空格前的run。",
+      "把带引号的$@和$*当成相同的参数转发方式。"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "tags": [
+      "笔试SV与流程补充",
+      "公开资料考点改编"
+    ],
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/discuss/481041431860092928",
+      "note": "公开往届笔试汇编支持本题知识方向；公司、届别和原卷归属未独立追溯。本题代码、条件、选项与解析独立重构，非原题，不继承汇编参考答案。技术规则另按规范及运行检查核对。 来源脚本参数任务涉及.csh，本题明确改写成Bash参数边界任务；规则以GNU Bash手册为准，不复用原脚本。 页面显示2023-04-27编辑，本轮重新核对公开正文。"
+    },
+    "options": [
+      {
+        "id": "A",
+        "textMd": "shift之后参数个数为2，cpu core仍是一个参数。"
+      },
+      {
+        "id": "B",
+        "textMd": "shift会把$0改成run dir。"
+      },
+      {
+        "id": "C",
+        "textMd": "将最后一行的\"$@\"换成\"$*\"，仍会传给printf两个独立参数。"
+      },
+      {
+        "id": "D",
+        "textMd": "最后两行输出arg=<-top>和arg=<cpu core>。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "正确。调用时引号保留边界；shift移去第一个完整参数，剩余两个参数不会被再次按空格拆开。",
+      "B": "错误。shift只移动位置参数$1等，不修改脚本名$0。",
+      "C": "错误。默认IFS下\"$*\"产生一个合并参数-top cpu core，只会打印一条arg行。",
+      "D": "正确。\"$@\"保持每个剩余参数的独立性，printf按格式分别处理它们。"
+    }
+  }
+]

@@ -1,0 +1,229 @@
+[
+  {
+    "id": "ADAPTED-EXAMSV-CLASS-0001",
+    "contentVersion": 1,
+    "type": "multiple_choice",
+    "topicId": "02",
+    "subtopicId": "sv-basics",
+    "title": "复制类句柄后修改对象：置null会不会清掉另一份",
+    "promptMd": "在SystemVerilog仿真中执行完整程序。只讨论普通类句柄，未执行浅拷贝、clone或自定义复制函数。以下哪些判断正确？\n\n```systemverilog\nclass Item;\n  int value;\nendclass\nmodule tb;\n  Item first, second;\n  initial begin\n    // 只创建一个对象，再复制句柄。\n    first = new;\n    first.value = 6;\n    second = first;\n    second.value = 14;\n    second = null;\n    $display(\"RESULT=%0d %0d\", first.value, second == null);\n    $finish;\n  end\nendmodule\n```\n\n",
+    "explanationMd": "**答案：A、C。**\n\n`new`只执行一次，因此只有一个Item对象。`second = first`复制的是对象句柄，两者指向同一对象；通过second把value改为14，也会从first看到14。最后second=null只改变second这一个变量，不会把对象内容清零，也不会修改first。\n\n| 操作之后 | first指向 | second指向 | 对象value |\n|---|---|---|---:|\n|first=new|对象X|null|默认0|\n|second=first|对象X|对象X|6|\n|second.value=14|对象X|对象X|14|\n|second=null|对象X|null|14|\n\n最终打印`RESULT=14 1`。别名与独立拷贝必须分开：要获得独立对象，必须真正创建/复制对象，并进一步考虑其中嵌套对象的句柄是否仍共享。本题不讨论垃圾回收的具体时机。",
+    "commonMistakes": [
+      "把句柄赋值当成对象深拷贝。",
+      "认为将一个句柄置null就会销毁所有别名所指的对象。"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "tags": [
+      "笔试SV与流程补充",
+      "公开资料考点改编"
+    ],
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/discuss/481041431860092928",
+      "note": "公开往届笔试汇编支持本题知识方向；公司、届别和原卷归属未独立追溯。本题代码、条件、选项与解析独立重构，非原题，不继承汇编参考答案。技术规则另按规范及运行检查核对。 此题是汇编类题的句柄基础拆解，不声称原题明确出现了本别名代码。 页面显示2023-04-27编辑，本轮重新核对公开正文。"
+    },
+    "options": [
+      {
+        "id": "A",
+        "textMd": "修改second.value之后，first.value也变为14。"
+      },
+      {
+        "id": "B",
+        "textMd": "second=null会将first同时置null。"
+      },
+      {
+        "id": "C",
+        "textMd": "最后打印RESULT=14 1。"
+      },
+      {
+        "id": "D",
+        "textMd": "执行second=first之后，已经有两个彼此独立的Item对象。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确。两个变量保存相同对象的句柄，所以通过任一别名修改的属性可由另一个看到。",
+      "B": "错误。null赋值只更新目标变量second；first仍指向原对象。",
+      "C": "正确。first的对象属性保留14，second==null为真，按十进制输出1。",
+      "D": "错误。只有一次new，没有创建第二个对象；独立变量数量不等于对象数量。"
+    }
+  },
+  {
+    "id": "ADAPTED-EXAMSV-CLASS-0002",
+    "contentVersion": 1,
+    "type": "multiple_choice",
+    "topicId": "02",
+    "subtopicId": "sv-basics",
+    "title": "$cast失败后目标句柄保留什么：声明类型和对象类型分开看",
+    "promptMd": "程序中的$cast使用有返回值的函数形式。问第二条打印RESULT的三个整数及转换规则，哪些正确？\n\n```systemverilog\nclass Parent;\n  int value;\nendclass\nclass Child extends Parent;\nendclass\nmodule tb;\n  Parent parent_h;\n  Child child_h, keep_h;\n  int ok;\n  initial begin\n    child_h = new;\n    child_h.value = 23;\n    keep_h = child_h;\n    // Parent变量此刻实际引用的是Child对象。\n    parent_h = child_h;\n    ok = $cast(child_h, parent_h);\n    $display(\"UP=%0d %0d\", ok, child_h == keep_h);\n    // 换成真正的Parent对象，不能伪造成Child。\n    parent_h = new;\n    ok = $cast(child_h, parent_h);\n    $display(\"RESULT=%0d %0d %0d\", ok, child_h == keep_h, child_h.value);\n    $finish;\n  end\nendmodule\n```\n\n",
+    "explanationMd": "**答案：B、D。**\n\n第一次parent_h=child_h是合法向上赋值，未创建新对象；虽然变量声明为Parent，此时实际引用Child对象，因此向下$cast成功，UP打印1 1。\n\n随后parent_h=new创建的是Parent对象。它没有Child的动态类型，第二次$cast失败，返回0，并且不修改目标child_h。child_h仍等于keep_h，指向value=23的旧Child对象，所以RESULT打印0 1 23。\n\n$cast不会把一个基类对象“升级”成派生类对象。另一方面，普通直接赋值是否允许要先看静态类型：将Parent变量直接赋给Child变量是不合法的，即使程序员知道它碰巧装着Child句柄，也要使用合适的动态检查。这里失败由函数返回值处理，不把task形式的错误处理混进来。",
+    "commonMistakes": [
+      "只看句柄声明类型，误认为第一次向下转换必失败。",
+      "认为失败的$cast会自动把目标清成null或创建派生对象。"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "tags": [
+      "笔试SV与流程补充",
+      "公开资料考点改编"
+    ],
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/discuss/481041431860092928",
+      "note": "公开往届笔试汇编支持本题知识方向；公司、届别和原卷归属未独立追溯。本题代码、条件、选项与解析独立重构，非原题，不继承汇编参考答案。技术规则另按规范及运行检查核对。 页面显示2023-04-27编辑，本轮重新核对公开正文。"
+    },
+    "options": [
+      {
+        "id": "A",
+        "textMd": "两次$cast都会成功，因为Child继承了Parent。"
+      },
+      {
+        "id": "B",
+        "textMd": "RESULT打印0 1 23，失败转换没有修改child_h。"
+      },
+      {
+        "id": "C",
+        "textMd": "任何Parent变量都可以不经$cast直接赋给Child变量。"
+      },
+      {
+        "id": "D",
+        "textMd": "第一次$cast成功，是因为parent_h当时实际引用Child对象。"
+      }
+    ],
+    "correctOptionIds": [
+      "B",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "错误。继承关系使类型有转换关系，但第二次实际对象只有Parent类型，不能作为Child对象使用。",
+      "B": "正确。函数形式$cast失败返回0且目标不变，原Child仍由child_h和keep_h引用。",
+      "C": "错误。向下直接赋值违反静态赋值规则，不能由程序员的运行时推测代替动态检查。",
+      "D": "正确。变量的静态类型与其所指对象的动态类型不同；第一次的动态对象满足目标Child要求。"
+    }
+  },
+  {
+    "id": "ADAPTED-EXAMSV-FORK-0001",
+    "contentVersion": 1,
+    "type": "single_choice",
+    "topicId": "02",
+    "subtopicId": "event-scheduling",
+    "title": "join_any继续之后，另一个子进程会被自动取消吗",
+    "promptMd": "以下仿真从t=0开始，没有其他进程写x/y。FIRST和RESULT各输出时间（ns）、x、y。哪项正确？\n\n```systemverilog\nmodule tb;\n  timeunit 1ns;\n  timeprecision 1ps;\n  int x = 0, y = 0;\n  initial begin\n    fork\n      #4 x = 1;\n      #9 y = 1;\n    join_any\n    $display(\"FIRST=%0d %0d %0d\", $time, x, y);\n    // 不取消仍在运行的子进程，等待它结束。\n    wait fork;\n    $display(\"RESULT=%0d %0d %0d\", $time, x, y);\n    $finish;\n  end\nendmodule\n```\n\n",
+    "explanationMd": "**答案：C。**\n\n两个子进程在同一fork中启动，延迟都相对于进入fork的t=0计算。x在4ns置1，y在9ns置1；join_any等第一个子进程完成，于4ns恢复父进程，此时x=1、y=0。\n\njoin_any本身不取消剩余进程，因此y的子进程仍会在9ns执行。紧接着的wait fork让父进程等待剩余子进程结束，最终得到RESULT=9 1 1。两项延迟是并行计时，不是先4ns再9ns的串行13ns。若想在竞争结束后取消其他线程，需要额外且作用域明确的取消设计；这段代码没有这样的语句。",
+    "commonMistakes": [
+      "把join_any误认为自动执行disable fork。",
+      "把两个并行延迟相加得到13ns。"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "tags": [
+      "笔试SV与流程补充",
+      "公开资料考点改编"
+    ],
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/discuss/481041431860092928",
+      "note": "公开往届笔试汇编支持本题知识方向；公司、届别和原卷归属未独立追溯。本题代码、条件、选项与解析独立重构，非原题，不继承汇编参考答案。技术规则另按规范及运行检查核对。 另一篇公开芯海2022届汇编也列出fork等待语义；这是不同汇编入口，不据此统计独立考次或出现频率。 页面显示2023-04-27编辑，本轮重新核对公开正文。",
+      "inspiredByUrl": "https://www.nowcoder.com/discuss/353159156829986816"
+    },
+    "options": [
+      {
+        "id": "A",
+        "textMd": "FIRST=9 1 1；RESULT=9 1 1。"
+      },
+      {
+        "id": "B",
+        "textMd": "FIRST=4 1 0；RESULT=4 1 0，另一个线程被取消。"
+      },
+      {
+        "id": "C",
+        "textMd": "FIRST=4 1 0；RESULT=9 1 1。"
+      },
+      {
+        "id": "D",
+        "textMd": "FIRST=4 1 0；RESULT=13 1 1。"
+      }
+    ],
+    "correctOptionIds": [
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "错误。等所有线程完成的是join；join_any在4ns第一个线程结束时就继续。",
+      "B": "错误。join_any不会自动取消y线程，wait fork仍要等它到9ns结束。",
+      "C": "正确。4ns先恢复父进程，随后wait fork阻塞至9ns，两个变量最终均为1。",
+      "D": "错误。两个子线程的#4、#9都从t=0计时，不是串行延迟相加。"
+    }
+  },
+  {
+    "id": "ADAPTED-EXAMSV-FORK-0002",
+    "contentVersion": 1,
+    "type": "single_choice",
+    "topicId": "02",
+    "subtopicId": "event-scheduling",
+    "title": "for加join_none：子进程读的是每轮i，还是循环后的i",
+    "promptMd": "完整程序没有其他初始进程，不使用NBA、#0或其他延迟。父进程在for内没有阻塞操作。问RESULT的i和total，哪项正确？\n\n```systemverilog\nmodule tb;\n  int i;\n  int total = 0;\n  initial begin\n    for (i = 0; i < 3; i = i + 1) begin\n      fork\n        begin\n          // 子进程读取同一个模块变量i，没有每轮副本。\n          total = total + i;\n        end\n      join_none\n    end\n    wait fork;\n    $display(\"RESULT=%0d %0d\", i, total);\n    $finish;\n  end\nendmodule\n```\n\n",
+    "explanationMd": "**答案：D，RESULT=3 9。**\n\njoin_none不会让父进程等待；其派生进程要等父线程执行阻塞语句或结束后才开始。父线程连续完成三次循环，i依次推进，退出时i=3，然后在wait fork处让出执行。\n\n三个子进程都访问同一个模块变量i，此时它已经是3，所以各次累加都是加3，最终total=9。子进程的执行先后不影响本题结果：每个begin块内没有等待或延迟，阻塞赋值在本进程中连续完成，且三个加数相同。\n\n如需分别捕获0、1、2，应在每次进入fork作用域时声明并初始化独立automatic副本，再让子进程读取副本；若把初始化藏到稍后才启动的子进程begin里，仍可能读到最终i。本题考查变量生命周期和启动时机，而非一般意义上“所有并发写变量都安全”。",
+    "commonMistakes": [
+      "把创建子进程时的循环索引自动当成了子进程的私有参数。",
+      "把automatic副本放进稍后启动的子进程体内，却以为已经捕获每轮索引。"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "tags": [
+      "笔试SV与流程补充",
+      "公开资料考点改编"
+    ],
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/discuss/481041431860092928",
+      "note": "公开往届笔试汇编支持本题知识方向；公司、届别和原卷归属未独立追溯。本题代码、条件、选项与解析独立重构，非原题，不继承汇编参考答案。技术规则另按规范及运行检查核对。 页面显示2023-04-27编辑，本轮重新核对公开正文。"
+    },
+    "options": [
+      {
+        "id": "A",
+        "textMd": "RESULT=3 3，三个子进程分别加0、1、2。"
+      },
+      {
+        "id": "B",
+        "textMd": "RESULT=2 6，父循环最后停在i=2。"
+      },
+      {
+        "id": "C",
+        "textMd": "RESULT=3 0，因为join_none使子进程不再执行。"
+      },
+      {
+        "id": "D",
+        "textMd": "RESULT=3 9，三个子进程启动后都读到i=3。"
+      }
+    ],
+    "correctOptionIds": [
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "错误。题中只有一个共享模块变量i，没有每次迭代的独立副本；子进程启动时循环已结束。",
+      "B": "错误。最后一次自增将i从2变成3，再判断条件失败退出，不会停在2。",
+      "C": "错误。join_none只是父进程不等，随后wait fork会等待已经派生的子进程执行完。",
+      "D": "正确。父线程到wait fork才阻塞，三个子进程读取同一最终i=3，总和9。"
+    }
+  }
+]

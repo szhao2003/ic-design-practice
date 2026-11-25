@@ -31,7 +31,7 @@ jobs:
       - name: Test published Python reference
         run: npm run test:python
       - name: Install HDL simulator
-        run: sudo apt-get update && sudo apt-get install -y iverilog
+        run: sudo apt-get update && sudo apt-get install -y iverilog verilator
       - name: Simulate all published reference modules
         run: npm run test:rtl
       - run: npm run build

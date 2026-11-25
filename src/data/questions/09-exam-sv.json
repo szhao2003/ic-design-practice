@@ -1,0 +1,59 @@
+[
+  {
+    "id": "ADAPTED-EXAMSV-COV-0001",
+    "contentVersion": 1,
+    "type": "multiple_choice",
+    "topicId": "09",
+    "subtopicId": "coverage",
+    "title": "两个分支都走过，是否覆盖了两个条件的全部组合",
+    "promptMd": "仅考虑二值输入a、b，组合逻辑为 `if (a && b) y=1; else y=0;`。已测输入按顺序是(a,b)=(0,0)、(1,1)，并检查这两次的y均符合预期。\n\n本题定义：分支目标只有then和else两个；组合目标为00、01、10、11四项。不涉及工具对短路求值的条件覆盖计数或MC/DC。哪些判断正确？",
+    "explanationMd": "**答案：A、C。**\n\n00使条件为假，执行else；11使条件为真，执行then，因此两个分支目标都命中，题定分支覆盖率为2/2=100%。但四个输入组合仅出现00和11，组合目标命中2/4=50%，01和10都未测试。\n\n| 输入 | 条件a&&b | 分支 | 本轮是否出现 |\n|---|---:|---|---|\n|00|0|else|是|\n|01|0|else|否|\n|10|0|else|否|\n|11|1|then|是|\n\n如果实现被错误改成y=a，两次已测输入依然都通过，但01/10中的10就能暴露错误。因此分支命中不等于布尔输入组合穷尽，更不等于功能已被完整验证。此题明示覆盖目标，不用不同工具的condition/expression名字来替代实际分母。",
+    "commonMistakes": [
+      "把分支覆盖100%当成所有条件组合均被测试。",
+      "看到每个输入bit都取过0/1，就认为两个bit的联合组合也全部出现。"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "tags": [
+      "笔试SV与流程补充",
+      "公开资料考点改编"
+    ],
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/discuss/481041431860092928",
+      "note": "公开往届笔试汇编支持本题知识方向；公司、届别和原卷归属未独立追溯。本题代码、条件、选项与解析独立重构，非原题，不继承汇编参考答案。技术规则另按规范及运行检查核对。 页面显示2023-04-27编辑，本轮重新核对公开正文。"
+    },
+    "options": [
+      {
+        "id": "A",
+        "textMd": "按题定目标，分支覆盖为100%。"
+      },
+      {
+        "id": "B",
+        "textMd": "四个输入组合的覆盖为100%。"
+      },
+      {
+        "id": "C",
+        "textMd": "输入组合覆盖为50%，还缺01、10。"
+      },
+      {
+        "id": "D",
+        "textMd": "只要这两个分支都命中并且两次输出正确，就能证明任意输入都正确。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确。00执行else，11执行then，两个目标均被访问。",
+      "B": "错误。00和11只占四项中的两项，不能把每bit各取过0/1等同联合组合穷尽。",
+      "C": "正确。分母为明确列出的四项，命中两项，01和10尚未出现。",
+      "D": "错误。错误实现y=a会通过现有两项却在10出错，构成具体反例。"
+    }
+  }
+]
