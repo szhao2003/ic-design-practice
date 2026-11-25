@@ -7,7 +7,7 @@ import type { PracticeSession } from '../src/domain/practice-session';
 const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-TIMINGSTART-${id}`)!;
 describe('STA与CDC起步练习',()=>{
  it('4道简单题至218，技术资料只支持规则方向',()=>{
-  expect(questions).toHaveLength(218);const batch=questions.filter(q=>q.id.startsWith('ADAPTED-TIMINGSTART-'));expect(batch).toHaveLength(4);
+  expect(questions.filter(q=>!q.id.startsWith('ADAPTED-OPPREC-'))).toHaveLength(218);const batch=questions.filter(q=>q.id.startsWith('ADAPTED-TIMINGSTART-'));expect(batch).toHaveLength(4);
   for(const q of batch){expect(q.difficulty).toBe('easy');expect(q.contentVersion).toBe(1);expect(q.source.company).toBeUndefined();expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.sourceClaimVerification).toBe('checked');}
  });
  it('Max报告相减保留负号，ns与ps判分一致，不能重复扣预算',()=>{

@@ -15,6 +15,7 @@ export const topics: Topic[] = [
     { id: 'blocking-nba', name: 'Blocking / NBA' }, { id: 'event-scheduling', name: 'Event Scheduling' },
     { id: 'signed-width', name: 'signed / width' }, { id: 'four-state', name: 'X / Z' },
     { id: 'latch-inference', name: 'Latch 推断' }, { id: 'sv-basics', name: 'SV 基础' },
+    { id: 'operator-precedence', name: '运算符优先级' },
   ] },
   { id: '03', name: 'STA 时序分析', englishName: 'Static Timing Analysis', priority: 'core', subtopics: [
     { id: 'setup-hold', name: 'Setup / Hold' }, { id: 'slack-fmax', name: 'Slack / Fmax' },

@@ -7,7 +7,7 @@ import {ReferenceAnswer} from '../src/components/QuestionContent';
 const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-INTEGRATION-${id}`)!;
 describe('完整接口与时序约束',()=>{
  it('6道独立任务，156总量，来源与人工判分边界保持真实',()=>{
-  expect(questions.filter(q=>!/^ADAPTED-(BOUNDARY|SAMPLING|CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART)-/.test(q.id))).toHaveLength(156);
+  expect(questions.filter(q=>!/^ADAPTED-(BOUNDARY|SAMPLING|CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC)-/.test(q.id))).toHaveLength(156);
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-INTEGRATION-'));
   expect(batch).toHaveLength(6);
   for(const q of batch){

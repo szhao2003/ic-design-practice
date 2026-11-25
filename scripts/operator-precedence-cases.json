@@ -1,0 +1,58 @@
+[
+  {
+    "id": "ADAPTED-OPPREC-0001",
+    "expression": "32'd2 + 32'd3 * 32'd4",
+    "grouped": "32'd2 + (32'd3 * 32'd4)",
+    "alternative": "(32'd2 + 32'd3) * 32'd4",
+    "alternativeValue": 20
+  },
+  {
+    "id": "ADAPTED-OPPREC-0002",
+    "expression": "32'd1 << 32'd2 + 32'd1",
+    "grouped": "32'd1 << (32'd2 + 32'd1)",
+    "alternative": "(32'd1 << 32'd2) + 32'd1",
+    "alternativeValue": 5
+  },
+  {
+    "id": "ADAPTED-OPPREC-0003",
+    "expression": "a & b == c",
+    "grouped": "a & (b == c)",
+    "alternative": "(a & b) == c",
+    "alternativeValue": 1
+  },
+  {
+    "id": "ADAPTED-OPPREC-0004",
+    "expression": "a || b && c",
+    "grouped": "a || (b && c)",
+    "alternative": "(a || b) && c",
+    "alternativeValue": 0
+  },
+  {
+    "id": "ADAPTED-OPPREC-0005",
+    "expression": "a | b & c ^ d",
+    "grouped": "a | ((b & c) ^ d)",
+    "alternative": "((a | b) & c) ^ d",
+    "alternativeValue": 2
+  },
+  {
+    "id": "ADAPTED-OPPREC-0006",
+    "expression": "&a == b",
+    "grouped": "(&a) == b",
+    "alternative": "&(a == b)",
+    "alternativeValue": 0
+  },
+  {
+    "id": "ADAPTED-OPPREC-0007",
+    "expression": "32'd20 / 32'd2 * 32'd3",
+    "grouped": "(32'd20 / 32'd2) * 32'd3",
+    "alternative": "32'd20 / (32'd2 * 32'd3)",
+    "alternativeValue": 3
+  },
+  {
+    "id": "ADAPTED-OPPREC-0008",
+    "expression": "a ? b : c ? d : e",
+    "grouped": "a ? b : (c ? d : e)",
+    "alternative": "(a ? b : c) ? d : e",
+    "alternativeValue": 6
+  }
+]

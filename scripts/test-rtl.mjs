@@ -1,6 +1,7 @@
 import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
+import { checkOperatorPrecedence } from './test-operator-precedence.mjs';
 const mapping = {
   gray_codec:'ADAPTED-CODEC-GRAY-0001', even_divider:'ADAPTED-CODEC-DIV-0001',
   sample_edges:'ADAPTED-SAMPLING-EDGE-0001',
@@ -67,3 +68,4 @@ if (!available) {
   }
   console.log(`RTL simulation: ${count}/${count} references + language, parity, reset/event observation, FIFO capacity, and starter trace checks PASS (digital functional checks; not CDC/STA/silicon sign-off).`);
 }
+await checkOperatorPrecedence(questions, available);

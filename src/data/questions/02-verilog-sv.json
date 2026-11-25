@@ -756,5 +756,261 @@
       "解释b只读取一次旧a、之后不自动联动。",
       "区分Inactive与Postponed，不能用#0保证读NBA新值。"
     ]
+  },
+  {
+    "id": "ADAPTED-OPPREC-0001",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "operator-precedence",
+    "type": "numeric",
+    "title": "先乘后加：不要整行从左算到右",
+    "promptMd": "下面是完整SystemVerilog模块。所有声明的logic均为无符号，输入只有明确给出的0/1，无X/Z、函数调用或其他进程；无延时和并发驱动。写出打印的y的无符号十进制值，并自行给右侧表达式加括号说明分组。只提交数值。\n\n```systemverilog\nmodule expr;\n  logic [31:0] y;\n  initial begin\n    y = 32'd2 + 32'd3 * 32'd4;\n    $display(\"RESULT=%0d\", y);\n  end\nendmodule\n```",
+    "explanationMd": "**结果：14。**\n\n等价的显式分组是：\n\n```systemverilog\n32'd2 + (32'd3 * 32'd4)\n```\n\n乘法*高于二元加法+，先得3×4=12，再加2为14。相反括号会先算2+3，再乘4得到20。\n\n对照：`(32'd2 + 32'd3) * 32'd4` 得到 20，因此括号不同会改变本题结果。优先级决定表达式如何分组，不等于有副作用的操作数必定按某种时间顺序执行；工程代码宜显式加括号。",
+    "commonMistakes": [
+      "看见表达式从左写到右，就先计算2+3。",
+      "把运算符优先级与位宽、signed或事件调度规则混为一谈。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "SV运算符优先级",
+      "表达式分组",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://fpga.mit.edu/6205/_static/F25/documentation/1800-2017.pdf",
+      "note": "依据IEEE Std 1800-2017第11.3.2节及表11-2的运算符优先级/结合性规则独立构造；标准文本由MIT课程站点提供。数值、代码和解析非公司原题，不作为招聘考频证据。"
+    },
+    "expectedValue": 14,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-OPPREC-0002",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "operator-precedence",
+    "type": "numeric",
+    "title": "加法与移位：移位量也可能是一整个表达式",
+    "promptMd": "下面是完整SystemVerilog模块。所有声明的logic均为无符号，输入只有明确给出的0/1，无X/Z、函数调用或其他进程；无延时和并发驱动。写出打印的y的无符号十进制值，并自行给右侧表达式加括号说明分组。只提交数值。\n\n```systemverilog\nmodule expr;\n  logic [31:0] y;\n  initial begin\n    y = 32'd1 << 32'd2 + 32'd1;\n    $display(\"RESULT=%0d\", y);\n  end\nendmodule\n```",
+    "explanationMd": "**结果：8。**\n\n等价的显式分组是：\n\n```systemverilog\n32'd1 << (32'd2 + 32'd1)\n```\n\n二元加法+高于移位<<，所以移位量是2+1=3，1左移3位为8。先左移2位再加1会得到5，是不同的括号表达式。\n\n对照：`(32'd1 << 32'd2) + 32'd1` 得到 5，因此括号不同会改变本题结果。优先级决定表达式如何分组，不等于有副作用的操作数必定按某种时间顺序执行；工程代码宜显式加括号。",
+    "commonMistakes": [
+      "把<<误认为比+优先。",
+      "把运算符优先级与位宽、signed或事件调度规则混为一谈。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "SV运算符优先级",
+      "表达式分组",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://fpga.mit.edu/6205/_static/F25/documentation/1800-2017.pdf",
+      "note": "依据IEEE Std 1800-2017第11.3.2节及表11-2的运算符优先级/结合性规则独立构造；标准文本由MIT课程站点提供。数值、代码和解析非公司原题，不作为招聘考频证据。"
+    },
+    "expectedValue": 8,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-OPPREC-0003",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "operator-precedence",
+    "type": "numeric",
+    "title": "比较和按位与：a & b == c到底先比还是先与",
+    "promptMd": "下面是完整SystemVerilog模块。所有声明的logic均为无符号，输入只有明确给出的0/1，无X/Z、函数调用或其他进程；无延时和并发驱动。写出打印的y的无符号十进制值，并自行给右侧表达式加括号说明分组。只提交数值。\n\n```systemverilog\nmodule expr;\n  logic [3:0] a, b, c, y;\n  initial begin\n    a = 4'b1010; b = 4'b0011; c = 4'b0010;\n    y = a & b == c;\n    $display(\"RESULT=%0d\", y);\n  end\nendmodule\n```",
+    "explanationMd": "**结果：0。**\n\n等价的显式分组是：\n\n```systemverilog\na & (b == c)\n```\n\n相等比较==高于二元按位与&。先比较b与c，0011不等于0010，结果为1bit的0；再与a按位相与得0000，所以y的十进制为0。若本意是掩码比较，必须写(a & b) == c；此处那会先得到0010，再比较得到1。\n\n对照：`(a & b) == c` 得到 1，因此括号不同会改变本题结果。优先级决定表达式如何分组，不等于有副作用的操作数必定按某种时间顺序执行；工程代码宜显式加括号。",
+    "commonMistakes": [
+      "把看起来像掩码比较的代码直接按设计意图解释。",
+      "把运算符优先级与位宽、signed或事件调度规则混为一谈。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "SV运算符优先级",
+      "表达式分组",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://fpga.mit.edu/6205/_static/F25/documentation/1800-2017.pdf",
+      "note": "依据IEEE Std 1800-2017第11.3.2节及表11-2的运算符优先级/结合性规则独立构造；标准文本由MIT课程站点提供。数值、代码和解析非公司原题，不作为招聘考频证据。"
+    },
+    "expectedValue": 0,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-OPPREC-0004",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "operator-precedence",
+    "type": "numeric",
+    "title": "逻辑或与逻辑与：a || b && c怎样分组",
+    "promptMd": "下面是完整SystemVerilog模块。所有声明的logic均为无符号，输入只有明确给出的0/1，无X/Z、函数调用或其他进程；无延时和并发驱动。写出打印的y的无符号十进制值，并自行给右侧表达式加括号说明分组。只提交数值。\n\n```systemverilog\nmodule expr;\n  logic a, b, c, y;\n  initial begin\n    a = 1'b1; b = 1'b0; c = 1'b0;\n    y = a || b && c;\n    $display(\"RESULT=%0d\", y);\n  end\nendmodule\n```",
+    "explanationMd": "**结果：1。**\n\n等价的显式分组是：\n\n```systemverilog\na || (b && c)\n```\n\n逻辑与&&高于逻辑或||。先形成b&&c=0，再与a逻辑或得到1。若写成(a||b)&&c，则结果为0。这里都是无副作用、已知0/1的输入，只考察分组及逻辑值。\n\n对照：`(a || b) && c` 得到 0，因此括号不同会改变本题结果。优先级决定表达式如何分组，不等于有副作用的操作数必定按某种时间顺序执行；工程代码宜显式加括号。",
+    "commonMistakes": [
+      "把&&和||当成同一优先级左结合。",
+      "把运算符优先级与位宽、signed或事件调度规则混为一谈。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "SV运算符优先级",
+      "表达式分组",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://fpga.mit.edu/6205/_static/F25/documentation/1800-2017.pdf",
+      "note": "依据IEEE Std 1800-2017第11.3.2节及表11-2的运算符优先级/结合性规则独立构造；标准文本由MIT课程站点提供。数值、代码和解析非公司原题，不作为招聘考频证据。"
+    },
+    "expectedValue": 1,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-OPPREC-0005",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "operator-precedence",
+    "type": "numeric",
+    "title": "按位混合：&、^、|不是同一层级",
+    "promptMd": "下面是完整SystemVerilog模块。所有声明的logic均为无符号，输入只有明确给出的0/1，无X/Z、函数调用或其他进程；无延时和并发驱动。写出打印的y的无符号十进制值，并自行给右侧表达式加括号说明分组。只提交数值。\n\n```systemverilog\nmodule expr;\n  logic [3:0] a, b, c, d, y;\n  initial begin\n    a = 4'b1000; b = 4'b1111; c = 4'b0011; d = 4'b0001;\n    y = a | b & c ^ d;\n    $display(\"RESULT=%0d\", y);\n  end\nendmodule\n```",
+    "explanationMd": "**结果：10。**\n\n等价的显式分组是：\n\n```systemverilog\na | ((b & c) ^ d)\n```\n\n二元按位运算的顺序为&高于^，^高于|。b&c=0011，再异或d得0010，最后与a按位或得1010，十进制10。若全部从左算，结果会是0010即2。这里不是逻辑&&/||，结果保留4bit。\n\n对照：`((a | b) & c) ^ d` 得到 2，因此括号不同会改变本题结果。优先级决定表达式如何分组，不等于有副作用的操作数必定按某种时间顺序执行；工程代码宜显式加括号。",
+    "commonMistakes": [
+      "认为所有按位运算优先级一样。",
+      "把运算符优先级与位宽、signed或事件调度规则混为一谈。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "SV运算符优先级",
+      "表达式分组",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://fpga.mit.edu/6205/_static/F25/documentation/1800-2017.pdf",
+      "note": "依据IEEE Std 1800-2017第11.3.2节及表11-2的运算符优先级/结合性规则独立构造；标准文本由MIT课程站点提供。数值、代码和解析非公司原题，不作为招聘考频证据。"
+    },
+    "expectedValue": 10,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-OPPREC-0006",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "operator-precedence",
+    "type": "numeric",
+    "title": "一元归约与高于比较：&a == b的&是哪一种",
+    "promptMd": "下面是完整SystemVerilog模块。所有声明的logic均为无符号，输入只有明确给出的0/1，无X/Z、函数调用或其他进程；无延时和并发驱动。写出打印的y的无符号十进制值，并自行给右侧表达式加括号说明分组。只提交数值。\n\n```systemverilog\nmodule expr;\n  logic [3:0] a;\n  logic b, y;\n  initial begin\n    a = 4'b1110; b = 1'b0;\n    y = &a == b;\n    $display(\"RESULT=%0d\", y);\n  end\nendmodule\n```",
+    "explanationMd": "**结果：1。**\n\n等价的显式分组是：\n\n```systemverilog\n(&a) == b\n```\n\n这里前缀&a是一元归约与，优先于==；1110归约为0，随后0==b(0)得到1。不要把它当成前一题连接两个操作数的二元&。若先比较a与b，比较结果为0，再归约这个单bit仍为0。\n\n对照：`&(a == b)` 得到 0，因此括号不同会改变本题结果。优先级决定表达式如何分组，不等于有副作用的操作数必定按某种时间顺序执行；工程代码宜显式加括号。",
+    "commonMistakes": [
+      "看见&就套二元按位与的优先级。",
+      "把运算符优先级与位宽、signed或事件调度规则混为一谈。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "SV运算符优先级",
+      "表达式分组",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://fpga.mit.edu/6205/_static/F25/documentation/1800-2017.pdf",
+      "note": "依据IEEE Std 1800-2017第11.3.2节及表11-2的运算符优先级/结合性规则独立构造；标准文本由MIT课程站点提供。数值、代码和解析非公司原题，不作为招聘考频证据。"
+    },
+    "expectedValue": 1,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-OPPREC-0007",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "operator-precedence",
+    "type": "numeric",
+    "title": "同级左结合：除法后遇乘法不能优先算右边",
+    "promptMd": "下面是完整SystemVerilog模块。所有声明的logic均为无符号，输入只有明确给出的0/1，无X/Z、函数调用或其他进程；无延时和并发驱动。写出打印的y的无符号十进制值，并自行给右侧表达式加括号说明分组。只提交数值。\n\n```systemverilog\nmodule expr;\n  logic [31:0] y;\n  initial begin\n    y = 32'd20 / 32'd2 * 32'd3;\n    $display(\"RESULT=%0d\", y);\n  end\nendmodule\n```",
+    "explanationMd": "**结果：30。**\n\n等价的显式分组是：\n\n```systemverilog\n(32'd20 / 32'd2) * 32'd3\n```\n\n*与/在同一优先级且左结合，因此先20/2=10，再乘3=30。不能因为常说先乘除就擅自优先算右边的2×3；那是另外的括号表达式，整数除法得到3。所有常量和结果均为32bit无符号，且没有溢出。\n\n对照：`32'd20 / (32'd2 * 32'd3)` 得到 3，因此括号不同会改变本题结果。优先级决定表达式如何分组，不等于有副作用的操作数必定按某种时间顺序执行；工程代码宜显式加括号。",
+    "commonMistakes": [
+      "以为乘法一定高于除法，或把同级表达式从右合并。",
+      "把运算符优先级与位宽、signed或事件调度规则混为一谈。"
+    ],
+    "difficulty": "easy",
+    "tags": [
+      "SV运算符优先级",
+      "表达式分组",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://fpga.mit.edu/6205/_static/F25/documentation/1800-2017.pdf",
+      "note": "依据IEEE Std 1800-2017第11.3.2节及表11-2的运算符优先级/结合性规则独立构造；标准文本由MIT课程站点提供。数值、代码和解析非公司原题，不作为招聘考频证据。"
+    },
+    "expectedValue": 30,
+    "absoluteTolerance": 0
+  },
+  {
+    "id": "ADAPTED-OPPREC-0008",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "operator-precedence",
+    "type": "numeric",
+    "title": "嵌套条件表达式：?:按右侧结合",
+    "promptMd": "下面是完整SystemVerilog模块。所有声明的logic均为无符号，输入只有明确给出的0/1，无X/Z、函数调用或其他进程；无延时和并发驱动。写出打印的y的无符号十进制值，并自行给右侧表达式加括号说明分组。只提交数值。\n\n```systemverilog\nmodule expr;\n  logic a, c;\n  logic [3:0] b, d, e, y;\n  initial begin\n    a = 1'b1; b = 4'd0; c = 1'b0; d = 4'd5; e = 4'd6;\n    y = a ? b : c ? d : e;\n    $display(\"RESULT=%0d\", y);\n  end\nendmodule\n```",
+    "explanationMd": "**结果：0。**\n\n等价的显式分组是：\n\n```systemverilog\na ? b : (c ? d : e)\n```\n\n条件运算符?:右结合，右侧c?d:e整体属于第一个条件的假分支。a=1，选择b=0，所以y为0。若按左侧括号，先得到0，再把0作为另一个条件，就会选择e=6。此题条件只有已知0/1，不涉及X条件下的分支合并。\n\n对照：`(a ? b : c) ? d : e` 得到 6，因此括号不同会改变本题结果。优先级决定表达式如何分组，不等于有副作用的操作数必定按某种时间顺序执行；工程代码宜显式加括号。",
+    "commonMistakes": [
+      "把嵌套?:当成从左向右结合。",
+      "把运算符优先级与位宽、signed或事件调度规则混为一谈。"
+    ],
+    "difficulty": "medium",
+    "tags": [
+      "SV运算符优先级",
+      "表达式分组",
+      "公开资料考点改编"
+    ],
+    "estimatedMinutes": 4,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://fpga.mit.edu/6205/_static/F25/documentation/1800-2017.pdf",
+      "note": "依据IEEE Std 1800-2017第11.3.2节及表11-2的运算符优先级/结合性规则独立构造；标准文本由MIT课程站点提供。数值、代码和解析非公司原题，不作为招聘考频证据。"
+    },
+    "expectedValue": 0,
+    "absoluteTolerance": 0
   }
 ]

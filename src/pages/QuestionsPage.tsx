@@ -7,6 +7,7 @@ import { filterQuestions, selectPracticeQuestions, fidelityLabels, questionYears
 import { useLearning } from '../storage/LearningContext';
 import { typeLabels } from '../components/QuestionContent';
 import { QuestionRows } from '../components/QuestionList';
+import { OperatorPrecedenceGuide } from '../components/OperatorPrecedenceGuide';
 
 export function QuestionsPage({ practice = false }: { practice?: boolean }) {
   const { store, state, refresh } = useLearning();
@@ -36,6 +37,7 @@ export function QuestionsPage({ practice = false }: { practice?: boolean }) {
   }
   const select = (key: keyof QuestionFilters, label: string, options: [string, string][]) => <div><label htmlFor={`filter-${key}`}>{label}</label><select id={`filter-${key}`} value={filters[key] || ''} onChange={(e) => update(key, e.target.value)}><option value="">全部</option>{options.map(([value, title]) => <option value={value} key={value}>{title}</option>)}</select></div>;
   return <><header className="page-heading"><p className="eyebrow">{practice ? 'PRACTICE' : 'QUESTION BANK'}</p><h1>{practice ? '组题与连续练习' : topic?.name || '题库'}</h1><p>按知识点和来源选择题目，或随机组成一轮不重复的练习。改编题参考公开资料中的考点，不是公司原题；具体资料性质见各题来源说明。</p></header>
+    {filters.topic === '02' && filters.subtopic === 'operator-precedence' && <OperatorPrecedenceGuide />}
     <section className="panel"><div className="filter-grid">{select('topic', '知识专题', topics.map((t) => [t.id, `${t.id} · ${t.name}`]))}<div><label htmlFor="filter-search">搜索题目</label><input id="filter-search" type="search" value={filters.q || ''} placeholder="题目、题面或标签" onChange={(e) => update('q', e.target.value)} /></div></div>
       <details className="advanced-filters" open={hasAdvanced}><summary>更多筛选（题型、来源、年份等）</summary><div className="filter-grid">
         {select('subtopic', '子专题', (topic ? topic.subtopics : []).map((t) => [t.id, t.name]))}
