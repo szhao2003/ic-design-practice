@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { questions } from '../src/data/question-bank';
 import { gradeAnswer } from '../src/domain/grading';
+import { sourceLabel } from '../src/components/QuestionContent';
 
 const batch=questions.filter(q=>q.id.startsWith('ADAPTED-EXAMBASE-'));
 const get=(id:string)=>batch.find(q=>q.id===`ADAPTED-EXAMBASE-${id}`)!;
 describe('笔试基础补缺',()=>{
+  it('面经和汇编不会显示成亲历笔经',()=>{
+    expect(sourceLabel(get('PULSE-0001'))).toBe('公开面经考点改编｜非原题');
+    expect(sourceLabel(get('PARAM-0001'))).toBe('公开汇编考点改编｜非原题');
+    expect(sourceLabel(get('FLOW-0001'))).toBe('公开笔经考点改编｜非原题');
+  });
   it('8道来源重构进入已有分类，保持原创身份不变',()=>{
     expect(questions).toHaveLength(234);expect(batch).toHaveLength(8);
     expect(questions.filter(q=>q.source.kind==='self_authored')).toHaveLength(44);

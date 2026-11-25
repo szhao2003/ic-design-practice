@@ -12,7 +12,12 @@ function CodeBlock({ children, canCopy }: { children: ReactNode; canCopy: boolea
 
 export const typeLabels: Record<Question['type'], string> = { single_choice: '单选', multiple_choice: '多选', true_false: '判断', numeric: '数值计算', short_answer: '简答 · 自评', rtl_coding: 'RTL · 自评', waveform_analysis: '波形 · 自评' };
 export function sourceLabel(question: Question) {
-  if (question.source.questionFidelity === 'topic_only_reconstruction' && question.source.kind === 'practice_collection') return '公开资料考点改编｜非原题';
+  if (question.source.questionFidelity === 'topic_only_reconstruction') {
+    if (question.source.kind === 'firsthand_recall') return '公开笔经考点改编｜非原题';
+    if (question.source.kind === 'interview_recall') return '公开面经考点改编｜非原题';
+    if (question.source.kind === 'past_paper_compilation') return '公开汇编考点改编｜非原题';
+    return '公开资料考点改编｜非原题';
+  }
   return { self_authored: '原创专项题', topic_only_reconstruction: '公开笔经考点改编｜非原题', paraphrased_from_source: '公开笔经题目转述', verbatim_verified: '可核实原题摘录' }[question.source.questionFidelity];
 }
 export function RichText({ text, copyCode = false }: { text: string; copyCode?: boolean }) {
