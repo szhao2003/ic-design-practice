@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction } from 'idb';
+import { imageListSchema } from '../domain/image-attachments';
 import { planBackupMerge, type BackupData, type JsonValue, type MutableRecord } from '../domain/backup-merge';
 import type { Question } from '../domain/question-schema';
 import { createRound, revealAnswer, selfGrade, type SelfGrade, type LearningEvent, type PracticeRound } from '../domain/practice';
@@ -77,6 +78,7 @@ export class LearningStore {
     } catch (error) {
       try { tx.abort(); } catch { /* 事务可能已经因底层错误中止。 */ }
       await done.catch(() => {});
+      if (error instanceof Error && error.name === 'QuotaExceededError') throw new Error('本机存储空间不足，未保存此次更改。请先导出备份，再整理图片后重试。');
       throw error;
     }
   }
@@ -166,6 +168,7 @@ export class LearningStore {
     });
   }
   async saveRecord(namespace: Exclude<MutableRecord['namespace'], 'drafts'>, id: string, value: JsonValue, deleted = false) {
+    if (namespace === 'noteImages') imageListSchema.parse(value);
     return this.write(async (tx) => {
       const key = `${namespace}/${id}`;
       const previous = await tx.objectStore('records').get(key);
@@ -254,7 +257,7 @@ export class LearningStore {
   }
   async exportJSON(): Promise<string> {
     const state = await this.read();
-    return JSON.stringify({ ...state.data, exportedAt: new Date().toISOString(), bankVersion: '1.26.0' }, null, 2);
+    return JSON.stringify({ ...state.data, exportedAt: new Date().toISOString(), bankVersion: '1.27.0' }, null, 2);
   }
   async previewImport(input: unknown, mode: 'merge' | 'replace', currentIds: string[]): Promise<ImportPreview> {
     const incoming = validateBackup(input);

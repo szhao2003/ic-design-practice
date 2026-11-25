@@ -26,7 +26,7 @@ export function ProgressPage() {
   return <><header className="page-heading"><p className="eyebrow">LEARNING PROGRESS</p><h1>学习进度</h1><p>从真实作答记录看覆盖面和待巩固知识点。统计为累计数据，独立练习过不等于已经掌握，未练也不代表不会。</p></header>
     <section className="metrics" aria-label="累计学习统计"><div><p>独立练习覆盖</p><strong>{stats.practicedQuestions}<small> / {stats.totalQuestions} 道</small></strong><p>{percent(stats.practicedQuestions, stats.totalQuestions)}</p></div><div><p>自动题正确率</p><strong>{percent(stats.autoCorrect, stats.autoAttempts)}</strong><p>{stats.autoCorrect} / {stats.autoAttempts} 次有效提交</p></div><div><p>独立人工自评</p><strong>{stats.independentManualAssessments}<small> 次</small></strong><p>最近独立掌握 {stats.manualMasteredQuestions} 题</p></div><div><p>到期复习</p><strong>{stats.dueQuestions}<small> 道</small></strong><p>未解决错题 {stats.unresolvedQuestions} 道</p></div></section>
     <p className="notice">自动正确率按有效提交次数计算；未答考试题、草稿和直接揭示不计入。人工自评单独统计，辅助自评 {stats.assistedManualAssessments} 次不算独立掌握。模拟考试得分请查看各卷结果。</p>
-    {!report.recent.length && <section className="panel progress-empty"><h2>先完成一道题，进度就会出现在这里</h2><p>选择题、判断题和数值题提交后计入统计；简答、RTL 和波形题在独立作答并自评后计入。</p><Link className="button primary" to="/practice">开始练习</Link></section>}
+    {!report.recent.length && <section className="panel progress-empty"><h2>先完成一道题，进度就会出现在这里</h2><p>选择题、判断题和数值题提交后计入统计；简答、RTL 和波形题在独立作答并自评后计入。</p><Link className="button primary" to="/questions">开始练习</Link></section>}
     <div className="section-heading"><div><p className="eyebrow">TOPIC COVERAGE</p><h2>按专题看进度</h2></div><Link to="/topics">查看知识专题</Link></div>
     <div className="progress-topic-grid">{topics.filter(t => report.byTopic.has(t.id)).map(t => {
       const row = report.byTopic.get(t.id)!;

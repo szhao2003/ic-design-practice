@@ -7,7 +7,7 @@ import type { PracticeSession } from './practice-session';
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 export type MutableRecord = {
   id: string;
-  namespace: 'notes' | 'bookmarks' | 'issues' | 'drafts' | 'preferences';
+  namespace: 'notes' | 'noteImages' | 'bookmarks' | 'issues' | 'drafts' | 'preferences';
   updatedAt: string;
   deleted: boolean;
   value: JsonValue;

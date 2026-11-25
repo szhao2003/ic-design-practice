@@ -1,10 +1,11 @@
 import { gradeAnswer, isManual, type Answer, type Grade } from './grading';
 import type { Question } from './question-schema';
+import { imageListSchema, type ImageAttachment } from './image-attachments';
 import { assertTimestamp, snapshotQuestion, type QuestionSnapshot } from './snapshots';
 
 export type SelfGrade = 'good' | 'partial' | 'again';
 export type GuidanceContent = { steps: { title: string; promptMd: string }[]; checks: string[] };
-type EventBase = { id: string; roundId: string; questionId: string; snapshotKey: string; at: string };
+type EventBase = { id: string; roundId: string; questionId: string; snapshotKey: string; at: string; images?: ImageAttachment[] };
 export type LearningEvent = EventBase & (
   | { kind: 'submitted'; answer: Answer; result: Extract<Grade, { valid: true }>; independent: true }
   | { kind: 'revealed_without_submission'; draft?: Answer; independent: false; reason?: 'guidance' }
@@ -16,6 +17,7 @@ export type PracticeRound = {
   startedAt: string;
   status: 'answering' | 'awaiting_self_grade' | 'complete';
   draft?: Answer;
+  images?: ImageAttachment[];
   independentAnswer?: string;
   paperCompletedAt?: string;
   revealedAt?: string;
@@ -41,6 +43,13 @@ export function saveDraft(round: PracticeRound, answer: Answer): PracticeRound {
   return { ...round, draft: structuredClone(answer) };
 }
 
+export function saveAnswerImages(round: PracticeRound, images: ImageAttachment[]): PracticeRound {
+  if (round.status !== 'answering' || !isManual(round.snapshot.question)) throw new Error('本轮图片已锁定，重做需要新轮次。');
+  const validated = imageListSchema.parse(images);
+  if (!validated.length) { const next = { ...round }; delete next.images; return next; }
+  return { ...round, images: structuredClone(validated) };
+}
+
 function eventBase(round: PracticeRound, at: string, suffix: string): EventBase {
   return { id: `${round.id}:${suffix}`, roundId: round.id, questionId: round.snapshot.question.id, snapshotKey: round.snapshot.key, at };
 }
@@ -60,11 +69,12 @@ export function revealAnswer(round: PracticeRound, at: string, independentlyComp
   assertTime(round, at);
   const manual = isManual(round.snapshot.question);
   const answer = typeof round.draft === 'string' && round.draft.trim() ? round.draft : undefined;
-  if (independentlyCompleted && (!manual || (!answer && !paperCompleted))) throw new Error('请先保存独立文字/代码作答，或声明纸笔完成。');
-  const independent = manual && independentlyCompleted && Boolean(answer || paperCompleted);
+  if (independentlyCompleted && (!manual || (!answer && !paperCompleted && !round.images?.length))) throw new Error('请先保存文字、图片作答，或声明纸笔完成。');
+  const independent = manual && independentlyCompleted && Boolean(answer || paperCompleted || round.images?.length);
   const events = independent ? round.events : [...round.events, {
     ...eventBase(round, at, 'revealed'), kind: 'revealed_without_submission' as const,
     draft: structuredClone(round.draft), independent: false as const,
+    ...(round.images?.length ? { images: structuredClone(round.images) } : {}),
   }];
   return {
     ...round, status: manual ? 'awaiting_self_grade' : 'complete', revealedAt: at, independent, events,
@@ -82,6 +92,7 @@ export function selfGrade(round: PracticeRound, grade: SelfGrade, at: string): P
   const effectiveGrade = !round.independent && grade === 'good' ? 'partial' : grade;
   const event: LearningEvent = {
     ...eventBase(round, at, 'self-graded'), kind: 'self_graded', answer: round.independentAnswer,
+    ...(round.images?.length ? { images: structuredClone(round.images) } : {}),
     paperCompletedAt: round.paperCompletedAt, requestedGrade: grade, effectiveGrade, independent: round.independent,
   };
   return { ...round, status: 'complete', events: [...round.events, event] };

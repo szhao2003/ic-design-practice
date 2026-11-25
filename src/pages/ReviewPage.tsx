@@ -13,7 +13,12 @@ export function ReviewPage() {
   const progress = new Map(state.progress.map((p) => [p.questionId, p]));
   const ids = new Set<string>();
   if (tab === 'bookmarks' || tab === 'notes') {
-    for (const r of state.data.records) if (!r.deleted && r.namespace === (tab === 'bookmarks' ? 'bookmarks' : 'notes') && r.value) ids.add(r.id);
+    for (const r of state.data.records) {
+      if (r.deleted) continue;
+      if (tab === 'bookmarks' ? r.namespace === 'bookmarks' && r.value :
+        (r.namespace === 'notes' && typeof r.value === 'string' && r.value.trim()) ||
+        (r.namespace === 'noteImages' && Array.isArray(r.value) && r.value.length > 0)) ids.add(r.id);
+    }
   } else {
     for (const p of state.progress) if (tab === 'due' ? Date.parse(p.nextReviewAt) <= Date.now() : tab === 'resolved' ? !p.hasUnresolvedMistake && state.data.events.some((e) => e.questionId === p.questionId && ((e.kind === 'submitted' && !e.result.isCorrect) || (e.kind === 'self_graded' && e.effectiveGrade === 'again'))) : p.hasUnresolvedMistake) ids.add(p.questionId);
   }
@@ -23,7 +28,7 @@ export function ReviewPage() {
     <nav className="tabs" aria-label="复习分类">{[['wrong', '未解决错题'], ['due', '到期复习'], ['resolved', '已解决错题'], ['bookmarks', '收藏'], ['notes', '笔记']].map(([key, title]) => <button key={key} aria-pressed={tab === key} className={tab === key ? 'active' : ''} onClick={() => setParams({ tab: key })}>{title}</button>)}</nav>
     {error && <div className="error-banner" role="alert">{error}</div>}
     {!!queue.length && <section className="panel"><p>将当前列表中的 {queue.length} 道可练题组成连续复习；已移除题只保留单题历史入口。</p><button className="button primary" disabled={busy} onClick={() => { setBusy(true); void store.startPractice(queue, 'review', { reviewTab: tab }).then(async (session) => { await refresh(); navigate(`/practice-session/${session.id}`); }).catch((e: unknown) => setError(e instanceof Error ? e.message : '无法组建复习。')).finally(() => setBusy(false)); }}>连续复习此列表</button></section>}
-    {!items.length && <section className="empty-state"><h2>这个列表暂时为空</h2><p>答错、辅助学习或收藏后，相应记录会出现在这里。未到期的错题也可随时重练。</p><Link className="button primary" to="/practice">开始练习</Link></section>}
+    {!items.length && <section className="empty-state"><h2>这个列表暂时为空</h2><p>答错、辅助学习或收藏后，相应记录会出现在这里。未到期的错题也可随时重练。</p><Link className="button primary" to="/questions">开始练习</Link></section>}
     {items.map((id) => {
       const current = questions.find((q) => q.id === id);
       const question = current ?? state.data.snapshots.find((s) => s.question.id === id)?.question;

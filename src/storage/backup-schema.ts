@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { questionSchema } from '../domain/question-schema';
 import { gradeAnswer } from '../domain/grading';
-import { advanceGuidedPractice, createRound, revealAnswer, saveDraft, selfGrade, startGuidedPractice, submitAutomatic } from '../domain/practice';
+import { advanceGuidedPractice, createRound, revealAnswer, saveDraft, saveAnswerImages, selfGrade, startGuidedPractice, submitAutomatic } from '../domain/practice';
+import { imageListSchema } from '../domain/image-attachments';
 import { canonical } from '../domain/snapshots';
 import { planBackupMerge, type BackupData } from '../domain/backup-merge';
 import { finishMock, mockReviewDraftId } from '../domain/mock-session';
@@ -12,7 +13,7 @@ const text = z.string().min(1);
 const numericInput = z.object({ raw: z.string(), unit: z.string().optional() }).strict();
 const answer = z.union([z.array(z.string()), z.boolean(), numericInput, z.string()]);
 const grade = z.enum(['good', 'partial', 'again']);
-const base = { id: text, roundId: text, questionId: text, snapshotKey: text, at: timestamp };
+const base = { id: text, roundId: text, questionId: text, snapshotKey: text, at: timestamp, images: imageListSchema.optional() };
 const snapshot = z.object({ key: text, question: questionSchema }).strict();
 export const eventSchema = z.discriminatedUnion('kind', [
   z.object({ ...base, kind: z.literal('submitted'), answer, result: z.object({ valid: z.literal(true), isCorrect: z.boolean(), normalizedValue: z.number().optional(), tolerance: z.number().nonnegative().optional() }).strict(), independent: z.literal(true) }).strict(),
@@ -21,7 +22,7 @@ export const eventSchema = z.discriminatedUnion('kind', [
 ]);
 export const roundSchema = z.object({
   id: text, snapshot, startedAt: timestamp, status: z.enum(['answering', 'awaiting_self_grade', 'complete']),
-  draft: answer.optional(), independentAnswer: z.string().optional(), paperCompletedAt: timestamp.optional(),
+  draft: answer.optional(), images: imageListSchema.optional(), independentAnswer: z.string().optional(), paperCompletedAt: timestamp.optional(),
   revealedAt: timestamp.optional(), independent: z.boolean(), events: z.array(eventSchema),
   guidance: z.object({ steps: z.array(z.object({ title: text, promptMd: text }).strict()).min(1).max(5), checks: z.array(text).min(1).max(8), currentStep: z.number().int().nonnegative() }).strict().optional(),
 }).strict().superRefine((round, ctx) => {
@@ -31,7 +32,7 @@ export const storedRoundSchema = z.object({ revision: z.number().int().nonnegati
 export type StoredRound = z.infer<typeof storedRoundSchema>;
 export const issueSchema = z.object({ flags: z.array(z.enum(['ambiguous_prompt', 'suspected_wrong_answer', 'needs_diagram', 'source_check_needed'])).refine((items) => new Set(items).size === items.length), comment: z.string() }).strict();
 const json = z.json();
-const record = z.object({ id: text, namespace: z.enum(['notes', 'bookmarks', 'issues', 'drafts', 'preferences']), updatedAt: timestamp, deleted: z.boolean(), value: json }).strict();
+const record = z.object({ id: text, namespace: z.enum(['notes', 'noteImages', 'bookmarks', 'issues', 'drafts', 'preferences']), updatedAt: timestamp, deleted: z.boolean(), value: json }).strict();
 const session = z.object({
   id: text, questionKeys: z.array(text).min(1), answers: z.record(z.string(), answer), startedAt: timestamp, updatedAt: timestamp,
   deadlineAt: timestamp.optional(), status: z.enum(['active', 'submitted', 'expired']), completedAt: timestamp.optional(),
@@ -52,12 +53,13 @@ export function validateBackup(input: unknown): BackupData {
   if (!plan.ok) throw new Error(`备份包含冲突或缺失的历史题面：${plan.conflicts.map((item) => item.id).join('、')}`);
   for (const event of data.events) {
     const question = data.snapshots.find((item) => item.key === event.snapshotKey)!.question;
+    if (event.images?.length && !['short_answer', 'rtl_coding', 'waveform_analysis'].includes(question.type)) throw new Error('自动题不能保存图片作答。');
     const suffix = event.kind === 'submitted' ? 'submitted' : event.kind === 'self_graded' ? 'self-graded' : 'revealed';
     if (event.id !== `${event.roundId}:${suffix}`) throw new Error('作答事件 ID 与轮次不一致。');
     if (event.kind === 'submitted' && canonical(gradeAnswer(question, event.answer)) !== canonical(event.result)) throw new Error('历史自动判分结果与快照不一致。');
     if (event.kind === 'self_graded') {
       if (!['short_answer', 'rtl_coding', 'waveform_analysis'].includes(question.type)) throw new Error('自动题不能保存人工评分。');
-      if (event.independent && !event.answer?.trim() && !event.paperCompletedAt) throw new Error('缺少独立作答依据。');
+      if (event.independent && !event.answer?.trim() && !event.paperCompletedAt && !event.images?.length) throw new Error('缺少独立作答依据。');
       if (event.paperCompletedAt && Date.parse(event.paperCompletedAt) > Date.parse(event.at)) throw new Error('纸笔作答时间晚于评分。');
       const expectedGrade = !event.independent && event.requestedGrade === 'good' ? 'partial' : event.requestedGrade;
       if (event.effectiveGrade !== expectedGrade) throw new Error('辅助揭示后的掌握等级无效。');
@@ -89,6 +91,7 @@ export function validateBackup(input: unknown): BackupData {
     if (item.deleted) continue;
     if (item.namespace === 'bookmarks' && typeof item.value !== 'boolean') throw new Error('收藏记录格式不正确。');
     if (item.namespace === 'notes' && typeof item.value !== 'string') throw new Error('笔记格式不正确。');
+    if (item.namespace === 'noteImages' && !imageListSchema.safeParse(item.value).success) throw new Error('笔记图片格式不正确。');
     if (item.namespace === 'issues' && !issueSchema.safeParse(item.value).success) throw new Error('纠错类型或说明格式不正确。');
     if (item.namespace === 'drafts') {
       const parsedRound = storedRoundSchema.safeParse(item.value);
@@ -101,6 +104,7 @@ export function validateBackup(input: unknown): BackupData {
       if ((!inSession && !mockRound && item.id !== round.snapshot.question.id) || !data.snapshots.some((s) => canonical(s) === canonical(round.snapshot))) throw new Error('草稿与题面快照不匹配。');
       let replay = createRound(round.id, round.snapshot.question, round.startedAt);
       if (round.draft !== undefined) replay = saveDraft(replay, round.draft);
+      if (round.images !== undefined) replay = saveAnswerImages(replay, round.images);
       if (round.guidance) {
         replay = startGuidedPractice(replay, { steps: round.guidance.steps, checks: round.guidance.checks }, round.revealedAt!);
         for (let step = 0; step < round.guidance.currentStep; step++) replay = advanceGuidedPractice(replay);
