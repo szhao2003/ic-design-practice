@@ -11,7 +11,7 @@ describe('编码分频与存储接口',()=>{
   expect(questions.filter(q=>!/^ADAPTED-(BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC|EXAMBASE|EXAMSV)-/.test(q.id))).toHaveLength(174);
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-CODEC-'));
   expect(batch).toHaveLength(6);
-  for(const q of batch){expect(q.contentVersion).toBe(1);expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.company).toBeUndefined();expect(q.tags).toContain('编码分频与存储接口');}
+  for(const q of batch){expect(q.contentVersion).toBe(q.id==='ADAPTED-CODEC-GRAY-0001' ? 2 : 1);expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.company).toBeUndefined();expect(q.tags).toContain('编码分频与存储接口');}
  });
  it('两份完整RTL与实际仿真文件逐字一致，网页保持人工评分',()=>{
   for(const [id,module]of [['GRAY-0001','gray_codec'],['DIV-0001','even_divider']]){

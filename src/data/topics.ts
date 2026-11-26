@@ -29,9 +29,11 @@ export const topics: Topic[] = [
     { id: 'gray-code', name: 'Gray Code' }, { id: 'full-empty', name: 'Full / Empty' }, { id: 'fifo-depth', name: 'FIFO Depth' },
     { id: 'fifo-read-mode', name: 'FIFO Read Mode' }, { id: 'sram-bram', name: 'SRAM / BRAM' },
   ] },
-  { id: '06', name: 'RTL 设计 / Microarchitecture', englishName: 'RTL Design', priority: 'core', subtopics: [
+  { id: '06', name: 'RTL 手撕 / 设计', englishName: 'RTL Coding & Design', priority: 'core', subtopics: [
     { id: 'fsm', name: 'FSM' }, { id: 'arbiter', name: 'Arbiter' }, { id: 'counter', name: 'Counter' },
     { id: 'divider', name: 'Divider' }, { id: 'adder-pipeline', name: 'Adder / Pipeline' }, { id: 'serial-parallel', name: 'Serial / Parallel' },
+    { id: 'cdc-reset', name: 'CDC / 复位手撕' }, { id: 'fifo-memory', name: 'FIFO / Memory 手撕' },
+    { id: 'bus-interface', name: '总线接口手撕' },
   ] },
   { id: '07', name: '总线与通信协议', englishName: 'AMBA & Interfaces', priority: 'high', subtopics: [
     { id: 'axi', name: 'AXI4 / AXI-Lite' }, { id: 'ahb', name: 'AHB' }, { id: 'apb', name: 'APB' },

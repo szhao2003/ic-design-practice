@@ -1,0 +1,235 @@
+[
+  {
+    "id": "ADAPTED-RK26-CDC-0001",
+    "contentVersion": 3,
+    "type": "rtl_coding",
+    "topicId": "06",
+    "subtopicId": "cdc-reset",
+    "title": "有事件间隔约束的 toggle 脉冲跨域",
+    "difficulty": "medium",
+    "tags": [
+      "CDC",
+      "toggle",
+      "SystemVerilog",
+      "CDC / Reset"
+    ],
+    "estimatedMinutes": 15,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "firsthand_recall",
+      "evidenceGrade": "A",
+      "questionFidelity": "topic_only_reconstruction",
+      "company": "瑞芯微",
+      "graduationCohort": "2026届",
+      "url": "https://www.nowcoder.com/discuss/802688503929655296",
+      "sourceClaimVerification": "not_rechecked",
+      "note": "根据配套调研中的公开笔经索引，以“单 bit 脉冲跨时钟域”为线索独立编制。本题条件、数值、代码和解答均重新设计，不是原卷原题；来源链接未再次核验。"
+    },
+    "promptMd": "编写 `pulse_toggle_cdc`，输入 src_clk=100 MHz、dst_clk=25 MHz，彼此异步。src_pulse 是在源时钟上升沿采样、恰好一个源周期宽的事件脉冲；相邻事件至少间隔 160 ns，即 4 个目的周期。只传递“发生一次事件”，不携带数据。\n\nsrc_rst_n 和 dst_rst_n 均异步低有效，分别在各自域同步释放；系统保证两域都完成复位且同步链稳定后才产生事件，运行中不单独复位。所有 toggle 与同步寄存器复位为 0。功能推演假设亚稳态在后级采样前消退；工程上仍需做 CDC/时序约束，不能声称绝对消除亚稳态。\n\n要求源域用 toggle 编码，每个事件翻转一次；目的域用 2-FF 同步后检测变化，产生一个目的周期宽的寄存输出 dst_pulse。给出完整 SystemVerilog，并解释为什么事件间隔和复位约定不可省略。",
+    "referenceAnswerMd": "接口分为源、目的两个时钟与复位域。源端保存事件翻转，目的端只从后级同步样本生成寄存脉冲。\n\n```systemverilog\nmodule pulse_toggle_cdc (\n  input  logic src_clk,\n  input  logic src_rst_n,  // Async assert; externally synchronized release\n  input  logic src_pulse,\n  input  logic dst_clk,\n  input  logic dst_rst_n,\n  output logic dst_pulse\n);\n  logic src_toggle;\n  (* ASYNC_REG = \"TRUE\" *) logic sync1, sync2;\n  logic sync2_d;\n\n  // Keep an event as a level change until the next source event.\n  always_ff @(posedge src_clk or negedge src_rst_n) begin\n    if (!src_rst_n) begin\n      src_toggle <= 1'b0;\n    end else if (src_pulse) begin\n      src_toggle <= ~src_toggle;\n    end\n  end\n\n  // Only sync2 may feed functional change detection; sync1 stays inside the chain.\n  always_ff @(posedge dst_clk or negedge dst_rst_n) begin\n    if (!dst_rst_n) begin\n      sync1     <= 1'b0;\n      sync2     <= 1'b0;\n      sync2_d   <= 1'b0;\n      dst_pulse <= 1'b0;\n    end else begin\n      sync1     <= src_toggle;\n      sync2     <= sync1;\n      sync2_d   <= sync2;\n      // NBA reads old sync2/sync2_d: register the pulse one edge later.\n      dst_pulse <= sync2 ^ sync2_d;\n    end\n  end\nendmodule\n```\n\n下面按数据流、边界与采样沿解释这份实现。参考实现并非唯一正确写法；网页仍使用人工自评，不执行提交的用户代码。",
+    "rubric": [
+      "源域每次 src_pulse 只翻转一次 toggle。",
+      "同步器第一级只进入后级同步，不直接驱动事件检测。",
+      "目的域变化检测与寄存脉冲、复位初值正确。",
+      "解释间隔、复位协调、无数据载荷及亚稳态假设的边界。"
+    ],
+    "explanationMd": "**数据流：源事件 → 保持的 toggle → 两级同步 → 与历史样本比较 → 目的单周期脉冲。**\n\n源域每接受一次 src_pulse 就翻转 src_toggle，因此慢时钟不必直接采到 10 ns 高电平。目的域 sync1、sync2 使用同一目的时钟；只有 sync2 进入变化检测。历史寄存器 sync2_d 保存上一拍 sync2，二者不同表示发现一次翻转。\n\n代码中的 dst_pulse 本身也寄存：若某沿 sync2 刚更新为新值，同沿异或仍读取旧 sync2；再下一个目的沿才输出脉冲。不能把同步后电平变化和脉冲更新写成同一件事。连续无新事件时，两份历史一致，脉冲回 0。\n\n题设相邻事件至少 160 ns，且两域稳定完成协调复位后才工作，给目的域观察每次状态变化留出时间。两次未被观察的翻转会抵消；一侧单独复位还可能制造假事件。本实现不提供排队或确认，也不传 payload。数字 Testbench 只能检查这些约定内的事件行为，不能模拟模拟亚稳态或替代 CDC/物理约束。",
+    "commonMistakes": [
+      "把 10 ns 脉冲直接送到 40 ns 周期的采样器，忽略可能完全错过。",
+      "漏掉 dst_pulse 寄存赋值读取旧 sync2 的额外一沿。",
+      "单独复位一个域，或让两次 toggle 在目的采样前抵消。"
+    ]
+  },
+  {
+    "id": "ORIGINAL-CDC-0005",
+    "contentVersion": 3,
+    "topicId": "06",
+    "subtopicId": "cdc-reset",
+    "type": "rtl_coding",
+    "title": "异步断言与同步释放复位",
+    "promptMd": "编写 reset_release，端口 clk、arst_n、rst_n。外部低有效 arst_n 异步断言，使 rst_n 低；释放后经两个目的时钟上升沿再使 rst_n 高。无其他写进程，假定复位已断言过。给出 RTL 和理想逐沿说明，并说明多时钟域的使用边界。",
+    "explanationMd": "**异步拉低，目的时钟两沿后释放。**\n\n两个同步寄存器都接外部 arst_n，低电平时不等待时钟就清成 00。arst_n 变高不会立刻让输出变高，只会允许后续时钟向寄存器移入 1。\n\n| 时刻 | pipe[1:0] | rst_n |\n|---|---|---:|\n| arst_n=0 | 00 | 0 |\n| 释放后的第一个上升沿 | 01 | 0 |\n| 释放后的第二个上升沿 | 11 | 1 |\n\n输出只取末级，避免直接使用可能受释放时刻影响的第一级。若时钟停住，复位仍可异步断言，但不会自行释放。每个时钟域需要自己的释放同步器；同一域复位网络还要满足扇出、偏斜及库时序要求。此理想表不保证物理亚稳态总能在固定两沿内结束。",
+    "difficulty": "medium",
+    "tags": [
+      "rdc-reset",
+      "CDC / Reset"
+    ],
+    "estimatedMinutes": 15,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "self_authored",
+      "evidenceGrade": "none",
+      "questionFidelity": "self_authored",
+      "sourceClaimVerification": "not_applicable"
+    },
+    "commonMistakes": [
+      "直接将外部复位释放送给整个目的域。",
+      "输出误取第一级，少了一拍释放延迟。",
+      "在多个时钟域共用同一个域的同步释放结果。"
+    ],
+    "referenceAnswerMd": "arst_n 是外部异步低有效复位，rst_n 是本目的域的释放同步输出。两级寄存器依次移入 1。\n\n```systemverilog\nmodule reset_release (\n  input  logic clk,\n  input  logic arst_n,\n  output logic rst_n\n);\n  (* ASYNC_REG = \"TRUE\" *) logic [1:0] pipe;\n\n  // Assertion clears both stages without waiting for clk.\n  // Release shifts in ones: 00 -> 01 -> 11 on two destination edges.\n  always_ff @(posedge clk or negedge arst_n) begin\n    if (!arst_n) begin\n      pipe <= 2'b00;\n    end else begin\n      pipe <= {pipe[0], 1'b1};\n    end\n  end\n\n  assign rst_n = pipe[1];\nendmodule\n```\n\n下面按数据流、边界与采样沿解释这份实现。参考实现并非唯一正确写法；网页仍使用人工自评，不执行提交的用户代码。",
+    "rubric": [
+      "异步低有效敏感事件与两级状态清零正确。",
+      "释放时逐级移入 1，输出取第二级。",
+      "给出 00→01→11 的逐沿关系。",
+      "说明每域独立、时钟必须运行，物理实现仍需检查。"
+    ]
+  },
+  {
+    "id": "ADAPTED-FOCUSED-RTL-FIFO-0001",
+    "contentVersion": 2,
+    "topicId": "06",
+    "subtopicId": "fifo-memory",
+    "title": "完整4×8同步FIFO：用沿前空满决定是否接受",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q84/Q86 的考查任务；参数、接口、条件和解答独立构造，非公司原题。已核对资料方向，不继承汇编的公司/届别标签。"
+    },
+    "difficulty": "hard",
+    "tags": [
+      "高频任务与汇编补充",
+      "公开资料考点改编",
+      "FIFO / Memory"
+    ],
+    "estimatedMinutes": 18,
+    "reviewStatus": "verified",
+    "promptMd": "实现sync_fifo4x8：输入clk、同步高有效rst、wr_en、rd_en、din[7:0]；输出dout[7:0]、rd_valid、full、empty、count[2:0]，容量4字。复位优先清指针、count、dout、rd_valid，不要求清存储阵列。\n\n每沿使用沿前状态：write_accept=wr_en&&!full，read_accept=rd_en&&!empty。明确不做旁路：空时同时读写只接受写；满时同时读写只接受读；中间状态同时读写均接受。接受读后同沿NBA完成时dout为最旧数据，rd_valid=1；否则dout保持、rd_valid=0。count只统计已接受请求，full/empty反映沿后占用。输入满足时序，只有一个时钟。",
+    "explanationMd": "**把请求、接受和占用变化分开，边界规则按题设执行。**\n\n| 沿前占用 | wr_en=rd_en=1时接受 | 沿后占用 |\n|---:|---|---:|\n| 0 | 仅写 | 1 |\n| 1…3 | 读写均接受 | 不变 |\n| 4 | 仅读 | 3 |\n\n读返回旧队首，写追加到队尾。读写指针各只在对应请求被接受时推进，2bit自然回绕；count需3bit以表示0…4。空满从count比较生成，而不是从wr_en/rd_en猜测。\n\nrd_valid每沿重算，dout只有接受读或复位时改动。存储阵列不清零仍正确：只允许读已写入且未弹出的项，复位指针和count已让旧内容不可见。复位后第一次有效写覆盖要使用的位置。\n\n满时同沿先读后写的优化、空时直通等是其他合法接口契约，但本题明确不采用；不能暗中改变以提高吞吐。",
+    "commonMistakes": [
+      "把原始读写请求直接用于count增减，空读/满写会破坏状态。",
+      "count仅用2bit，无法区分占用0和4。",
+      "把空时同沿写入的数据直接读出，违背非旁路契约。"
+    ],
+    "type": "rtl_coding",
+    "referenceAnswerMd": "```systemverilog\nmodule sync_fifo4x8 (\n  input logic clk, rst, wr_en, rd_en,\n  input logic [7:0] din,\n  output logic [7:0] dout,\n  output logic rd_valid, full, empty,\n  output logic [2:0] count\n);\n  logic [7:0] mem [0:3];\n  logic [1:0] wptr, rptr;\n  logic put, take;\n  assign full = (count == 3'd4);\n  assign empty = (count == 3'd0);\n  // Acceptance uses the state BEFORE this edge: no full/empty bypass.\n  assign put = wr_en && !full;\n  assign take = rd_en && !empty;\n  always_ff @(posedge clk) begin\n    if (rst) begin\n      wptr <= 2'd0;\n      rptr <= 2'd0;\n      count <= 3'd0;\n      dout <= 8'd0;\n      rd_valid <= 1'b0;\n    end else begin\n      rd_valid <= take;\n      if (put) begin\n        mem[wptr] <= din;\n        wptr <= wptr + 2'd1;\n      end\n      if (take) begin\n        dout <= mem[rptr];\n        rptr <= rptr + 2'd1;\n      end\n      case ({put, take})\n        2'b10: count <= count + 3'd1;\n        2'b01: count <= count - 3'd1;\n        default: ;\n      endcase\n    end\n  end\nendmodule\n```\n\nput/take分别由沿前count决定。接受读返回旧队首；输出rd_valid逐拍更新，dout无读时保持。",
+    "rubric": [
+      "全部端口、同步复位、容量与count宽度正确。",
+      "空/满/中间同时读写严格遵守题定接受规则。",
+      "指针仅随接受推进，回绕且顺序正确。",
+      "正确的读数据/rd_valid时刻，未接受读时dout保持。"
+    ]
+  },
+  {
+    "id": "ADAPTED-INTEGRATION-FIFO-0001",
+    "contentVersion": 2,
+    "topicId": "06",
+    "subtopicId": "fifo-memory",
+    "title": "完整异步FIFO：双时钟Gray指针与寄存读输出",
+    "type": "rtl_coding",
+    "difficulty": "hard",
+    "tags": [
+      "完整接口与时序约束",
+      "公开资料考点改编",
+      "FIFO / Memory"
+    ],
+    "estimatedMinutes": 35,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q83/Q85/Q87 的任务方向；本题接口、参数、边界和解答独立重构，非公司原题，不继承汇编的公司/届别归因。"
+    },
+    "promptMd": "实现完整参数化模块async_fifo_gray，参数WIDTH>=1、ADDR_BITS>=2，容量为2**ADDR_BITS个字。写域输入wclk、wrst_n、winc、wdata[WIDTH-1:0]，输出wfull；读域输入rclk、rrst_n、rinc，输出rdata[WIDTH-1:0]、rvalid、rempty。不能用跨域共享count。\n\n两时钟相互异步；所有采样数据为二值且满足所在域的时序。两复位异步低有效，必须协调断言以丢弃全部在途数据；外部保证各自在本域安全释放，业务请求只在两端均完成复位后恢复。不要求支持运行中单域独立复位。复位清指针、同步器、wfull=0、rempty=1、rdata=0、rvalid=0，不清RAM。\n\n写在wclk上升沿按沿前winc&&!wfull接受；读在rclk上升沿按沿前rinc&&!rempty接受。接受读的同沿NBA后rdata为最旧字且rvalid=1；未读时rdata保持、rvalid=0。这是寄存读，不是FWFT；本题用单写时钟、单读时钟存储阵列建模，不要求绑定某个器件RAM宏。\n\n二进制指针用于地址，额外1bit用于绕回；注册Gray指针分别经对方域两级同步，使用next指针注册空满。满拒写、空拒读，禁止旁路；允许跨域同步带来的保守阻塞。给完整RTL，并说明复位、RAM实现和Gray总线物理约束为什么仍需单独检查。",
+    "explanationMd": "**两个域各自管理本地指针，只跨域发布注册的Gray指针。** 深度D=2^A，地址只用A位，但计入绕回的指针需A+1位。接受请求才推进二进制指针；Gray由下一二进制值计算G=B^(B>>1)，不能把组合计数器的中间毛刺直接跨域。\n\n| 检查 | 所在域 | 本次寄存的条件 |\n|---|---|---|\n| empty | rclk | rg_next == 同步到读域的wg |\n| full | wclk | wg_next == 同步到写域的rg翻转最高两位 |\n\n满时两个二进制指针相差D；经反射Gray编码后表现为最高两位相反、其余相同，不能只翻最高一位。比较next能让最后一个空位被写入的同沿置满、最后一个字读出的同沿置空，避免多接受一次请求。读写接受仍由沿前标志决定，不用下一状态反向产生组合接受环。\n\n指针经两级同步后，标志又在本域寄存，因此对端刚读/写不会让标志立即撤销。保守拒绝可能降低短时吞吐，但不会允许空读或覆盖未读数据。rdata只在接受读时从旧读地址取字，随后读指针推进；外部在rvalid高的沿后使用rdata。\n\n实现前提：协调复位清空逻辑所有权；释放满足各域复位时序。标记同步器并不会自动保证Gray各bit的布局延迟/偏斜，需要CDC和器件约束检查。RAM需匹配单写/单读双时钟能力及指定读模式，不能把行为仿真通过当所有RAM宏可直接推断。数字TB不模拟模拟亚稳态，亦未完成物理签核。",
+    "commonMistakes": [
+      "将跨域总线二进制计数逐bit打拍，可能读到混合指针。",
+      "Gray满比较只翻最高1bit，导致容量/绕回错误。",
+      "认为刚写入后读域立刻非空，忽略同步器及标志寄存。",
+      "独立复位一侧后仍按原数据队列继续运行。"
+    ],
+    "referenceAnswerMd": "```systemverilog\nmodule async_fifo_gray #(\n  parameter integer WIDTH = 8,\n  parameter integer ADDR_BITS = 2\n) (\n  input logic wclk, wrst_n, winc,\n  input logic [WIDTH-1:0] wdata,\n  output logic wfull,\n  input logic rclk, rrst_n, rinc,\n  output logic [WIDTH-1:0] rdata,\n  output logic rvalid, rempty\n);\n  // Contract: WIDTH >= 1, ADDR_BITS >= 2; capacity is 2**ADDR_BITS.\n  localparam integer DEPTH = 1 << ADDR_BITS;\n  localparam logic [ADDR_BITS:0] FULL_MASK = {2'b11, {(ADDR_BITS-1){1'b0}}};\n  logic [WIDTH-1:0] mem [0:DEPTH-1];\n  logic [ADDR_BITS:0] wb, wg, rb, rg;\n  logic [ADDR_BITS:0] wb_next, wg_next, rb_next, rg_next;\n  (* ASYNC_REG = \"TRUE\" *) logic [ADDR_BITS:0] rg_w1, rg_w2;\n  (* ASYNC_REG = \"TRUE\" *) logic [ADDR_BITS:0] wg_r1, wg_r2;\n  logic put, take;\n\n  assign put = winc && !wfull;\n  assign take = rinc && !rempty;\n  assign wb_next = wb + {{ADDR_BITS{1'b0}}, put};\n  assign rb_next = rb + {{ADDR_BITS{1'b0}}, take};\n  assign wg_next = (wb_next >> 1) ^ wb_next;\n  assign rg_next = (rb_next >> 1) ^ rb_next;\n\n  // Only registered Gray pointers cross domains, through two stages.\n  always_ff @(posedge wclk or negedge wrst_n) begin\n    if (!wrst_n) begin\n      rg_w1 <= '0;\n      rg_w2 <= '0;\n    end else begin\n      rg_w1 <= rg;\n      rg_w2 <= rg_w1;\n    end\n  end\n  always_ff @(posedge rclk or negedge rrst_n) begin\n    if (!rrst_n) begin\n      wg_r1 <= '0;\n      wg_r2 <= '0;\n    end else begin\n      wg_r1 <= wg;\n      wg_r2 <= wg_r1;\n    end\n  end\n\n  always_ff @(posedge wclk or negedge wrst_n) begin\n    if (!wrst_n) begin\n      wb <= '0;\n      wg <= '0;\n      wfull <= 1'b0;\n    end else begin\n      wb <= wb_next;\n      wg <= wg_next;\n      wfull <= (wg_next == (rg_w2 ^ FULL_MASK));\n    end\n  end\n  // Memory is not reset. A read is permitted only after a published write.\n  always_ff @(posedge wclk) begin\n    if (wrst_n && put) mem[wb[ADDR_BITS-1:0]] <= wdata;\n  end\n  always_ff @(posedge rclk or negedge rrst_n) begin\n    if (!rrst_n) begin\n      rb <= '0;\n      rg <= '0;\n      rempty <= 1'b1;\n      rdata <= '0;\n      rvalid <= 1'b0;\n    end else begin\n      rb <= rb_next;\n      rg <= rg_next;\n      rempty <= (rg_next == wg_r2);\n      rvalid <= take;\n      if (take) rdata <= mem[rb[ADDR_BITS-1:0]];\n    end\n  end\nendmodule\n```\n\nwb/rb含绕回位，地址取低ADDR_BITS位；wg/rg为注册发布值。同步链只用于指针，数据通过存储阵列保持，直到读域获得所有权。rvalid在每个接受读的沿后为1，连续读可连续高，停读时清0；它不要求高电平之间必须插空拍。满/空采用本地next指针和旧的第二级同步指针，撤销会保守延后。参数范围已限定A>=2，未实现任意非2的幂深度或运行中单域清空协议。",
+    "rubric": [
+      "完整双时钟接口和明确参数范围，二进制/Gray指针含绕回位。",
+      "两个方向均为两级同步，跨域使用注册Gray。",
+      "next指针注册空满，满翻Gray最高两位。",
+      "沿前标志接受，寄存读输出和rvalid行为完整。",
+      "协调复位、非FWFT及RAM/CDC物理约束边界解释清楚。"
+    ]
+  },
+  {
+    "id": "ADAPTED-CODEC-GRAY-0001",
+    "contentVersion": 2,
+    "topicId": "06",
+    "subtopicId": "fifo-memory",
+    "title": "参数化Gray双向转换：解码不是再异或右移一次",
+    "difficulty": "medium",
+    "tags": [
+      "编码分频与存储接口",
+      "公开资料考点改编",
+      "FIFO / Memory"
+    ],
+    "estimatedMinutes": 18,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q18/Q19/Q21/Q22 的考查方向；接口、参数、条件与解析独立重构，非公司原题，不继承其公司/届别归因。"
+    },
+    "promptMd": "实现纯组合模块gray_codec，参数WIDTH>=1。两组相互独立的输入binary_in[WIDTH-1:0]、gray_in[WIDTH-1:0]，输出gray_out[WIDTH-1:0]、binary_out[WIDTH-1:0]。采用二进制反射Gray映射G=B^(B>>1)，无符号逻辑右移补0。gray_out编码binary_in，binary_out解码gray_in；不能假定两个输入互相对应。\n\n所有位为0/1；不需要时钟、复位、valid或存储。WIDTH=1也须可编译且输入输出相等，不得产生负位号或零宽切片。给完整可综合RTL和逐位推导；说明这个组合转换器为什么不能单独保证跨域相干，也不能因为输出叫Gray就认为输入任意跳变只改变1bit。",
+    "explanationMd": "**编码用相邻二进制位异或；解码用从最高位到当前位的前缀异或。** 最高位g[W−1]=b[W−1]，其余g[i]=b[i+1]^b[i]。因此b[i]=g[W−1]^g[W−2]^…^g[i]，中间二进制项两两抵消，只剩b[i]。\n\nRTL用generate为每一个常量位号生成一个归约异或切片。WIDTH=1时切片是gray_in[0:0]，有效且等于自身，不需要访问[-1]。两个方向独立驱动，组合赋值覆盖所有位，不会因漏分支形成锁存。\n\n不能把解码写成gray_in^(gray_in>>1)：这个操作是编码关系，通常不是自身的逆。也不能只证明encode后decode能还原就忽略独立gray_in路径；测试要覆盖全部编码输入和全部Gray位模式。\n\n跨域安全另有条件：组合binary_in多位同时翻转时，路径延迟差可能在组合Gray输出形成瞬态；即使数学相邻码只差1bit，也要按架构注册发布、满足相邻推进和CDC物理约束。这个模块只转换码值，不包含同步器或相干协议。",
+    "commonMistakes": [
+      "把编码公式再套一次当解码。",
+      "WIDTH=1时引用binary[-1]或生成空切片。",
+      "只做回环测试或默认两个输入相等，遗漏独立解码通路。"
+    ],
+    "type": "rtl_coding",
+    "referenceAnswerMd": "```systemverilog\nmodule gray_codec #(\n  parameter integer WIDTH = 8\n) (\n  input logic [WIDTH-1:0] binary_in, gray_in,\n  output logic [WIDTH-1:0] gray_out, binary_out\n);\n  // Contract: WIDTH >= 1. This is a combinational codec, not a CDC circuit.\n  assign gray_out = binary_in ^ (binary_in >> 1);\n  for (genvar bit_index = 0; bit_index < WIDTH; bit_index = bit_index + 1) begin : decode\n    // Each binary bit is the parity of the Gray prefix down to that bit.\n    assign binary_out[bit_index] = ^gray_in[WIDTH-1:bit_index];\n  end\nendmodule\n```\n\ngray_out直接按反射Gray定义编码；binary_out每位是gray_in高位前缀的归约异或。generate的bit_index在展开时为常量，所以切片可综合。模块没有寄存器，不能用它替代异步FIFO中的注册Gray发布和同步链。",
+    "rubric": [
+      "两个输入方向独立，接口位宽和纯组合要求完整。",
+      "编码右移补0，解码前缀异或正确。",
+      "WIDTH=1安全，无负下标/空位宽。",
+      "所有位都有驱动，无隐含锁存。",
+      "区分数学码值转换和真实CDC安全条件。"
+    ]
+  },
+  {
+    "id": "ADAPTED-INTEGRATION-AXIL-0001",
+    "contentVersion": 2,
+    "topicId": "06",
+    "subtopicId": "bus-interface",
+    "title": "完整AXI4-Lite寄存器从设备：独立AW/W缓存与响应背压",
+    "type": "rtl_coding",
+    "difficulty": "hard",
+    "tags": [
+      "完整接口与时序约束",
+      "公开资料考点改编",
+      "总线协议"
+    ],
+    "estimatedMinutes": 35,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
+      "note": "参考公开练习汇编 Q118/Q119 的任务方向；本题接口、参数、边界和解答独立重构，非公司原题，不继承汇编的公司/届别归因。"
+    },
+    "promptMd": "实现axil_regs2，32bit数据、8bit字节地址、单时钟aclk、异步低有效aresetn（安全释放由外部保证）。端口如下：awaddr[7:0]、awprot[2:0]、awvalid→awready；wdata[31:0]、wstrb[3:0]、wvalid→wready；bresp[1:0]、bvalid→bready；araddr[7:0]、arprot[2:0]、arvalid→arready；rdata[31:0]、rresp[1:0]、rvalid→rready。箭头右侧表示反向握手信号；参考实现需明确每个input/output。\n\n寄存器仅地址0x00和0x04，各32bit、可读写、复位为0。只接受这两个精确对齐地址；其他地址均返回SLVERR(2'b10)，写不改变状态、读返回0；合法地址返回OKAY(2'b00)。WSTRB[i]控制data[8*i +: 8]，全0为成功但不改数据。AxPROT在本练习忽略，不提供权限隔离。\n\n写侧独立缓存最多一笔AW、一笔W，允许AW先/W先/同拍。第二个通道握手后的下一上升沿才提交写并注册BVALID；不做同沿旁路。BVALID存在时不接受下一笔AW/W，包括B响应握手的同一沿；B响应消耗后的下一周期恢复接收。缓存已占用也必须停收相应通道。BVALID不依赖BREADY，等待时BVALID/BRESP保持。\n\n读侧最多一笔R：空闲时AR握手，同沿NBA后登记RDATA/RRESP/RVALID；RVALID存在时ARREADY=0，即使同沿RREADY=1也不接新AR。RDATA是AR接受时的寄存器快照，等待期间不被后续写改变。读写相互独立；AR接受与写提交同沿且同地址时读到沿前旧值。这是本实现契约，不是协议对所有从设备的统一要求。\n\n复位清寄存器、缓存、响应有效位及响应payload；冲掉在途事务，主机协调撤销旧请求。所有输入满足AXI稳定性规则；不能产生总线输入到总线输出的组合路径。给完整RTL，说明为什么AW/W不能强制同拍、为什么需要缓存WSTRB和RDATA。",
+    "explanationMd": "**分别锁存AW、W，配对提交；读响应独立登记快照。** 地址和数据是两次独立握手，不能把AWVALID&&WVALID当成唯一事件。只见地址时记住地址，数据先到时同时保存WDATA和WSTRB，直到两者都存在且B槽空闲才提交一次。\n\n| 状态 | AWREADY/WREADY策略 | 不能做的事 |\n|---|---|---|\n| 无缓存、无B | 两路均可接收 | 偷等BREADY才接收或才产生BVALID |\n| 只有AW | 停收AW，可接W | 用当前总线AWADDR替代缓存地址 |\n| 只有W | 停收W，可接AW | 丢失此前握手的WSTRB |\n| 两缓存齐全 | 下一沿提交，清两槽，登记B | 未配齐便写寄存器或重复提交 |\n| BVALID=1 | 两路停收，响应保持至握手 | 消耗旧B同沿覆盖为新事务 |\n\n四个byte分别按WSTRB合并，未选byte保留旧值，不能把部分写误当整字覆盖。非法地址同样产生一次B响应但无副作用；全0 strobe合法写返回OKAY，不能无响应地丢弃。\n\n读在AR握手时取快照，RVALID不以RREADY为前提。若R被背压，寄存器之后被写仍不能改变已登记RDATA。NBA使同一沿的读表达式看到写前寄存器，故题设的同拍读旧值可自然实现。READY只由缓存/响应寄存状态驱动，无输入VALID或READY的组合反馈；代价是响应消耗和下一事务之间有空泡，这里优先清楚正确，未承诺每拍吞吐。",
+    "commonMistakes": [
+      "AW和W必须同时VALID才接收，遗漏地址先到或数据先到。",
+      "BVALID直接受BREADY控制，无法在背压下独立提供响应。",
+      "只缓存WDATA不缓存WSTRB，提交时错误使用已改变的总线掩码。",
+      "R等待期间组合读取寄存器，使同一响应数据随后续写改变。"
+    ],
+    "referenceAnswerMd": "```systemverilog\nmodule axil_regs2 (\n  input logic aclk, aresetn,\n  input logic [7:0] awaddr,\n  input logic [2:0] awprot,\n  input logic awvalid,\n  output logic awready,\n  input logic [31:0] wdata,\n  input logic [3:0] wstrb,\n  input logic wvalid,\n  output logic wready,\n  output logic [1:0] bresp,\n  output logic bvalid,\n  input logic bready,\n  input logic [7:0] araddr,\n  input logic [2:0] arprot,\n  input logic arvalid,\n  output logic arready,\n  output logic [31:0] rdata,\n  output logic [1:0] rresp,\n  output logic rvalid,\n  input logic rready\n);\n  logic [31:0] reg0, reg1;\n  logic aw_pending, w_pending;\n  logic [7:0] saved_addr;\n  logic [31:0] saved_data;\n  logic [3:0] saved_strb;\n  integer lane;\n  // READY depends only on registered state, never on a bus input.\n  assign awready = !aw_pending && !bvalid;\n  assign wready = !w_pending && !bvalid;\n  assign arready = !rvalid;\n\n  always_ff @(posedge aclk or negedge aresetn) begin\n    if (!aresetn) begin\n      reg0 <= '0;\n      reg1 <= '0;\n      aw_pending <= 1'b0;\n      w_pending <= 1'b0;\n      saved_addr <= '0;\n      saved_data <= '0;\n      saved_strb <= '0;\n      bvalid <= 1'b0;\n      bresp <= 2'b00;\n      rvalid <= 1'b0;\n      rdata <= '0;\n      rresp <= 2'b00;\n    end else begin\n      if (bvalid && bready) bvalid <= 1'b0;\n      if (rvalid && rready) rvalid <= 1'b0;\n      // AW and W may arrive in either order. Save each exactly once.\n      if (awvalid && awready) begin\n        saved_addr <= awaddr;\n        aw_pending <= 1'b1;\n      end\n      if (wvalid && wready) begin\n        saved_data <= wdata;\n        saved_strb <= wstrb;\n        w_pending <= 1'b1;\n      end\n      // Commit one edge after the second input handshake; no bypass.\n      if (aw_pending && w_pending && !bvalid) begin\n        aw_pending <= 1'b0;\n        w_pending <= 1'b0;\n        bvalid <= 1'b1;\n        bresp <= 2'b10;\n        if (saved_addr == 8'h00 || saved_addr == 8'h04) begin\n          bresp <= 2'b00;\n          for (lane = 0; lane < 4; lane = lane + 1) begin\n            if (saved_strb[lane]) begin\n              if (saved_addr == 8'h00)\n                reg0[8*lane +: 8] <= saved_data[8*lane +: 8];\n              else\n                reg1[8*lane +: 8] <= saved_data[8*lane +: 8];\n            end\n          end\n        end\n      end\n      // Snapshot at AR acceptance. Same-edge writes update after this read.\n      if (arvalid && arready) begin\n        rvalid <= 1'b1;\n        rresp <= 2'b00;\n        case (araddr)\n          8'h00: rdata <= reg0;\n          8'h04: rdata <= reg1;\n          default: begin\n            rdata <= '0;\n            rresp <= 2'b10;\n          end\n        endcase\n      end\n    end\n  end\n  // AxPROT is accepted but intentionally ignored in this unprivileged model.\nendmodule\n```\n\naw_pending与w_pending代表两个独立槽位。只有旧状态两个槽都满且没有B响应才提交，所以第二次握手后不会当沿立刻提交；这是有意规定的吞吐契约。B/R在等待时没有覆盖赋值，payload持续保持。读块与写块共用一个时序进程，但寄存器NBA仍保证同沿读旧值；协议没有替我们定义所有设备的读写冲突语义。精确8bit地址比较避免把0x08或未对齐地址别名到有效寄存器。",
+    "rubric": [
+      "完整五通道方向、地址/数据/响应位宽和复位。",
+      "AW/W独立缓存，保存地址、数据、strobe并正确配对一次提交。",
+      "BVALID/RVALID独立于READY，背压时payload保持。",
+      "两寄存器按byte写，零strobe与非法地址响应完整。",
+      "读快照、同拍读旧值、读写独立及受限吞吐符合题定契约。"
+    ]
+  }
+]

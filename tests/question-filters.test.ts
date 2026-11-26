@@ -33,9 +33,9 @@ describe('题库多维过滤', () => {
     if (key === 'type') expect(result.every((q) => q.type === value)).toBe(true);
   });
   it('组合过滤采用交集，搜索大小写不敏感', () => {
-    const result = filterQuestions(questions, { topic: '04', type: 'rtl_coding', company: '瑞芯微', fidelity: 'topic_only_reconstruction', q: 'TOGGLE' }, emptyBackup());
+    const result = filterQuestions(questions, { topic: '06', subtopic: 'cdc-reset', type: 'rtl_coding', company: '瑞芯微', fidelity: 'topic_only_reconstruction', q: 'TOGGLE' }, emptyBackup());
     expect(result.some((q) => q.id === 'ADAPTED-RK26-CDC-0001')).toBe(true);
-    expect(result.every((q) => q.topicId === '04' && q.type === 'rtl_coding' && q.source.company === '瑞芯微' && q.source.questionFidelity === 'topic_only_reconstruction')).toBe(true);
+    expect(result.every((q) => q.topicId === '06' && q.subtopicId === 'cdc-reset' && q.type === 'rtl_coding' && q.source.company === '瑞芯微' && q.source.questionFidelity === 'topic_only_reconstruction')).toBe(true);
   });
   it('无结果、不存在分类、needs_review 不回退塞题', () => {
     expect(filterQuestions(questions, { topic: '99' }, emptyBackup())).toEqual([]);

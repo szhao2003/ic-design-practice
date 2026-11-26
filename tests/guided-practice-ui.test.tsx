@@ -21,6 +21,6 @@ describe('分步引导的页面揭示边界',()=>{
   const restarted=render(createRound('redo',manual,later));expect(restarted).not.toContain('PRIVATE_HINT_TWO');expect(restarted).not.toContain('PRIVATE_FINAL_ANSWER');
  });
  it('知识专题提供19个现有题入口，只有匹配内容版本的题可被引导',()=>{
-  const html=renderToStaticMarkup(<MemoryRouter><GuidedQuestionLinks/></MemoryRouter>);expect((html.match(/href="\/practice\//g)??[])).toHaveLength(19);expect(html).toContain('综合题分步引导');expect((html.match(/<h3>/g)??[])).toHaveLength(5);expect(html).toContain('总线与通信协议');expect(html).toContain('RTL 设计 / Microarchitecture');expect(html).not.toContain('set_multicycle_path 3');
+  const html=renderToStaticMarkup(<MemoryRouter><GuidedQuestionLinks/></MemoryRouter>);expect((html.match(/href="\/practice\//g)??[])).toHaveLength(19);expect(html).toContain('综合题分步引导');expect((html.match(/<h3>/g)??[])).toHaveLength(5);expect(html).toContain('总线与通信协议');expect(html).toContain('RTL 手撕 / 设计');expect(html).not.toContain('set_multicycle_path 3');
  });
 });

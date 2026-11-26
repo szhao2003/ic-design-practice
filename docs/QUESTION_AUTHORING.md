@@ -3,6 +3,7 @@
 题目放入 `src/data/questions/` 下的 JSON 数组文件，字段以 `src/domain/question-schema.ts` 为准。新增文件自动载入，不需要修改组件。
 
 1. 选择 `topics.ts` 中的专题和子专题，指定稳定 ID 与正整数 `contentVersion`。
+   所有 `rtl_coding` 手撕完整RTL题统一归06；CDC/复位、FIFO/Memory、总线接口使用06下对应子专题，并保留领域标签。其他专题放原理、计算、读代码与波形分析，不再新增完整RTL手撕。分类调整需保留稳定ID和历史快照，见[归类说明](RTL_CODING_CLASSIFICATION.md)。
 2. 写出完整条件、问题、答案、推导、关键假设和易错点。代码题提供完整参考实现与接口/复位约定，波形题明确采样沿。
 3. 选择题覆盖所有选项的解释；数值题明确标准单位、允许单位倍率及至少一种非负容差；人工题提供参考答案与评分点。
 4. 原创使用 `kind=self_authored`、`questionFidelity=self_authored`、`evidenceGrade=none`、`sourceClaimVerification=not_applicable`，不关联公司。

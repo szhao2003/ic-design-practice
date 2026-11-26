@@ -11,7 +11,7 @@ describe('完整接口与时序约束',()=>{
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-INTEGRATION-'));
   expect(batch).toHaveLength(6);
   for(const q of batch){
-   expect(q.contentVersion).toBe(1);expect(q.reviewStatus).toBe('verified');
+   expect(q.contentVersion).toBe(q.type==='rtl_coding' ? 2 : 1);expect(q.reviewStatus).toBe('verified');
    expect(q.source.company).toBeUndefined();expect(q.source.questionFidelity).toBe('topic_only_reconstruction');
    expect(q.tags).toContain('完整接口与时序约束');
   }

@@ -16,7 +16,8 @@ describe('核心专题精选路径',()=>{
   const ids=coreLearningPaths.flatMap(p=>p.stages.flatMap(s=>s.questionIds));expect(ids).toHaveLength(45);expect(new Set(ids).size).toBe(45);
   for(const path of coreLearningPaths){expect(path.stages).toHaveLength(3);expect(new Set(path.stages.map(s=>s.id)).size).toBe(3);
    for(const stage of path.stages){expect(stage.questionIds).toHaveLength(3);expect(stage.goal.length).toBeGreaterThan(10);
-    expect(orderedPathQuestions(stage.questionIds,questions).every(q=>q.topicId===path.topicId)).toBe(true);}}
+    // Retain historical path IDs for saved sessions after coding tasks move to 06.
+    expect(orderedPathQuestions(stage.questionIds,questions).every(q=>q.topicId===path.topicId || (q.type==='rtl_coding' && q.topicId==='06'))).toBe(true);}}
  });
  it('固定题序不依赖题库顺序，缺题或未审核时不静默缩短路径',()=>{
   const ids=coreLearningPaths[0].stages[0].questionIds;const reversed=[...questions].reverse();

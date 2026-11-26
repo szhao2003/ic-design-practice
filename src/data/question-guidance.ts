@@ -23,7 +23,7 @@ export const questionGuidance: QuestionGuidance[] = [
     { title: '同步器更新与状态机读取分开', promptMd: '每到一个域的沿，先让状态机读取旧第二级，再计算两级同步器的新值。第二级在该沿刚变成1，是否意味着状态机在同沿已经读到1？对返回ack也用同样方法。' },
     { title: '必须走完返回低的四相流程', promptMd: '依次标出首次接收、源撤请求、目的撤确认、源回空闲、第二笔请求发起。源WAIT_LO分支回到IDLE时，能否同沿再执行IDLE分支？最后检查每个时刻对应哪个域的沿。' },
   ], checks: ['逐沿使用旧s2，而非同沿刚更新的s2。', '首笔接收45ns、源撤req为70ns、目的撤ack为125ns。', '源150ns回IDLE，第二笔最早160ns，不同沿执行两次状态分支。', '不把题定理想数字模型的吞吐外推成所有CDC固定延迟。'] },
-  { questionId: 'ADAPTED-FOCUSED-RTL-FIFO-0001', contentVersion: 1, steps: [
+  { questionId: 'ADAPTED-FOCUSED-RTL-FIFO-0001', contentVersion: 2, steps: [
     { title: '先写请求接受表', promptMd: '分别考虑空、中间占用、满三种沿前状态，在同时读写时写出两个接受条件。只按题定沿前许可，不临时加入旁路或前瞻。' },
     { title: '再把状态更新分开', promptMd: '把写指针、读指针、count分别对应到实际接受事件。count需要表示满容量，指针需要表示阵列地址；它们的位宽是否相同？用只写、只读、同时接受、都不接受四种情况检查。' },
     { title: '最后检查读返回与复位', promptMd: '确认dout表示哪笔旧数据、何时更新，未读时哪些输出保持、哪些应清零。复位需要清哪些状态？不清存储阵列时，怎样确保旧内容不会被当作有效数据读出？' },
@@ -38,7 +38,7 @@ export const questionGuidance: QuestionGuidance[] = [
     { title: '分清沿上采样和沿后响应', promptMd: '找出地址与数据都已接受的时刻，再按题定实现登记BVALID。该沿之后新产生的BVALID，能否被算作同一沿已经采样到的响应？这里只采用题目给定的响应延迟。' },
     { title: '响应有效不等于响应完成', promptMd: '继续检查B通道的READY。响应准备好但尚未被接受时，哪些信号必须保持？最后说明AXI-Lite单beat为什么不能套用完整版AXI的WLAST要求。' },
   ], checks: ['W在E0握手，AW在E2握手；数据先到在本题独立缓存条件下合法。', 'BVALID最早E2沿后变高，不能说E2沿已经采到高。', 'E3的BREADY为0，响应尚未完成；B在E4握手完成。', '等待期间保持BVALID/BRESP，AW等待时保持AWVALID/AWADDR。', '限定AXI4-Lite单beat及题定响应登记规则，不引入WLAST或推广固定响应延迟。'] },
-  { questionId: 'ADAPTED-INTEGRATION-AXIL-0001', contentVersion: 1, steps: [
+  { questionId: 'ADAPTED-INTEGRATION-AXIL-0001', contentVersion: 2, steps: [
     { title: '先为独立通道分配存储槽', promptMd: '写侧分别需要记住地址、数据与哪些byte使能？为AW槽、W槽、B槽列出空闲与占用规则。让AW先到、W先到、同拍到三种情况都走一遍，不能要求两个VALID同时出现。' },
     { title: '再定义一次提交与一次响应', promptMd: '根据沿前缓存是否齐全以及B槽状态，决定哪沿提交。检查第二个通道接受的同沿能否直接写寄存器，响应消耗同沿能否接新请求。分别处理合法地址、非法地址和全零strobe。' },
     { title: '最后独立完成读快照与复位', promptMd: 'AR接受时把响应数据保存在哪里，R被背压时是否允许跟随寄存器更新？检查读与写提交同沿的NBA旧值，读响应槽的占用规则，再检查复位和总线输入到输出的组合路径。' },

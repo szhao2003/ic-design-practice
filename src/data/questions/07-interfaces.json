@@ -796,45 +796,6 @@
     ]
   },
   {
-    "id": "ADAPTED-INTEGRATION-AXIL-0001",
-    "contentVersion": 1,
-    "topicId": "07",
-    "subtopicId": "axi",
-    "title": "完整AXI4-Lite寄存器从设备：独立AW/W缓存与响应背压",
-    "type": "rtl_coding",
-    "difficulty": "hard",
-    "tags": [
-      "完整接口与时序约束",
-      "公开资料考点改编"
-    ],
-    "estimatedMinutes": 35,
-    "reviewStatus": "verified",
-    "source": {
-      "kind": "practice_collection",
-      "evidenceGrade": "C",
-      "questionFidelity": "topic_only_reconstruction",
-      "sourceClaimVerification": "checked",
-      "url": "https://www.yhchub.com/数字前端数字IC笔试真题与解析.html",
-      "note": "参考公开练习汇编 Q118/Q119 的任务方向；本题接口、参数、边界和解答独立重构，非公司原题，不继承汇编的公司/届别归因。"
-    },
-    "promptMd": "实现axil_regs2，32bit数据、8bit字节地址、单时钟aclk、异步低有效aresetn（安全释放由外部保证）。端口如下：awaddr[7:0]、awprot[2:0]、awvalid→awready；wdata[31:0]、wstrb[3:0]、wvalid→wready；bresp[1:0]、bvalid→bready；araddr[7:0]、arprot[2:0]、arvalid→arready；rdata[31:0]、rresp[1:0]、rvalid→rready。箭头右侧表示反向握手信号；参考实现需明确每个input/output。\n\n寄存器仅地址0x00和0x04，各32bit、可读写、复位为0。只接受这两个精确对齐地址；其他地址均返回SLVERR(2'b10)，写不改变状态、读返回0；合法地址返回OKAY(2'b00)。WSTRB[i]控制data[8*i +: 8]，全0为成功但不改数据。AxPROT在本练习忽略，不提供权限隔离。\n\n写侧独立缓存最多一笔AW、一笔W，允许AW先/W先/同拍。第二个通道握手后的下一上升沿才提交写并注册BVALID；不做同沿旁路。BVALID存在时不接受下一笔AW/W，包括B响应握手的同一沿；B响应消耗后的下一周期恢复接收。缓存已占用也必须停收相应通道。BVALID不依赖BREADY，等待时BVALID/BRESP保持。\n\n读侧最多一笔R：空闲时AR握手，同沿NBA后登记RDATA/RRESP/RVALID；RVALID存在时ARREADY=0，即使同沿RREADY=1也不接新AR。RDATA是AR接受时的寄存器快照，等待期间不被后续写改变。读写相互独立；AR接受与写提交同沿且同地址时读到沿前旧值。这是本实现契约，不是协议对所有从设备的统一要求。\n\n复位清寄存器、缓存、响应有效位及响应payload；冲掉在途事务，主机协调撤销旧请求。所有输入满足AXI稳定性规则；不能产生总线输入到总线输出的组合路径。给完整RTL，说明为什么AW/W不能强制同拍、为什么需要缓存WSTRB和RDATA。",
-    "explanationMd": "**分别锁存AW、W，配对提交；读响应独立登记快照。** 地址和数据是两次独立握手，不能把AWVALID&&WVALID当成唯一事件。只见地址时记住地址，数据先到时同时保存WDATA和WSTRB，直到两者都存在且B槽空闲才提交一次。\n\n| 状态 | AWREADY/WREADY策略 | 不能做的事 |\n|---|---|---|\n| 无缓存、无B | 两路均可接收 | 偷等BREADY才接收或才产生BVALID |\n| 只有AW | 停收AW，可接W | 用当前总线AWADDR替代缓存地址 |\n| 只有W | 停收W，可接AW | 丢失此前握手的WSTRB |\n| 两缓存齐全 | 下一沿提交，清两槽，登记B | 未配齐便写寄存器或重复提交 |\n| BVALID=1 | 两路停收，响应保持至握手 | 消耗旧B同沿覆盖为新事务 |\n\n四个byte分别按WSTRB合并，未选byte保留旧值，不能把部分写误当整字覆盖。非法地址同样产生一次B响应但无副作用；全0 strobe合法写返回OKAY，不能无响应地丢弃。\n\n读在AR握手时取快照，RVALID不以RREADY为前提。若R被背压，寄存器之后被写仍不能改变已登记RDATA。NBA使同一沿的读表达式看到写前寄存器，故题设的同拍读旧值可自然实现。READY只由缓存/响应寄存状态驱动，无输入VALID或READY的组合反馈；代价是响应消耗和下一事务之间有空泡，这里优先清楚正确，未承诺每拍吞吐。",
-    "commonMistakes": [
-      "AW和W必须同时VALID才接收，遗漏地址先到或数据先到。",
-      "BVALID直接受BREADY控制，无法在背压下独立提供响应。",
-      "只缓存WDATA不缓存WSTRB，提交时错误使用已改变的总线掩码。",
-      "R等待期间组合读取寄存器，使同一响应数据随后续写改变。"
-    ],
-    "referenceAnswerMd": "```systemverilog\nmodule axil_regs2 (\n  input logic aclk, aresetn,\n  input logic [7:0] awaddr,\n  input logic [2:0] awprot,\n  input logic awvalid,\n  output logic awready,\n  input logic [31:0] wdata,\n  input logic [3:0] wstrb,\n  input logic wvalid,\n  output logic wready,\n  output logic [1:0] bresp,\n  output logic bvalid,\n  input logic bready,\n  input logic [7:0] araddr,\n  input logic [2:0] arprot,\n  input logic arvalid,\n  output logic arready,\n  output logic [31:0] rdata,\n  output logic [1:0] rresp,\n  output logic rvalid,\n  input logic rready\n);\n  logic [31:0] reg0, reg1;\n  logic aw_pending, w_pending;\n  logic [7:0] saved_addr;\n  logic [31:0] saved_data;\n  logic [3:0] saved_strb;\n  integer lane;\n  // READY depends only on registered state, never on a bus input.\n  assign awready = !aw_pending && !bvalid;\n  assign wready = !w_pending && !bvalid;\n  assign arready = !rvalid;\n\n  always_ff @(posedge aclk or negedge aresetn) begin\n    if (!aresetn) begin\n      reg0 <= '0;\n      reg1 <= '0;\n      aw_pending <= 1'b0;\n      w_pending <= 1'b0;\n      saved_addr <= '0;\n      saved_data <= '0;\n      saved_strb <= '0;\n      bvalid <= 1'b0;\n      bresp <= 2'b00;\n      rvalid <= 1'b0;\n      rdata <= '0;\n      rresp <= 2'b00;\n    end else begin\n      if (bvalid && bready) bvalid <= 1'b0;\n      if (rvalid && rready) rvalid <= 1'b0;\n      // AW and W may arrive in either order. Save each exactly once.\n      if (awvalid && awready) begin\n        saved_addr <= awaddr;\n        aw_pending <= 1'b1;\n      end\n      if (wvalid && wready) begin\n        saved_data <= wdata;\n        saved_strb <= wstrb;\n        w_pending <= 1'b1;\n      end\n      // Commit one edge after the second input handshake; no bypass.\n      if (aw_pending && w_pending && !bvalid) begin\n        aw_pending <= 1'b0;\n        w_pending <= 1'b0;\n        bvalid <= 1'b1;\n        bresp <= 2'b10;\n        if (saved_addr == 8'h00 || saved_addr == 8'h04) begin\n          bresp <= 2'b00;\n          for (lane = 0; lane < 4; lane = lane + 1) begin\n            if (saved_strb[lane]) begin\n              if (saved_addr == 8'h00)\n                reg0[8*lane +: 8] <= saved_data[8*lane +: 8];\n              else\n                reg1[8*lane +: 8] <= saved_data[8*lane +: 8];\n            end\n          end\n        end\n      end\n      // Snapshot at AR acceptance. Same-edge writes update after this read.\n      if (arvalid && arready) begin\n        rvalid <= 1'b1;\n        rresp <= 2'b00;\n        case (araddr)\n          8'h00: rdata <= reg0;\n          8'h04: rdata <= reg1;\n          default: begin\n            rdata <= '0;\n            rresp <= 2'b10;\n          end\n        endcase\n      end\n    end\n  end\n  // AxPROT is accepted but intentionally ignored in this unprivileged model.\nendmodule\n```\n\naw_pending与w_pending代表两个独立槽位。只有旧状态两个槽都满且没有B响应才提交，所以第二次握手后不会当沿立刻提交；这是有意规定的吞吐契约。B/R在等待时没有覆盖赋值，payload持续保持。读块与写块共用一个时序进程，但寄存器NBA仍保证同沿读旧值；协议没有替我们定义所有设备的读写冲突语义。精确8bit地址比较避免把0x08或未对齐地址别名到有效寄存器。",
-    "rubric": [
-      "完整五通道方向、地址/数据/响应位宽和复位。",
-      "AW/W独立缓存，保存地址、数据、strobe并正确配对一次提交。",
-      "BVALID/RVALID独立于READY，背压时payload保持。",
-      "两寄存器按byte写，零strobe与非法地址响应完整。",
-      "读快照、同拍读旧值、读写独立及受限吞吐符合题定契约。"
-    ]
-  },
-  {
     "id": "ADAPTED-INTEGRATION-AXIL-0002",
     "contentVersion": 1,
     "topicId": "07",

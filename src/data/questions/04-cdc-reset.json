@@ -89,46 +89,6 @@
     }
   },
   {
-    "id": "ADAPTED-RK26-CDC-0001",
-    "contentVersion": 2,
-    "type": "rtl_coding",
-    "topicId": "04",
-    "subtopicId": "pulse-toggle",
-    "title": "有事件间隔约束的 toggle 脉冲跨域",
-    "difficulty": "medium",
-    "tags": [
-      "CDC",
-      "toggle",
-      "SystemVerilog"
-    ],
-    "estimatedMinutes": 15,
-    "reviewStatus": "verified",
-    "source": {
-      "kind": "firsthand_recall",
-      "evidenceGrade": "A",
-      "questionFidelity": "topic_only_reconstruction",
-      "company": "瑞芯微",
-      "graduationCohort": "2026届",
-      "url": "https://www.nowcoder.com/discuss/802688503929655296",
-      "sourceClaimVerification": "not_rechecked",
-      "note": "根据配套调研中的公开笔经索引，以“单 bit 脉冲跨时钟域”为线索独立编制。本题条件、数值、代码和解答均重新设计，不是原卷原题；来源链接未再次核验。"
-    },
-    "promptMd": "编写 `pulse_toggle_cdc`，输入 src_clk=100 MHz、dst_clk=25 MHz，彼此异步。src_pulse 是在源时钟上升沿采样、恰好一个源周期宽的事件脉冲；相邻事件至少间隔 160 ns，即 4 个目的周期。只传递“发生一次事件”，不携带数据。\n\nsrc_rst_n 和 dst_rst_n 均异步低有效，分别在各自域同步释放；系统保证两域都完成复位且同步链稳定后才产生事件，运行中不单独复位。所有 toggle 与同步寄存器复位为 0。功能推演假设亚稳态在后级采样前消退；工程上仍需做 CDC/时序约束，不能声称绝对消除亚稳态。\n\n要求源域用 toggle 编码，每个事件翻转一次；目的域用 2-FF 同步后检测变化，产生一个目的周期宽的寄存输出 dst_pulse。给出完整 SystemVerilog，并解释为什么事件间隔和复位约定不可省略。",
-    "referenceAnswerMd": "接口分为源、目的两个时钟与复位域。源端保存事件翻转，目的端只从后级同步样本生成寄存脉冲。\n\n```systemverilog\nmodule pulse_toggle_cdc (\n  input  logic src_clk,\n  input  logic src_rst_n,  // Async assert; externally synchronized release\n  input  logic src_pulse,\n  input  logic dst_clk,\n  input  logic dst_rst_n,\n  output logic dst_pulse\n);\n  logic src_toggle;\n  (* ASYNC_REG = \"TRUE\" *) logic sync1, sync2;\n  logic sync2_d;\n\n  // Keep an event as a level change until the next source event.\n  always_ff @(posedge src_clk or negedge src_rst_n) begin\n    if (!src_rst_n) begin\n      src_toggle <= 1'b0;\n    end else if (src_pulse) begin\n      src_toggle <= ~src_toggle;\n    end\n  end\n\n  // Only sync2 may feed functional change detection; sync1 stays inside the chain.\n  always_ff @(posedge dst_clk or negedge dst_rst_n) begin\n    if (!dst_rst_n) begin\n      sync1     <= 1'b0;\n      sync2     <= 1'b0;\n      sync2_d   <= 1'b0;\n      dst_pulse <= 1'b0;\n    end else begin\n      sync1     <= src_toggle;\n      sync2     <= sync1;\n      sync2_d   <= sync2;\n      // NBA reads old sync2/sync2_d: register the pulse one edge later.\n      dst_pulse <= sync2 ^ sync2_d;\n    end\n  end\nendmodule\n```\n\n下面按数据流、边界与采样沿解释这份实现。参考实现并非唯一正确写法；网页仍使用人工自评，不执行提交的用户代码。",
-    "rubric": [
-      "源域每次 src_pulse 只翻转一次 toggle。",
-      "同步器第一级只进入后级同步，不直接驱动事件检测。",
-      "目的域变化检测与寄存脉冲、复位初值正确。",
-      "解释间隔、复位协调、无数据载荷及亚稳态假设的边界。"
-    ],
-    "explanationMd": "**数据流：源事件 → 保持的 toggle → 两级同步 → 与历史样本比较 → 目的单周期脉冲。**\n\n源域每接受一次 src_pulse 就翻转 src_toggle，因此慢时钟不必直接采到 10 ns 高电平。目的域 sync1、sync2 使用同一目的时钟；只有 sync2 进入变化检测。历史寄存器 sync2_d 保存上一拍 sync2，二者不同表示发现一次翻转。\n\n代码中的 dst_pulse 本身也寄存：若某沿 sync2 刚更新为新值，同沿异或仍读取旧 sync2；再下一个目的沿才输出脉冲。不能把同步后电平变化和脉冲更新写成同一件事。连续无新事件时，两份历史一致，脉冲回 0。\n\n题设相邻事件至少 160 ns，且两域稳定完成协调复位后才工作，给目的域观察每次状态变化留出时间。两次未被观察的翻转会抵消；一侧单独复位还可能制造假事件。本实现不提供排队或确认，也不传 payload。数字 Testbench 只能检查这些约定内的事件行为，不能模拟模拟亚稳态或替代 CDC/物理约束。",
-    "commonMistakes": [
-      "把 10 ns 脉冲直接送到 40 ns 周期的采样器，忽略可能完全错过。",
-      "漏掉 dst_pulse 寄存赋值读取旧 sync2 的额外一沿。",
-      "单独复位一个域，或让两次 toggle 在目的采样前抵消。"
-    ]
-  },
-  {
     "id": "ADAPTED-INNO26-CDC-0001",
     "contentVersion": 2,
     "type": "waveform_analysis",
@@ -255,40 +215,6 @@
       "目的端每请求只捕获一次，并定义返回空闲流程。",
       "busy 时背压，复位双方状态一致。",
       "说明数据稳定窗口及实现约束，不能只同步控制而不管数据。"
-    ]
-  },
-  {
-    "id": "ORIGINAL-CDC-0005",
-    "contentVersion": 2,
-    "topicId": "04",
-    "subtopicId": "rdc-reset",
-    "type": "rtl_coding",
-    "title": "异步断言与同步释放复位",
-    "promptMd": "编写 reset_release，端口 clk、arst_n、rst_n。外部低有效 arst_n 异步断言，使 rst_n 低；释放后经两个目的时钟上升沿再使 rst_n 高。无其他写进程，假定复位已断言过。给出 RTL 和理想逐沿说明，并说明多时钟域的使用边界。",
-    "explanationMd": "**异步拉低，目的时钟两沿后释放。**\n\n两个同步寄存器都接外部 arst_n，低电平时不等待时钟就清成 00。arst_n 变高不会立刻让输出变高，只会允许后续时钟向寄存器移入 1。\n\n| 时刻 | pipe[1:0] | rst_n |\n|---|---|---:|\n| arst_n=0 | 00 | 0 |\n| 释放后的第一个上升沿 | 01 | 0 |\n| 释放后的第二个上升沿 | 11 | 1 |\n\n输出只取末级，避免直接使用可能受释放时刻影响的第一级。若时钟停住，复位仍可异步断言，但不会自行释放。每个时钟域需要自己的释放同步器；同一域复位网络还要满足扇出、偏斜及库时序要求。此理想表不保证物理亚稳态总能在固定两沿内结束。",
-    "difficulty": "medium",
-    "tags": [
-      "rdc-reset"
-    ],
-    "estimatedMinutes": 15,
-    "reviewStatus": "verified",
-    "source": {
-      "kind": "self_authored",
-      "evidenceGrade": "none",
-      "questionFidelity": "self_authored",
-      "sourceClaimVerification": "not_applicable"
-    },
-    "commonMistakes": [
-      "直接将外部复位释放送给整个目的域。",
-      "输出误取第一级，少了一拍释放延迟。",
-      "在多个时钟域共用同一个域的同步释放结果。"
-    ],
-    "referenceAnswerMd": "arst_n 是外部异步低有效复位，rst_n 是本目的域的释放同步输出。两级寄存器依次移入 1。\n\n```systemverilog\nmodule reset_release (\n  input  logic clk,\n  input  logic arst_n,\n  output logic rst_n\n);\n  (* ASYNC_REG = \"TRUE\" *) logic [1:0] pipe;\n\n  // Assertion clears both stages without waiting for clk.\n  // Release shifts in ones: 00 -> 01 -> 11 on two destination edges.\n  always_ff @(posedge clk or negedge arst_n) begin\n    if (!arst_n) begin\n      pipe <= 2'b00;\n    end else begin\n      pipe <= {pipe[0], 1'b1};\n    end\n  end\n\n  assign rst_n = pipe[1];\nendmodule\n```\n\n下面按数据流、边界与采样沿解释这份实现。参考实现并非唯一正确写法；网页仍使用人工自评，不执行提交的用户代码。",
-    "rubric": [
-      "异步低有效敏感事件与两级状态清零正确。",
-      "释放时逐级移入 1，输出取第二级。",
-      "给出 00→01→11 的逐沿关系。",
-      "说明每域独立、时钟必须运行，物理实现仍需检查。"
     ]
   },
   {
