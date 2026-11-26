@@ -5,7 +5,7 @@ const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-ARCHTOOLS-${id}`)!;
 const numeric=(id:string,value:number)=>expect(gradeAnswer(get(id),{raw:String(value)})).toMatchObject({isCorrect:true});
 describe('体系结构与脚本调试',()=>{
  it('十题来源边界与总数',()=>{
-  expect(questions.filter(q=>!/^ADAPTED-(STARTER|TIMINGSTART|OPPREC|EXAMBASE|EXAMSV)-/.test(q.id))).toHaveLength(208);
+  expect(questions.filter(q=>!/^ADAPTED-(STARTER|TIMINGSTART|OPPREC|EXAMBASE|EXAMSV|DESIGNEXAM)-/.test(q.id))).toHaveLength(208);
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-ARCHTOOLS-'));expect(batch).toHaveLength(10);
   for(const q of batch){expect(q.reviewStatus).toBe('verified');expect(q.source.company).toBeUndefined();expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.url).toMatch(/^https:/);}
  });

@@ -1,0 +1,60 @@
+[
+  {
+    "id": "ADAPTED-DESIGNEXAM-ARCH-0001",
+    "contentVersion": 1,
+    "topicId": "10",
+    "subtopicId": "pipeline-hazard",
+    "title": "寄存器重命名能消除哪些相关，不能消除什么",
+    "promptMd": "按程序顺序有I1: R1←R2+R3；I2: R4←R1+R5；I3: R1←R6+R7。假设乱序CPU有足够物理寄存器，使用正确的重命名映射和按序提交。只比较寄存器相关，不讨论存储别名。哪些判断正确？",
+    "explanationMd": "**答案：A、C。**\n\nI2读取I1产生的R1，这是RAW真数据依赖。I3再次写架构R1，和I1有WAW名字相关，和前面的I2有WAR名字相关。可以令I1写物理P10、I2读取P10、I3写新的P11，从而让I3不必等待I2读取后才能执行。\n\n重命名去掉同名复用引起的假相关，却不能让I2提前拥有I1尚未计算出的数值；它仍需等P10就绪。按序提交负责正确更新架构可见状态，也不能仅由“存在重命名”推出程序的异常和提交机制自然正确。",
+    "commonMistakes": [
+      "认为有足够物理寄存器就能消除真正的数据依赖。",
+      "把I2所需的旧R1错误改绑到I3的新结果。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计理解与推导",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128962147",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录明确列有寄存器重命名消除数据相关类型。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "I1→I2的RAW依赖仍需等待I1结果就绪。"
+      },
+      {
+        "id": "B",
+        "textMd": "重命名后I2应读取I3的新R1结果。"
+      },
+      {
+        "id": "C",
+        "textMd": "给I1和I3不同物理目的寄存器可消除其WAW名字相关。"
+      },
+      {
+        "id": "D",
+        "textMd": "重命名保证I1、I2、I3完全没有任何依赖，可以任意提交。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确。I2消费I1产生的值，不能用换名字创造数据。",
+      "B": "错误。程序语义要求I2读到I1版本，I3版本在它之后。",
+      "C": "正确。两个写入不同物理位置后不再争同一存储位置，最终按序提交维护架构状态。",
+      "D": "错误。RAW仍在，且题目要求按序提交，不允许任意提交。"
+    }
+  }
+]

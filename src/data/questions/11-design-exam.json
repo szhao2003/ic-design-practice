@@ -1,0 +1,98 @@
+[
+  {
+    "id": "ADAPTED-DESIGNEXAM-CELL-0001",
+    "contentVersion": 1,
+    "topicId": "11",
+    "subtopicId": "fanout-delay",
+    "title": "单元延迟查表：输入slew和输出负载是两个轴",
+    "promptMd": "固定同一PVT、同一时序弧、同一输出上升方向。教学延迟表如下，表内单位ps。行是输入转换时间slew，列是输出总负载。只按本题规定做双线性插值，不做外推，也不把此表当成真实工艺库。\n\n| 输入slew | 2 fF | 6 fF |\n|---|---:|---:|\n| 20 ps | 30 | 50 |\n| 60 ps | 50 | 90 |\n\n输入slew=40 ps、输出负载=3 fF时，单元传播延迟为多少ps？输入数字可省略单位，默认ps。",
+    "explanationMd": "**答案：47.5 ps。**\n\n先在两行内按负载插值。3 fF在2…6 fF区间的位置是(3−2)/(6−2)=1/4，因此20 ps输入slew对应30+(50−30)/4=35 ps，60 ps输入slew对应50+(90−50)/4=60 ps。\n\n40 ps又恰在20…60 ps中点，所以最终延迟为(35+60)/2=47.5 ps。两步分别沿负载轴和slew轴处理，不能直接对四个角取平均，因为负载不在中点。输出上升传播延迟与输出转换时间是不同量；换下降弧或PVT需读取对应模型。",
+    "commonMistakes": [
+      "把输入slew当成待求的传播延迟。",
+      "两个轴都取中点平均，忽略负载3 fF只在区间四分之一处。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计岗基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/discuss/481041431860092928",
+      "note": "2026-11-26读取公开往届笔试汇编，资料公司与考次归属未独立核实。公开汇编明确列有cell delay与input transition/output load关系。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "numeric",
+    "expectedValue": 47.5,
+    "unit": "ps",
+    "defaultUnit": "ps",
+    "acceptedUnits": {
+      "ps": 1,
+      "ns": 1000
+    },
+    "absoluteTolerance": 0.01
+  },
+  {
+    "id": "ADAPTED-DESIGNEXAM-CELL-0002",
+    "contentVersion": 1,
+    "topicId": "11",
+    "subtopicId": "fanout-delay",
+    "title": "驱动能力加倍：为什么整条路径不一定更快",
+    "promptMd": "同一逻辑功能有X1和X4两个单元。指定负载下，X1延迟80 ps、输入电容1 fF；X4延迟45 ps、输入电容3 fF。替换后，前一级因负载增加而变慢50 ps。只考虑“前一级+本单元”串联路径，其他延迟不变。以下哪些判断正确？",
+    "explanationMd": "**答案：B、D。**\n\n本单元节省80−45=35 ps，但把前级增加的50 ps也计入，整条路径净增加50−35=15 ps，因此反而变慢。驱动能力是库内规格，不是“X4必定让所有路径快4倍”的保证。\n\n优化应重新评估前级负载、输入slew、输出负载、面积和功耗，再检查setup与hold。题目给的是固定工况下的数据；不能推广为“放大单元总是有害”，也不能只盯当前一级而忽略驱动它的电路。",
+    "commonMistakes": [
+      "只计算替换单元自身节省35 ps。",
+      "认为X4意味着延迟必为X1的四分之一。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计岗基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128962198",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录列有标准单元驱动能力辨析。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "串联路径净缩短35 ps。"
+      },
+      {
+        "id": "B",
+        "textMd": "串联路径净变慢15 ps。"
+      },
+      {
+        "id": "C",
+        "textMd": "X4对任何负载都保证比X1快4倍。"
+      },
+      {
+        "id": "D",
+        "textMd": "替换增大了前一级的输入负载，需要重算前一级延迟。"
+      }
+    ],
+    "correctOptionIds": [
+      "B",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "错误。35 ps仅是本单元的节省，尚未扣除前级增加的50 ps。",
+      "B": "正确。总变化为+50+(45−80)=+15 ps。",
+      "C": "错误。驱动规格不是固定延迟倍率，延迟还取决于slew、负载及PVT。",
+      "D": "正确。该负载从1 fF增至3 fF，前级代价已由题面给出。"
+    }
+  }
+]

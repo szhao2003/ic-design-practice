@@ -1,0 +1,38 @@
+[
+  {
+    "id": "ADAPTED-DESIGNEXAM-ECO-0001",
+    "contentVersion": 1,
+    "topicId": "01",
+    "subtopicId": "mux-decoder",
+    "title": "备用MUX能补AND：写出连接并验真值表",
+    "promptMd": "后期功能ECO需要组合输出Y=A AND B。附近可用一个2:1 MUX和常0源，没有AND门。MUX契约Y=S?D1:D0，信号均为稳定0/1。给出只使用这些资源的连接，并列出A/B=00、01、10、11四种结果。不要求RTL模块，不考虑模拟毛刺或时序签核。",
+    "explanationMd": "**答案：S=A，D1=B，D0=0，结果依次0、0、0、1。**\n\n用A作为选择条件：A=0时输出常0；A=1时输出B，正好实现A·B。也可交换A/B，令S=B、D1=A、D0=0。\n\n| A | B | MUX输出 |\n|---:|---:|---:|\n| 0 | 0 | 0 |\n| 0 | 1 | 0 |\n| 1 | 0 | 0 |\n| 1 | 1 | 1 |\n\n常量接反会实现不同函数，例如D1=1、D0=B、S=A实现的是OR。这里验证的是布尔功能，真实ECO仍要检查备用单元是否可用、布线可达、功能等价和时序，不能因真值表正确就跳过实现验收。",
+    "commonMistakes": [
+      "把D0和D1接反，未按S?D1:D0核对。",
+      "布尔等价通过就认为实际ECO自动满足时序。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计理解与推导",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128962147",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录的metal ECO题明确列有MUX、常量和其他备用单元实现AND的方向；本题缩减为独立真值表任务。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "short_answer",
+    "referenceAnswerMd": "S=A、D1=B、D0=0；或交换A/B。00、01、10、11时输出0、0、0、1。先按MUX选择含义推导，再用四行真值表检查。",
+    "rubric": [
+      "给出明确S、D0、D1连接且不使用额外门。",
+      "四行结果与AND一致。",
+      "说明逻辑实现正确不等于物理和时序签核通过。"
+    ]
+  }
+]

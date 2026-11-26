@@ -1,0 +1,41 @@
+[
+  {
+    "id": "ADAPTED-DESIGNEXAM-MEM-0003",
+    "contentVersion": 1,
+    "topicId": "07",
+    "subtopicId": "bandwidth",
+    "title": "DDR理论带宽：区分MHz、MT/s与字节",
+    "promptMd": "一条DDR数据接口，外部CK时钟频率为800 MHz，DQ数据宽度16 bit。每根DQ每个CK上升沿和下降沿各传输1 bit，连续满速传输，不计命令、刷新、周转等开销，也不把读写相加。求理论单向数据带宽，单位MB/s；1 MB=10^6 byte，8 bit=1 byte。输入可省略单位，默认MB/s。",
+    "explanationMd": "**答案：3200 MB/s。**\n\n每个完整CK周期每根DQ有两次传输，因此数据传输率为2×800=1600 MT/s。16根DQ每次共传16 bit，即2 byte，所以带宽为1600×2=3200 MB/s。\n\n也可直接写800×10^6×2×16÷8=3.2×10^9 byte/s。800 MHz是题定外部时钟，不是已经包含双沿倍率的1600 MT/s；若给的是MT/s，就不能再乘2。实际有效带宽需扣除刷新和其他开销，本题只计算理论上限。",
+    "commonMistakes": [
+      "把800 MHz当作已经含双沿倍率的传输率。",
+      "得到bit/s后直接标成byte/s，漏除8。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计岗基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128962198",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录列有DDR接口频率、位宽与带宽计算。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "numeric",
+    "expectedValue": 3200,
+    "unit": "MB/s",
+    "defaultUnit": "MB/s",
+    "acceptedUnits": {
+      "MB/s": 1,
+      "GB/s": 1000,
+      "B/s": 1e-06
+    },
+    "absoluteTolerance": 0.01
+  }
+]

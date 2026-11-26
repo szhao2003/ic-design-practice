@@ -1,0 +1,96 @@
+[
+  {
+    "id": "ADAPTED-DESIGNEXAM-MEM-0001",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "sram-bram",
+    "title": "SRAM与DRAM：不用刷新是否等于断电不丢",
+    "promptMd": "讨论常规易失性SRAM与DRAM，供电、工作条件均满足各自规格，不考虑电池备份、非易失性变种或故障。哪些说法正确？",
+    "explanationMd": "**答案：A、D。**\n\nSRAM依靠供电下的双稳态存储结构维持信息，常规使用不需要DRAM式周期刷新；DRAM用电容电荷存储信息，需要按器件规定刷新，否则即使供电正常也可能丢失数据。\n\n“静态”描述保存机制，不是“断电后仍保存”。两者在本题范围内都是易失性存储器。常见SRAM延迟和DRAM容量密度的优势不构成所有宏和系统的绝对性能排序，接口、组织与控制开销都需要另外考虑。",
+    "commonMistakes": [
+      "把不需要刷新理解成不需要供电。",
+      "认为正常访问少数地址就能保证整个DRAM自动按时刷新。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计岗基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128762539",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录明确列有SRAM/DRAM区别。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "常规SRAM在有效供电下无需DRAM式周期刷新。"
+      },
+      {
+        "id": "B",
+        "textMd": "SRAM的静态表示断电后内容永久保留。"
+      },
+      {
+        "id": "C",
+        "textMd": "DRAM只要电源正常，即使不刷新也能无限保存所有数据。"
+      },
+      {
+        "id": "D",
+        "textMd": "两者都属于本题限定的易失性存储器。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "正确。SRAM通过有源存储结构维持状态。",
+      "B": "错误。无刷新需求不等于非易失性，断电保存不在普通SRAM保证内。",
+      "C": "错误。DRAM存储电荷会泄漏，需满足刷新要求。",
+      "D": "正确。常规SRAM和DRAM都依赖供电保存内容。"
+    }
+  },
+  {
+    "id": "ADAPTED-DESIGNEXAM-MEM-0002",
+    "contentVersion": 1,
+    "topicId": "05",
+    "subtopicId": "sram-bram",
+    "title": "不要只看dual-port名字：按接口契约选RAM",
+    "promptMd": "某周期需同时接受“读地址12”和“写地址39”，每周期各一笔，读写可持续。三个教学宏均同一时钟，题定读延迟1周期：S每周期只能读或写一笔；R有一个专用读端口和一个专用写端口；T有两个独立读写端口，每端口每周期最多一笔。忽略面积和功耗。回答：(1)哪些宏可满足？(2)若改成同周期两笔读、零写，哪些可满足？(3)若读写同地址，能否仅凭这些描述确定返回新数据还是旧数据？",
+    "explanationMd": "**答案：(1)R和T；(2)仅T；(3)不能。**\n\n第一种负载是1R+1W，S的总吞吐只有一笔，不能同时接受；R专用读写各一笔，T两个端口也可分别承担一读一写。第二种是2R，R的写端口不能变成第二个读端口，因此仅T符合。\n\n读写同址属于碰撞语义，需要宏手册明确定义读旧值、读新值、保持输出或不保证等行为。端口数量和读延迟并不足以推导它。single-port、simple dual-port、two-port等名字在不同供应商文档中可能不同，应以实际接口能力和限制为准。",
+    "commonMistakes": [
+      "认为有两个端口就一定能同时做两笔读。",
+      "只凭dual-port名称推断同址读写结果。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计岗基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128977989",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录列有single-port/dual-port/two-port SRAM辨析，宏接口与访问模式由本题新设。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "short_answer",
+    "referenceAnswerMd": "(1)R、T满足持续1R+1W，S不满足。(2)只有T支持2R；R只有一个读端口。(3)不能，需查读写同址的碰撞契约；本题未给出，不能自行选择新/旧值。",
+    "rubric": [
+      "分别按每周期1R+1W和2R计算端口容量。",
+      "指出专用写端口不是可配置读端口。",
+      "指出同址读写语义需另查，不能由名称或延迟推出。"
+    ]
+  }
+]

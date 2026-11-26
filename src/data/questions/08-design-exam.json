@@ -1,0 +1,307 @@
+[
+  {
+    "id": "ADAPTED-DESIGNEXAM-CELL-0003",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "timing-closure",
+    "title": "标准阈值换高阈值：主要省什么，要复查什么",
+    "promptMd": "同一工艺、同一电源和温度下，库提供功能与引脚兼容的SVT和HVT单元。目标是在有setup余量的非关键路径降低待机功耗。按通常的多阈值库趋势，不要求所有工艺具有相同数值关系，哪些判断合理？",
+    "explanationMd": "**答案：A、C。**\n\nHVT提高阈值，通常降低亚阈值漏电，同时带来速度代价。因此有setup余量的路径是候选，但替换后仍要用目标库重新分析相关模式和角，确认setup等约束。\n\n阈值电压不是电源电压：换成HVT并未自动降低VDD。动态功耗与活动、负载、电源和频率有关，不能由“HVT”直接推出动态功耗按固定倍数下降。实际还需看库的泄漏、内部功耗、转换时间和兼容规则；不要把通常趋势替代为签核结论。",
+    "commonMistakes": [
+      "把阈值电压Vt与供电电压VDD混为一谈。",
+      "只看漏电收益，不复查更慢单元的setup余量。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计岗基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128962198",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录列有stdcell阈值判断；华为公开目录也列有SVT替换HVT方向。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "通常主要利用较低漏电，但可能损失速度。"
+      },
+      {
+        "id": "B",
+        "textMd": "换HVT等同于把该单元VDD自动调低。"
+      },
+      {
+        "id": "C",
+        "textMd": "应以目标库重新检查时序与功耗，不能凭名称直接通过。"
+      },
+      {
+        "id": "D",
+        "textMd": "只要逻辑功能相同，替换后就无需再检查setup。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确。多Vt的常见取舍是漏电与速度，题目限定通常趋势。",
+      "B": "错误。器件阈值与电源电压是不同参数。",
+      "C": "正确。相关模式、角和库表决定能否满足设计目标。",
+      "D": "错误。逻辑等价不保证传播延迟不变，HVT可能使setup失败。"
+    }
+  },
+  {
+    "id": "ADAPTED-DESIGNEXAM-RETIME-0001",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "synthesis",
+    "title": "移动寄存器能优化时序，是否等于随意多打一拍",
+    "promptMd": "在保持题定端口逐周期行为的前提下比较三种操作：①合法retiming将寄存器跨组合逻辑移动并处理初始状态；②在输出额外串入一拍寄存器而不修改接口契约；③只改变物理时钟到达时间。讨论常规单时钟同步设计，不跨CDC，不假定工具允许忽略复位。哪些说法正确？",
+    "explanationMd": "**答案：A、D。**\n\nretiming通过重新分配逻辑与寄存器的边界改善阶段延迟，合法性必须包含初态、复位、使能和端口时序要求。工具可能复制或合并部分寄存器，因此不能把“寄存器总数不变”当成定义。\n\n额外串入一拍一般改变端口延迟，不能在原接口契约不变时直接声称逐周期等价。时钟偏斜调度则改变时钟到达关系，并未移动网表中的寄存器边界。重定时可能改善最长阶段，但不保证任意电路都能达到目标频率，也不能把所有组合逻辑跨过所有复位寄存器。",
+    "commonMistakes": [
+      "把增加接口延迟与合法保持端口时序的retiming混为一谈。",
+      "认为复位或使能条件不影响重定时合法性。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计理解与推导",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128762539",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录列有通过移动寄存器优化时序，命令背诵改为语义辨析。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "①需要检查初始状态及逐周期可观察行为。"
+      },
+      {
+        "id": "B",
+        "textMd": "②即使改变输出延迟，也自动与原接口逐周期等价。"
+      },
+      {
+        "id": "C",
+        "textMd": "③就是将寄存器在组合逻辑两侧移动的retiming。"
+      },
+      {
+        "id": "D",
+        "textMd": "寄存器复位、使能及可观察端口可能限制重定时。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "正确。仅看组合函数相同不足以证明有状态电路等价。",
+      "B": "错误。多打一拍会把输出序列相对输入推迟，除非接口允许且另行验证。",
+      "C": "错误。调时钟到达关系不等于移动逻辑与寄存器边界。",
+      "D": "正确。受控更新和状态要求决定哪些变换安全。"
+    }
+  },
+  {
+    "id": "ADAPTED-DESIGNEXAM-RETIME-0002",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "synthesis",
+    "title": "反相器跨寄存器移动：复位值也要跟着变",
+    "promptMd": "两个1 bit同步电路都只在上升沿更新，输入d在沿前稳定。A在复位时令qA=0，非复位沿执行qA_next=d，连续输出yA=NOT qA。B连续令n=NOT d，非复位沿执行qB_next=n，连续输出yB=qB。两者复位同沿生效，要求复位沿更新后以及后续每个非复位沿更新后输出相同。B的同步复位值应设0还是1？复位释放后连续三个上升沿的d分别为0、1、1，列出两者每沿更新后的输出。仅考虑0/1理想数字模型，不比较沿间传播毛刺。",
+    "explanationMd": "**答案：qB复位为1；复位后输出1，三个数据沿后输出依次1、0、0。**\n\nA复位后qA=0，所以输出是NOT 0=1。B输出就是qB，因此若要复位时一致，qB必须为1。非复位沿后，A输出为NOT d，B也装入NOT d，故输出相同。\n\n| 观察点 | A的qA | A输出 | B的qB/输出 |\n|---|---:|---:|---:|\n| 复位沿后 | 0 | 1 | 1 |\n| d=0的沿后 | 0 | 1 | 1 |\n| d=1的沿后 | 1 | 0 | 0 |\n| d=1的沿后 | 1 | 0 | 0 |\n\n若机械地让两边寄存器都复位为0，B在复位后输出0，已经不等价。这说明移动边界还要正确映射状态，不能只比较非复位稳态的表达式。",
+    "commonMistakes": [
+      "两边寄存器名字不同，但仍机械沿用相同复位值。",
+      "只检查复位释放后的正常工作，漏掉复位期间的可观察输出。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计理解与推导",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128762539",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。移动寄存器方向的状态映射教学拆解；原目录没有此反相器程序。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "short_answer",
+    "referenceAnswerMd": "B的qB必须同步复位到1。复位沿后yA=yB=1；之后d=0、1、1对应输出1、0、0。若B复位到0，则复位后与A不同，不能声称保持逐周期行为。",
+    "rubric": [
+      "从A复位后的输出反推出B复位值1。",
+      "正确列出复位及三个数据沿后的输出。",
+      "说明相同组合功能还需相容的初始/复位状态。"
+    ]
+  },
+  {
+    "id": "ADAPTED-DESIGNEXAM-POWER-0001",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "clock-power-gating",
+    "title": "输出不用就一定省电吗：把隔离放在组合逻辑前",
+    "promptMd": "一个组合乘法器的结果仅在use=1的周期被下游采样。题定use在整个计算窗口稳定；use=0时输入a、b仍可能频繁变化，下游忽略结果，不需要保留乘法器内部状态。比较①仅把最终输出在use=0时选择为0；②在乘法器输入前用MUX把两个操作数在use=0时固定为0。只讨论这个组合块的活动与额外逻辑代价，不声称真实功耗已仿真。哪些说法正确？",
+    "explanationMd": "**答案：B、C。**\n\n①隔离的是最终可见输出，乘法器内部仍会响应a、b变化，不能因此保证内部停止翻转。②在不用结果时先固定输入，可抑制由外部输入变化引起的组合传播活动，这就是操作数隔离的思路。\n\n隔离MUX有面积、输入负载和延迟，也会随控制切换产生额外活动，因此是否净省电取决于空闲比例和实现。题目明确use稳定且只在use=1采样；真实设计仍需检查隔离控制时序与功能等价。操作数隔离不切断供电，也不自动消除漏电或下游时钟功耗。",
+    "commonMistakes": [
+      "把输出选0误认为上游乘法器内部也没有翻转。",
+      "把操作数隔离等同于断电或所有功耗为零。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计理解与推导",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128762539",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录低功耗翻转率方向的独立设计场景，不声称原文明确给出本乘法器。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "①已经保证乘法器内部不会因a、b改变而翻转。"
+      },
+      {
+        "id": "B",
+        "textMd": "②可以在空闲窗口阻止外部a、b变化传播进乘法器。"
+      },
+      {
+        "id": "C",
+        "textMd": "②需要评估输入MUX的面积、时序与额外活动代价。"
+      },
+      {
+        "id": "D",
+        "textMd": "②自动消除乘法器漏电与所有时钟功耗。"
+      }
+    ],
+    "correctOptionIds": [
+      "B",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "错误。输出MUX位于乘法器之后，无法挡住输入对内部节点的影响。",
+      "B": "正确。固定输入可抑制这一路变化引发的内部活动，但不能泛称功耗为零。",
+      "C": "正确。隔离逻辑不是免费的，净收益取决于工作负载与实现。",
+      "D": "错误。操作数隔离没有关闭电源，也没有自动改变其他模块时钟网络。"
+    }
+  },
+  {
+    "id": "ADAPTED-DESIGNEXAM-POWER-0002",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "clock-power-gating",
+    "title": "操作数隔离的净收益：空闲比例要多大",
+    "promptMd": "按题定平均功耗模型，乘法器有效计算时耗12 mW，原空闲窗口仍因无用输入翻转耗5 mW。增加操作数隔离后，空闲窗口乘法器耗1 mW；有效计算时仍耗12 mW；隔离控制与MUX在所有窗口额外平均耗0.6 mW。其他功耗不变，忽略切换瞬态。令空闲时间比例为p，求新方案严格比原方案省电时p的边界百分数。只输入边界，默认单位%。",
+    "explanationMd": "**答案：边界为15%，严格省电要求p>15%。**\n\n原平均功耗为12(1−p)+5p=12−7p mW。新平均功耗为12(1−p)+1p+0.6=12.6−11p mW，因此新减旧为0.6−4p mW。严格小于0需要p>0.15。\n\n在p=15%时两者相等，并不是已经严格省电。这里计算的是给定工作负载下的功耗盈亏，与原有的关断/唤醒能量摊销问题不同；模型没有包含那些瞬态，也不把0.6 mW当成仅在空闲时才存在的代价。",
+    "commonMistakes": [
+      "只看空闲节省4 mW，不计始终存在的0.6 mW额外代价。",
+      "把严格不等式边界当成已产生正收益。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计理解与推导",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128762539",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。低功耗翻转活动方向的独立量化变式，所有功耗及工作负载参数由本题新设。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "numeric",
+    "expectedValue": 15,
+    "unit": "%",
+    "defaultUnit": "%",
+    "acceptedUnits": {
+      "%": 1
+    },
+    "absoluteTolerance": 0.001
+  },
+  {
+    "id": "ADAPTED-DESIGNEXAM-ECO-0002",
+    "contentVersion": 1,
+    "topicId": "08",
+    "subtopicId": "lec-gls",
+    "title": "Metal-only ECO：有备用门是否就能直接交付",
+    "promptMd": "某项目已冻结晶体管与扩散等基底层，仅允许规定金属/通孔层改动。已有合法放置、供电的备用门，计划修改连接以修复一个组合逻辑错误。以本题限制为准，哪些判断正确？",
+    "explanationMd": "**答案：B、D。**\n\nmetal-only ECO利用已有器件改变允许的互连，不等于可以凭空在已冻结的基底层增加晶体管。备用门的种类、位置、剩余资源和可布线性会限制可实现修改。\n\n功能修复要验证修改后的网表满足修订后的功能规格；还要重新检查受影响时序与物理连接/规则。若旧网表本来存在功能缺陷，要求新旧网表在所有输入下完全等价反而与修复目的冲突，应使用正确的参考规格与受控的ECO验证方法。本题不规定所有项目都只能改相同金属层，也不讨论特定工具命令。",
+    "commonMistakes": [
+      "把metal-only理解成可以任意增加标准单元晶体管。",
+      "旧网表有缺陷，却仍要求新旧在所有输入下完全相同作为唯一修复标准。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计理解与推导",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128962147",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录列有metal ECO与spare cell使用，本题延伸资源限制及验证目标，不声称原题存在这些选项。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "可以在冻结的扩散层新增晶体管，只要最后用金属连接。"
+      },
+      {
+        "id": "B",
+        "textMd": "现有备用资源与允许互连层会限制补丁的可实现性。"
+      },
+      {
+        "id": "C",
+        "textMd": "旧网表已有错误，仍只需证明新旧所有输入完全相同，就能证明修复成功。"
+      },
+      {
+        "id": "D",
+        "textMd": "应对照修订后规格验证功能，并检查受影响时序及物理规则。"
+      }
+    ],
+    "correctOptionIds": [
+      "B",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "错误。违反题定的基底层冻结限制；新增器件不是本题允许的互连修改。",
+      "B": "正确。逻辑可表达还需已有器件与布线资源支持。",
+      "C": "错误。若完全保持旧错误行为，并不能证明修复，应选择正确参考。",
+      "D": "正确。功能、时序和物理实现是不同验收维度，均需按修改范围复查。"
+    }
+  }
+]

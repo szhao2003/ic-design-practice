@@ -8,7 +8,7 @@ const batch=questions.filter(q=>q.id.startsWith('ADAPTED-EXAMSV-'));
 const get=(id:string)=>batch.find(q=>q.id===`ADAPTED-EXAMSV-${id}`)!;
 describe('公开笔试SV和流程补充',()=>{
   it('8道汇编方向重构，来源归属不扩大且旧原创数量不变',()=>{
-    expect(questions).toHaveLength(242);expect(batch).toHaveLength(8);
+    expect(questions).toHaveLength(260);expect(batch).toHaveLength(8);
     expect(questions.filter(q=>q.source.kind==='self_authored')).toHaveLength(44);
     expect(filterQuestions(questions,{q:'笔试SV与流程补充'},emptyBackup())).toHaveLength(8);
     for(const q of batch){expect(q.source.kind).toBe('past_paper_compilation');expect(q.source.company).toBeUndefined();expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.sourceClaimVerification).toBe('checked');expect(sourceLabel(q)).toContain('汇编');}

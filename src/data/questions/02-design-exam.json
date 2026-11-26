@@ -1,0 +1,173 @@
+[
+  {
+    "id": "ADAPTED-DESIGNEXAM-TYPE-0001",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "four-state",
+    "title": "bit、logic、int、integer：未初始化时是什么",
+    "promptMd": "完整SystemVerilog程序中的模块级变量无显式初始化、无其他驱动。判断唯一一行RESULT输出。这里只讨论仿真语言默认值，不据此推断芯片上电值。\n\n```systemverilog\nmodule tb;\n  bit b;\n  logic l;\n  int i;\n  integer j;\n  initial begin\n    $display(\"RESULT=%0d %0d %0d %0d\",\n             b === 1'b0, l === 1'bx,\n             i === 32'd0, j === 32'bx);\n    $finish;\n  end\nendmodule\n```\n\n",
+    "explanationMd": "**答案：C，RESULT=1 1 1 1。**\n\nbit是二态类型，默认0；logic是四态类型，默认X。int是32位有符号二态类型，默认0；integer是32位有符号四态类型，默认全X。`32'bx`把X扩展至指定位宽，并不是只有最低位为X。\n\n四个判断都使用case equality `===`，把X作为可比较状态，因此比较结果都是确定的1。类型名相似不等于状态数相同，尤其不能把int与integer当成完全相同。本题模拟默认值不代表普通硬件寄存器上电有确定初始化。",
+    "commonMistakes": [
+      "将int和integer一律当作四态。",
+      "把仿真默认0当成ASIC硬件必然上电为0。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计岗基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128762539",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录列有Verilog四种逻辑状态；本题将该方向拆为类型默认值辨析。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "RESULT=1 0 1 0"
+      },
+      {
+        "id": "B",
+        "textMd": "RESULT=0 1 0 1"
+      },
+      {
+        "id": "C",
+        "textMd": "RESULT=1 1 1 1"
+      },
+      {
+        "id": "D",
+        "textMd": "RESULT=x x x x"
+      }
+    ],
+    "correctOptionIds": [
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "错误。logic和integer默认X，对应case equality也成立。",
+      "B": "错误。bit和int默认0，对应case equality成立。",
+      "C": "正确。四种类型逐个比较均为真。",
+      "D": "错误。===把X作为状态比较，其结果不会因被比较值为X而变X。"
+    }
+  },
+  {
+    "id": "ADAPTED-DESIGNEXAM-TYPE-0002",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "four-state",
+    "title": "四态赋给二态：X和Z还能被检查出来吗",
+    "promptMd": "在四态SystemVerilog仿真器中执行完整程序。只考虑普通赋值，不做随机化或强制。选择RESULT输出。\n\n```systemverilog\nmodule tb;\n  logic [3:0] raw;\n  bit [3:0] clean;\n  initial begin\n    raw = 4'b1xz0;\n    clean = raw;\n    $display(\"RESULT=%b %b %0d %0d\", raw, clean,\n             $isunknown(raw), $isunknown(clean));\n    $finish;\n  end\nendmodule\n```\n\n",
+    "explanationMd": "**答案：B，RESULT=1xz0 1000 1 0。**\n\nraw保留四态位图1xz0。赋给二态bit向量时，X与Z均转换为0，因此clean变成1000。赋值并未反向改变raw。\n\n`$isunknown`检查实参是否包含X或Z，故raw返回1，clean返回0。这不证明原始采样无未知态，只说明未知信息已经在二态转换中丢失。验证接口未知态时应在转换之前保留四态信息并检查；二态模型可以提高某些仿真效率，但不能承担已经丢失的X/Z诊断。",
+    "commonMistakes": [
+      "认为bit向量也能保存X/Z。",
+      "转换后检查clean无未知态，就推断raw也无未知态。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计岗基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128762539",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。四态状态方向的独立教学拆解，目录没有本题代码或转换条件。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "RESULT=1xz0 1xz0 1 1"
+      },
+      {
+        "id": "B",
+        "textMd": "RESULT=1xz0 1000 1 0"
+      },
+      {
+        "id": "C",
+        "textMd": "RESULT=1000 1000 0 0"
+      },
+      {
+        "id": "D",
+        "textMd": "RESULT=1xz0 1110 1 0"
+      }
+    ],
+    "correctOptionIds": [
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "错误。bit为二态，不能保留X/Z。",
+      "B": "正确。源不变，目的中X/Z变0，两个未知检查分别为1和0。",
+      "C": "错误。赋值只改目的clean，raw仍保存X/Z。",
+      "D": "错误。四态到二态转换将X/Z映射为0，不是1。"
+    }
+  },
+  {
+    "id": "ADAPTED-DESIGNEXAM-TYPE-0003",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "signed-width",
+    "title": "全1常量、单bit常量与截断不是同一个规则",
+    "promptMd": "执行以下完整SystemVerilog程序。三个目的变量均为8位无符号logic向量。选择RESULT十六进制输出。\n\n```systemverilog\nmodule tb;\n  logic [7:0] a, b, c;\n  initial begin\n    a = '1;\n    b = 1'b1;\n    c = 12'hB6D;\n    $display(\"RESULT=%h %h %h\", a, b, c);\n    $finish;\n  end\nendmodule\n```\n\n",
+    "explanationMd": "**答案：D，RESULT=ff 01 6d。**\n\n无尺寸无进制的特殊填充常量`'1`在赋值上下文中填满8位，a=11111111。显式尺寸常量`1'b1`是1位无符号值，赋给8位目的时零扩展，b=00000001。12'hB6D赋给8位目的时截去高4位B，保留低8位6D。\n\n区别在于常量的形式和目标尺寸，不是看到字符1就按同一方式扩展。若改变signed属性或表达式上下文，需要重新判断尺寸与扩展；本题没有混合算术，专门比较填充、零扩展和截断。",
+    "commonMistakes": [
+      "把特殊填充常量'1误读成1'b1。",
+      "宽值赋给窄目的时保留高位而丢弃低位。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计岗基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128962147",
+      "note": "2026-11-26读取公开复盘目录，仅据目录确认考点；完整题面与答案不可见，未访问付费内容。公开目录列有有符号位宽及语言程序求值方向；本题为尺寸基础拆解，非原代码。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "RESULT=01 01 6d"
+      },
+      {
+        "id": "B",
+        "textMd": "RESULT=ff ff 6d"
+      },
+      {
+        "id": "C",
+        "textMd": "RESULT=ff 01 b6"
+      },
+      {
+        "id": "D",
+        "textMd": "RESULT=ff 01 6d"
+      }
+    ],
+    "correctOptionIds": [
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "错误。'1随赋值上下文填满8位，应为ff。",
+      "B": "错误。1'b1是无符号单bit，零扩展后为01。",
+      "C": "错误。截断保留低8位6d，不是高8位b6。",
+      "D": "正确。三个结果依次对应填充、零扩展、低位保留。"
+    }
+  }
+]

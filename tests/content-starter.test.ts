@@ -6,7 +6,7 @@ import { gradeAnswer } from '../src/domain/grading';
 const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-STARTER-${id}`)!;
 describe('核心起步练习',()=>{
  it('6道简单题补足214题，技术方向来源不声称公司原题',()=>{
-  expect(questions.filter(q=>!/^ADAPTED-(TIMINGSTART|OPPREC|EXAMBASE|EXAMSV)-/.test(q.id))).toHaveLength(214);const batch=questions.filter(q=>q.id.startsWith('ADAPTED-STARTER-'));expect(batch).toHaveLength(6);
+  expect(questions.filter(q=>!/^ADAPTED-(TIMINGSTART|OPPREC|EXAMBASE|EXAMSV|DESIGNEXAM)-/.test(q.id))).toHaveLength(214);const batch=questions.filter(q=>q.id.startsWith('ADAPTED-STARTER-'));expect(batch).toHaveLength(6);
   for(const q of batch){expect(q.difficulty).toBe('easy');expect(q.contentVersion).toBe(1);expect(q.source.company).toBeUndefined();expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.sourceClaimVerification).toBe('checked');expect(q.tags).toContain('核心起步练习');}
  });
  it('FIFO以沿前状态许可，满时读不能为同沿写借空位',()=>{

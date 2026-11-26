@@ -1,5 +1,6 @@
 import { checkExamFoundation } from './test-exam-foundation.mjs';
 import { checkExamSV } from './test-exam-sv.mjs';
+import { checkDesignExam } from './test-design-exam.mjs';
 import { readFile, readdir, mkdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
@@ -74,3 +75,4 @@ await checkOperatorPrecedence(questions, available);
 
 await checkExamFoundation(questions, available);
 await checkExamSV(questions, available);
+await checkDesignExam(questions, available);

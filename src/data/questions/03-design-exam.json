@@ -1,0 +1,38 @@
+[
+  {
+    "id": "ADAPTED-DESIGNEXAM-OCV-0001",
+    "contentVersion": 1,
+    "topicId": "03",
+    "subtopicId": "sdc",
+    "title": "OCV、PVT与uncertainty：先明确各自建模对象",
+    "promptMd": "某教学STA模型中：PVT库角选择全局工作条件；clock uncertainty单独扣时序预算；flat derate对指定延迟乘系数。给定同一条数据路径标称最大延迟0.80 ns、最小延迟0.30 ns，late数据延迟系数1.10，early数据延迟系数0.90。只缩放题定数据延迟，不处理时钟路径、CPPR或其他高级OCV模型。回答两项缩放后的延迟，并说明为什么“只换PVT库角”和“只加uncertainty”都不等于本题的延迟缩放。",
+    "explanationMd": "**答案：late=0.88 ns，early=0.27 ns。**\n\nlate为0.80×1.10，early为0.30×0.90。derate按指定对象乘延迟系数；本题只指定数据路径，不应凭空修改时钟。\n\nPVT库角用于选择工艺、电压和温度下的特性模型；片内差异还可用derate等方法建模。uncertainty是在时序关系中保留的预算，不是给每个单元或连线乘倍率。实际项目可同时使用这些机制，但需按方法学避免重叠或误用。本题系数只是教学参数，不是任何工艺的推荐签核设置，也未声称所有OCV模型都只有两个固定系数。",
+    "commonMistakes": [
+      "把1.10理解为加1.10 ns而不是乘系数。",
+      "用uncertainty代替所有片内变化模型，或擅自缩放未指定的时钟路径。"
+    ],
+    "tags": [
+      "设计岗八股补充",
+      "设计岗基础补缺",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://www.nowcoder.com/discuss/353159156494442496",
+      "note": "2026-11-26读取公开往届笔试汇编，资料公司与考次归属未独立核实。公开正文第5题明确区分OCV、timing derate、uncertainty和库角。 本题条件、数据、选项及解析独立构造，非原题；未独立核实公司原卷，不据此声称必考或高频。"
+    },
+    "type": "short_answer",
+    "referenceAnswerMd": "late数据延迟0.88 ns，early数据延迟0.27 ns。PVT选择模型，derate缩放指定延迟，uncertainty调整预算；三者作用对象不同。本题未给出完整时钟关系，不能据此计算最终setup/hold slack。",
+    "rubric": [
+      "算出0.88 ns与0.27 ns，early/late方向不颠倒。",
+      "区分选择库角、乘延迟系数与扣预算。",
+      "只缩放指定数据延迟，不无条件推导整个签核结果。"
+    ]
+  }
+]
