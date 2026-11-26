@@ -57,3 +57,7 @@ RTL与协议第三批采用HDLBits、Verification Academy、Google Verilog指南
 ## 2026-11-26：验证基础六题
 
 新增6道DVBASE题，260→266。4题依据公开复盘目录方向（队列、monitor phase、virtual interface、参考模型）；动态数组与clocking采样2题明确为规范配套学习，按practice_collection记录，不声称出现在某公司考试。其余4题按past_paper_compilation记录，均为topic_only_reconstruction，不继承公司原卷归属。原260题逐对象不变，原创44、完整RTL21题全部在06。逐题范围、技术核对与验证见[批次28](CONTENT_BATCH_28_DVBASE.md)。
+
+## 2026-11-26：近期前端笔经复查（未增题）
+
+完成五家目标公司近期公开检索、原帖追溯和266题覆盖对照。较新面经、流程信息、错误岗位、访问受限及旧题重排分别记录；未发现满足本轮入库条件的独立新任务，不凑题。原266题对象及来源等级不变，版本仍1.31.0。逐条证据、拒绝原因及候选见[复查记录](RECENT_FRONTEND_SOURCE_REVIEW_2026_11_26.md)。
