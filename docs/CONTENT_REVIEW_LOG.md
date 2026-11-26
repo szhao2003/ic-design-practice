@@ -182,3 +182,8 @@ STA/CDC/FIFO六道现有题补3步提示与具体自查点，题库218题逐对�
 ## 2026-11-26：验证基础六题
 
 新增6道DVBASE题，260→266。4题依据公开复盘目录方向（队列、monitor phase、virtual interface、参考模型）；动态数组与clocking采样2题明确为规范配套学习，按practice_collection记录，不声称出现在某公司考试。其余4题按past_paper_compilation记录，均为topic_only_reconstruction，不继承公司原卷归属。原260题逐对象不变，原创44、完整RTL21题全部在06。逐题范围、技术核对与验证见[批次28](CONTENT_BATCH_28_DVBASE.md)。
+
+
+## 2026-11-26：动态数组构造表达式的Markdown显示修复（1.31.1）
+
+修复ADAPTED-DVBASE-ARRAY-0001题干与B选项解析中的裸`new[4](a)`，改用行内代码，防止Markdown将`[4](a)`当作指向相对路径a的链接。4是扩容长度，不是资料链接。该相对路径由浏览器解析为本站GitHub Pages下的/a，并非新增Git仓库引用。contentVersion从1升到2，题号不变，程序、选项、正确答案和数值解析保持不变；历史快照保留。扫描全部266题的题干、答案、选项和逐项解释（排除代码围栏及行内代码），只发现此题两处同类相对链接。实际Markdown渲染断言检查表达式以code显示且不存在href="a"。本轮为展示修复，不新增题目或来源归因。

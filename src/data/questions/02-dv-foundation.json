@@ -57,11 +57,11 @@
   },
   {
     "id": "ADAPTED-DVBASE-ARRAY-0001",
-    "contentVersion": 1,
+    "contentVersion": 2,
     "topicId": "02",
     "subtopicId": "sv-basics",
     "title": "动态数组扩容保留什么：整数数组赋值是不是句柄别名",
-    "promptMd": "执行完整SystemVerilog程序。数组元素类型为int，不含类句柄或嵌套对象；new[4](a)显式使用旧a初始化新数组。选择RESULT输出。\n\n```systemverilog\nmodule tb;\n  int a[], saved[];\n  initial begin\n    a = new[2];\n    a[0] = 3;\n    a[1] = 6;\n    saved = a;\n    a = new[4](a);\n    a[0] = 9;\n    $display(\"RESULT=%0d %0d %0d %0d %0d %0d\",\n             a[0], a[1], a[2], a[3], saved[0], saved.size());\n    $finish;\n  end\nendmodule\n```\n\n",
+    "promptMd": "执行完整SystemVerilog程序。数组元素类型为int，不含类句柄或嵌套对象；`new[4](a)`显式使用旧a初始化新数组。选择RESULT输出。\n\n```systemverilog\nmodule tb;\n  int a[], saved[];\n  initial begin\n    a = new[2];\n    a[0] = 3;\n    a[1] = 6;\n    saved = a;\n    a = new[4](a);\n    a[0] = 9;\n    $display(\"RESULT=%0d %0d %0d %0d %0d %0d\",\n             a[0], a[1], a[2], a[3], saved[0], saved.size());\n    $finish;\n  end\nendmodule\n```\n\n",
     "explanationMd": "**答案：D，RESULT=9 6 0 0 3 2。**\n\n最初a为{3,6}。`saved=a`进行数组元素的值复制，saved成为大小2、内容{3,6}的独立整数数组，不是指向同一数组的类句柄别名。\n\n`a=new[4](a)`先用旧内容初始化扩容后的数组，保留前两个元素，新增加的两个int元素取默认0，得到{3,6,0,0}。最后只将a[0]改为9，saved[0]仍为3，saved.size()仍为2。若写成不带初始化表达式的`a=new[4]`，旧内容不会自动保留。若元素是类句柄，复制元素仍可能共享对象，本题特意排除这种情况。",
     "commonMistakes": [
       "把整数动态数组赋值当成类句柄赋值，认为修改a也会修改saved。",
@@ -106,7 +106,7 @@
     ],
     "optionExplanations": {
       "A": "错误。saved不是数组句柄别名，不随a扩容或单元素修改。",
-      "B": "错误。new[4](a)显式用旧a初始化，第二个元素6保留。",
+      "B": "错误。`new[4](a)`显式用旧a初始化，第二个元素6保留。",
       "C": "错误。超出初始化数组长度的新增int元素默认0，不循环复制旧值。",
       "D": "正确。扩容保留3、6并补0，随后a[0]=9，saved仍为{3,6}。"
     }

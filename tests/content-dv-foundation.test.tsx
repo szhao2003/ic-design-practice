@@ -86,6 +86,10 @@ describe('验证基础六题：容器、采样与检查职责', () => {
       expect(html).not.toContain('```');
       if (q.id.includes('QUEUE') || q.id.includes('ARRAY')) expect(html).toContain('language-systemverilog');
       if (q.id.includes('MODEL')) expect(html).toContain('<table>');
+      if (q.id.includes('ARRAY')) {
+        expect(html).toContain('<code>new[4](a)</code>');
+        expect(html).not.toContain('href="a"');
+      }
     }
   });
 });

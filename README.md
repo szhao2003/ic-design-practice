@@ -2,7 +2,7 @@
 
 面向数字 IC、ASIC RTL、DV 与 FPGA 的专题练习工具，中文界面。
 
-当前为 **1.31.0：验证基础补充**。已有15个专题、266道完整题（原创44、资料考点改编222；按来源性质分为亲历笔经8、题目汇编35、面经2、教学/练习资料177），支持筛选组题、连续练习、解析、历史/草稿/笔记/收藏、错题复习、备份恢复及模拟考试。新增6题搜索“验证基础补充”，包括队列、动态数组、clocking采样、virtual interface、UVM phase和参考模型；来源及验证见[本批审核](docs/CONTENT_BATCH_28_DVBASE.md)。上一批18题仍可搜索“设计岗八股补充”，见[审核](docs/CONTENT_BATCH_26_27_DESIGNEXAM.md)。完整进度见[开发进度](docs/DEVELOPMENT_STATUS.md)。
+当前为 **1.31.1：验证基础补充**。已有15个专题、266道完整题（原创44、资料考点改编222；按来源性质分为亲历笔经8、题目汇编35、面经2、教学/练习资料177），支持筛选组题、连续练习、解析、历史/草稿/笔记/收藏、错题复习、备份恢复及模拟考试。新增6题搜索“验证基础补充”，包括队列、动态数组、clocking采样、virtual interface、UVM phase和参考模型；来源及验证见[本批审核](docs/CONTENT_BATCH_28_DVBASE.md)。上一批18题仍可搜索“设计岗八股补充”，见[审核](docs/CONTENT_BATCH_26_27_DESIGNEXAM.md)。完整进度见[开发进度](docs/DEVELOPMENT_STATUS.md)。
 
 全部21道RTL手撕统一在06“RTL 手撕 / 设计”，其他专题保留概念、计算、读代码与波形题。旧记录按原ID保留，见[分类说明](docs/RTL_CODING_CLASSIFICATION.md)。
 
