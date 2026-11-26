@@ -12,7 +12,7 @@ describe('笔试基础补缺',()=>{
     expect(sourceLabel(get('FLOW-0001'))).toBe('公开笔经考点改编｜非原题');
   });
   it('8道来源重构进入已有分类，保持原创身份不变',()=>{
-    expect(questions).toHaveLength(260);expect(batch).toHaveLength(8);
+    expect(questions).toHaveLength(266);expect(batch).toHaveLength(8);
     expect(questions.filter(q=>q.source.kind==='self_authored')).toHaveLength(44);
     for(const q of batch){expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.company).toBeUndefined();expect(q.reviewStatus).toBe('verified');expect(q.tags).toContain('笔试基础补缺');}
     expect(get('PULSE-0001').source.kind).toBe('interview_recall');

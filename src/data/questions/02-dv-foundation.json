@@ -1,0 +1,114 @@
+[
+  {
+    "id": "ADAPTED-DVBASE-QUEUE-0001",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "sv-basics",
+    "title": "队列的头尾与下标：insert和delete后顺序如何变化",
+    "promptMd": "执行完整SystemVerilog程序。q是无界队列，下标从0开始；本题没有越界、空队列弹出或并发修改。选择唯一的RESULT输出。\n\n```systemverilog\nmodule tb;\n  int q[$];\n  int removed;\n  initial begin\n    q = {10, 20};\n    q.push_front(5);\n    removed = q.pop_back();\n    q.insert(1, 7);\n    q.delete(0);\n    $display(\"RESULT=%0d %0d %0d %0d\", removed, q.size(), q[0], q[1]);\n    $finish;\n  end\nendmodule\n```\n\n",
+    "explanationMd": "**答案：B，RESULT=20 2 7 10。**\n\n| 操作后 | q从下标0到末尾 | removed |\n|---|---|---:|\n| 初始化 | 10、20 | 尚未使用 |\n| push_front(5) | 5、10、20 | 尚未使用 |\n| pop_back() | 5、10 | 20 |\n| insert(1,7) | 5、7、10 | 20 |\n| delete(0) | 7、10 | 20 |\n\npush_front在队首插入，pop_back从队尾移除并返回值；insert将新元素放在指定下标处，原有元素后移；带下标的delete只删除该元素，后续元素前移。因此最后队列大小为2，两个元素为7和10。`q.delete()`不带参数才会清空整个队列。",
+    "commonMistakes": [
+      "把pop_back当成读取队首，或认为只读取不移除。",
+      "把delete(0)理解为清空队列，混淆带参数与无参数形式。"
+    ],
+    "tags": [
+      "验证基础补充",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128977989",
+      "note": "2026-11-26重新读取公开笔试复盘目录，只能确认考点，完整题面与答案不可见；未访问付费内容，公司原卷归属未独立核实。公开目录明确列有queue方法，具体程序与数据不是目录原题。 本题条件、代码、选项及解析独立构造，非原题。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "RESULT=5 2 7 20"
+      },
+      {
+        "id": "B",
+        "textMd": "RESULT=20 2 7 10"
+      },
+      {
+        "id": "C",
+        "textMd": "RESULT=20 3 5 7"
+      },
+      {
+        "id": "D",
+        "textMd": "RESULT=20 0 0 0"
+      }
+    ],
+    "correctOptionIds": [
+      "B"
+    ],
+    "optionExplanations": {
+      "A": "错误。pop_back弹出尾部20，不是头部5。",
+      "B": "正确。依次模拟五步操作，最终q={7,10}，removed=20。",
+      "C": "错误。最后delete(0)还会删除5，大小从3减为2。",
+      "D": "错误。delete(0)仅删除下标0元素；清空需不带下标的delete()。"
+    }
+  },
+  {
+    "id": "ADAPTED-DVBASE-ARRAY-0001",
+    "contentVersion": 1,
+    "topicId": "02",
+    "subtopicId": "sv-basics",
+    "title": "动态数组扩容保留什么：整数数组赋值是不是句柄别名",
+    "promptMd": "执行完整SystemVerilog程序。数组元素类型为int，不含类句柄或嵌套对象；new[4](a)显式使用旧a初始化新数组。选择RESULT输出。\n\n```systemverilog\nmodule tb;\n  int a[], saved[];\n  initial begin\n    a = new[2];\n    a[0] = 3;\n    a[1] = 6;\n    saved = a;\n    a = new[4](a);\n    a[0] = 9;\n    $display(\"RESULT=%0d %0d %0d %0d %0d %0d\",\n             a[0], a[1], a[2], a[3], saved[0], saved.size());\n    $finish;\n  end\nendmodule\n```\n\n",
+    "explanationMd": "**答案：D，RESULT=9 6 0 0 3 2。**\n\n最初a为{3,6}。`saved=a`进行数组元素的值复制，saved成为大小2、内容{3,6}的独立整数数组，不是指向同一数组的类句柄别名。\n\n`a=new[4](a)`先用旧内容初始化扩容后的数组，保留前两个元素，新增加的两个int元素取默认0，得到{3,6,0,0}。最后只将a[0]改为9，saved[0]仍为3，saved.size()仍为2。若写成不带初始化表达式的`a=new[4]`，旧内容不会自动保留。若元素是类句柄，复制元素仍可能共享对象，本题特意排除这种情况。",
+    "commonMistakes": [
+      "把整数动态数组赋值当成类句柄赋值，认为修改a也会修改saved。",
+      "以为new更大尺寸总会保留旧数据，忽略初始化表达式。"
+    ],
+    "tags": [
+      "验证基础补充",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://fpga.mit.edu/6205/_static/F25/documentation/1800-2017.pdf",
+      "note": "已核对IEEE 1800-2017公开课程版的相关条款，仅为技术学习依据，不证明任何公司考过此题。核对7.5.1的new[尺寸](初始化数组)及7.6数组赋值。作为队列题的容器基础配套，不声称公开笔经出现了本动态数组任务。 本题条件、代码、选项及解析独立构造，非原题。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "RESULT=9 6 0 0 9 4"
+      },
+      {
+        "id": "B",
+        "textMd": "RESULT=9 0 0 0 3 2"
+      },
+      {
+        "id": "C",
+        "textMd": "RESULT=9 6 3 6 3 2"
+      },
+      {
+        "id": "D",
+        "textMd": "RESULT=9 6 0 0 3 2"
+      }
+    ],
+    "correctOptionIds": [
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "错误。saved不是数组句柄别名，不随a扩容或单元素修改。",
+      "B": "错误。new[4](a)显式用旧a初始化，第二个元素6保留。",
+      "C": "错误。超出初始化数组长度的新增int元素默认0，不循环复制旧值。",
+      "D": "正确。扩容保留3、6并补0，随后a[0]=9，saved仍为{3,6}。"
+    }
+  }
+]

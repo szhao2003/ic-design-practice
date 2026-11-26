@@ -7,7 +7,7 @@ const get = (id: string) => batch.find(q => q.id === `ADAPTED-DESIGNEXAM-${id}`)
 
 describe('设计岗八股补缺：独立模型验证', () => {
   it('18题均明确改编性质，保持21道手撕集中在06及原44原创', () => {
-    expect(questions).toHaveLength(260);
+    expect(questions).toHaveLength(266);
     expect(batch).toHaveLength(18);
     expect(batch.filter(q => q.tags.includes('设计岗基础补缺'))).toHaveLength(10);
     expect(batch.filter(q => q.tags.includes('设计理解与推导'))).toHaveLength(8);

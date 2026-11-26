@@ -13,7 +13,7 @@ const make=()=>{const s=new LearningStore(crypto.randomUUID());stores.push(s);re
 describe('RTL手撕题统一归类',()=>{
   it('全部21道RTL题集中06，其他专题仍可筛选概念和读波形',()=>{
     const coding=questions.filter(q=>q.type==='rtl_coding');
-    expect(questions).toHaveLength(260);expect(coding).toHaveLength(21);
+    expect(questions).toHaveLength(266);expect(coding).toHaveLength(21);
     expect(coding.every(q=>q.topicId==='06')).toBe(true);
     for(const topic of ['04','05','07'])expect(filterQuestions(questions,{topic,type:'rtl_coding'},emptyBackup())).toEqual([]);
     expect(filterQuestions(questions,{topic:'06',subtopic:'cdc-reset'},emptyBackup())).toHaveLength(2);

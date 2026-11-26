@@ -1,0 +1,207 @@
+[
+  {
+    "id": "ADAPTED-DVBASE-CLOCKING-0001",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "debug",
+    "title": "Clocking input #1step与#0：本沿NBA更新看到哪个值",
+    "promptMd": "某接口有两个clocking block，事件均为posedge clk，监视同一个四态信号q：pre_cb的input skew为#1step，now_cb的input skew为#0。在本次上升沿之前q已稳定为8'h35；本沿DUT在Active区安排非阻塞赋值，随后NBA区把q更新为8'hA6，无其他写入。本题只问两个clocking输入在该事件对应的采样值；读取发生在采样完成之后，不涉及读clockvar本身的竞态。按SystemVerilog规则，#1step取沿前一步的稳定值，显式input #0在本时间槽Observed区采样。哪组“pre_cb.q、now_cb.q”正确？",
+    "explanationMd": "**答案：A，分别为35、A6。**\n\npre_cb使用#1step，采样的是当前沿之前的稳定值，所以保存35。now_cb显式指定input #0，在本时间槽Observed区采样，此时DUT在本沿安排的NBA更新已经完成，所以保存A6。\n\n| 本次事件相关阶段 | q/采样动作 |\n|---|---|\n| 沿前一步 | q=35，pre_cb采到35 |\n| Active | DUT安排NBA更新 |\n| NBA | q变为A6 |\n| Observed | now_cb采到A6 |\n\nclocking skew的#0是声明采样语义，不能替换成过程语句`#0`；过程#0通常将当前过程排到Inactive区，并不表示等待NBA全部更新。使用clocking block也不自动修复所有错误的事件等待和读取顺序，本题已排除这些额外竞态。",
+    "commonMistakes": [
+      "把input #0当成过程语句#0，混淆Observed与Inactive。",
+      "认为同一个posedge对应的所有观测方式都必然读取相同数据。"
+    ],
+    "tags": [
+      "验证基础补充",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "practice_collection",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://fpga.mit.edu/6205/_static/F25/documentation/1800-2017.pdf",
+      "note": "已核对IEEE 1800-2017公开课程版的相关条款，仅为技术学习依据，不证明任何公司考过此题。核对14.3、14.4及14.13的采样规则，作为验证采样基础练习；不把规范当作公司笔试证据。 本题条件、代码、选项及解析独立构造，非原题。"
+    },
+    "type": "single_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "35、A6"
+      },
+      {
+        "id": "B",
+        "textMd": "A6、A6"
+      },
+      {
+        "id": "C",
+        "textMd": "35、35"
+      },
+      {
+        "id": "D",
+        "textMd": "A6、35"
+      }
+    ],
+    "correctOptionIds": [
+      "A"
+    ],
+    "optionExplanations": {
+      "A": "正确。沿前#1step保留35，本时间槽Observed的#0采到NBA后的A6。",
+      "B": "错误。pre_cb在沿前采样，不能提前看到本沿NBA产生的新值。",
+      "C": "错误。now_cb显式input #0在Observed采样，已在本沿NBA之后。",
+      "D": "错误。将两个skew的采样先后及值完全颠倒。"
+    }
+  },
+  {
+    "id": "ADAPTED-DVBASE-VIF-0001",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "uvm",
+    "title": "virtual interface绑定：换句柄会不会复制一套接口信号",
+    "promptMd": "静态展开中已经存在两个同类型、同参数且无modport限制的接口实例bus0和bus1，二者信号独立。class Monitor含变量`virtual BusIf vif`，已将同一个Monitor对象中的vif从bus0改绑为bus1。假设所有访问发生在赋值完成后，无其他别名或并发访问。哪些判断正确？",
+    "explanationMd": "**答案：A、C。**\n\nvirtual interface是引用既有接口实例的变量，使类代码能够访问选定实例的信号与任务。改绑vif只改变Monitor后续访问指向的接口，本题中由bus0变为bus1；它不会在运行时再实例化一套接口，也不会把bus0的全部状态复制给bus1。\n\n未初始化的virtual interface默认为null，访问其成员前需要正确绑定。真实环境还要检查参数和modport类型兼容，并在绑定失败时及时报错。virtual interface也不是CDC同步器：获得访问能力与保证跨时钟域数据安全是不同问题。",
+    "commonMistakes": [
+      "认为给virtual interface赋值会复制或创建接口实例。",
+      "把虚接口当成自动消除竞态、CDC风险的封装。"
+    ],
+    "tags": [
+      "验证基础补充",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128762539",
+      "note": "2026-11-26重新读取公开笔试复盘目录，只能确认考点，完整题面与答案不可见；未访问付费内容，公司原卷归属未独立核实。公开目录明确列有virtual interface作用，实例数量、参数与重新绑定场景均由本题新设。 本题条件、代码、选项及解析独立构造，非原题。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "改绑后通过vif访问的是bus1，bus0实例仍存在。"
+      },
+      {
+        "id": "B",
+        "textMd": "改绑会创建第三个接口实例，并复制bus0的全部信号。"
+      },
+      {
+        "id": "C",
+        "textMd": "未绑定的vif不能安全访问成员，应先检查和正确绑定。"
+      },
+      {
+        "id": "D",
+        "textMd": "vif指向哪个接口都不重要，因为它会自动同步不同域的信号。"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "optionExplanations": {
+      "A": "正确。变量指向改变不等于删除或替换原来的静态实例。",
+      "B": "错误。virtual interface赋值是引用绑定，不是模块/接口实例化，也不是状态深拷贝。",
+      "C": "正确。默认null不是有效连接，使用前需要确保赋值成功。",
+      "D": "错误。虚接口提供访问路径，不能替代协议时序与CDC设计。"
+    }
+  },
+  {
+    "id": "ADAPTED-DVBASE-PHASE-0001",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "uvm",
+    "title": "UVM monitor持续采样：为什么放在run_phase而不是build",
+    "promptMd": "采用UVM 1.2常见组件结构，使用build_phase创建子组件/获取配置，connect_phase连接TLM端口，monitor需要在每个时钟沿等待并采样。这里只比较这三个phase的回调类型与职责，不讨论自定义phase domain或阶段跳转。哪些说法正确？",
+    "explanationMd": "**答案：B、D。**\n\nbuild_phase和connect_phase是function回调，不允许在回调中直接执行等待时钟或延时的采样循环。持续监测通常写在task形式的run_phase中：等待接口事件、组装事务，再通过analysis端口发送给检查组件。\n\ntask形式意味着允许消耗仿真时间，不代表每次回调都必须等待固定时长。run_phase中的forever循环也不是自动保持阶段存活的机制；测试通常由合适的objection生命周期管理阶段结束，阶段结束会终止相关任务。本题不要求monitor自己永久raise objection，否则容易造成测试无法结束。",
+    "commonMistakes": [
+      "认为build_phase名称里的build允许等待DUT完成初始化。",
+      "用monitor中的forever循环代替objection管理，导致误判阶段存活。"
+    ],
+    "tags": [
+      "验证基础补充",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128977989",
+      "note": "2026-11-26重新读取公开笔试复盘目录，只能确认考点，完整题面与答案不可见；未访问付费内容，公司原卷归属未独立核实。公开目录明确问monitor接口采样放哪个UVM phase；独立扩展为function/task与生命周期辨析，技术核对Accellera UVM 1.2。 本题条件、代码、选项及解析独立构造，非原题。"
+    },
+    "type": "multiple_choice",
+    "options": [
+      {
+        "id": "A",
+        "textMd": "build_phase是task，因此适合直接forever等待posedge。"
+      },
+      {
+        "id": "B",
+        "textMd": "run_phase是task，适合等待时钟并持续采样。"
+      },
+      {
+        "id": "C",
+        "textMd": "monitor只要运行forever，就保证run phase永远不会结束，无需考虑objection。"
+      },
+      {
+        "id": "D",
+        "textMd": "connect_phase用于连接端口，不能在该function回调中直接等待时钟采样。"
+      }
+    ],
+    "correctOptionIds": [
+      "B",
+      "D"
+    ],
+    "optionExplanations": {
+      "A": "错误。UVM 1.2的build_phase是function，不是可直接等待时钟的task回调。",
+      "B": "正确。run_phase允许时间推进，持续监测仍需配合正确阶段生命周期。",
+      "C": "错误。阶段存活受objection等机制管理，forever本身不保证阻止阶段结束。",
+      "D": "正确。连接是其常见职责，function中不能直接使用阻塞时间控制。"
+    }
+  },
+  {
+    "id": "ADAPTED-DVBASE-MODEL-0001",
+    "contentVersion": 1,
+    "topicId": "09",
+    "subtopicId": "scoreboard",
+    "title": "值对了但晚一拍：参考模型能不能检查时序",
+    "promptMd": "某同步模块的规格明确规定：在编号n的上升沿沿前采样到in_valid && in_ready时接受输入x，结果(x+1) mod 256必须在第n+2个上升沿“沿前检查点”以out_valid=1给出。输出无背压；无请求对应的其他检查点out_valid必须为0。无复位或取消，初始无未完成请求。第2沿接受x=8'h7F，之后无请求。实际观察如下：\n\n| 沿前检查点 | out_valid | out_data |\n|---:|---:|---|\n| 3 | 0 | 不关心 |\n| 4 | 0 | 不关心 |\n| 5 | 1 | 8'h80 |\n\n回答：(1)应在哪个检查点出现什么期望？(2)只将有效输出按先后与期望数值队列比较，会漏掉什么？(3)参考模型是否只能做无时序函数，如何组织检查才能发现本例错误？",
+    "explanationMd": "**答案：第4沿前应有valid=1、data=80；本例晚一拍，不能因数值相同就通过。**\n\n输入在第2沿被接受，规格要求到期点为2+2=4。第3沿valid=0合理，第4沿valid=0构成缺失应答，第5沿又在无到期结果时输出valid=1，属于迟到/非预期时刻输出。可选择统一报告“晚一拍”，也可按检查器策略分别报告两处，不能当成功。\n\n只比较有效事务的值序列时，期望队列{80}与实际有效输出{80}会相同，因此漏掉固定延迟约束。可以让参考模型产生(value,due_cycle)，也可以让纯功能模型只算value，另由时序检查器记录接受周期、到期周期并核对valid。参考模型能够包含时序/状态；组件划分可选，规格中的时序要求不能省略。所有观察均按题定沿前检查点，避免混用本沿NBA之后的值。",
+    "commonMistakes": [
+      "仅比较有效输出的数值序列，把晚到的正确数据判为整体正确。",
+      "认为参考模型定义上只能无状态、无时序，因而无需检查延迟。"
+    ],
+    "tags": [
+      "验证基础补充",
+      "公开资料考点改编"
+    ],
+    "difficulty": "medium",
+    "estimatedMinutes": 7,
+    "reviewStatus": "verified",
+    "source": {
+      "kind": "past_paper_compilation",
+      "evidenceGrade": "C",
+      "questionFidelity": "topic_only_reconstruction",
+      "sourceClaimVerification": "checked",
+      "url": "https://blog.csdn.net/lum250/article/details/128762539",
+      "note": "2026-11-26重新读取公开笔试复盘目录，只能确认考点，完整题面与答案不可见；未访问付费内容，公司原卷归属未独立核实。公开目录第一题明确涉及reference model是否只支持无时序功能建模；本题输入、延迟、采样点与日志独立构造。 本题条件、代码、选项及解析独立构造，非原题。"
+    },
+    "type": "short_answer",
+    "referenceAnswerMd": "第2沿接受7F，期望第4沿前valid=1且data=80。实际第4沿缺失、第5沿迟到。仅比有效数据队列会将{80}对{80}判通过，漏掉延迟。使用(value,due_cycle)或独立周期检查器；参考模型可以含时序，不必强制功能和时序检查写在同一组件。",
+    "rubric": [
+      "按接受而非仅in_valid记账，到期周期算成4。",
+      "说明数据值正确仍违反固定延迟，并指出只比数值序列的盲区。",
+      "给出周期标签或独立时序检查方案，统一沿前观察约定。"
+    ]
+  }
+]

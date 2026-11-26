@@ -8,7 +8,7 @@ const get=(id:string)=>questions.find(q=>q.id===`ADAPTED-CODEC-${id}`)!;
 const weight=(value:number)=>value.toString(2).replaceAll('0','').length;
 describe('编码分频与存储接口',()=>{
  it('新增6题共174，来源与旧题界限清楚',()=>{
-  expect(questions.filter(q=>!/^ADAPTED-(BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC|EXAMBASE|EXAMSV|DESIGNEXAM)-/.test(q.id))).toHaveLength(174);
+  expect(questions.filter(q=>!/^ADAPTED-(BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC|EXAMBASE|EXAMSV|DESIGNEXAM|DVBASE)-/.test(q.id))).toHaveLength(174);
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-CODEC-'));
   expect(batch).toHaveLength(6);
   for(const q of batch){expect(q.contentVersion).toBe(q.id==='ADAPTED-CODEC-GRAY-0001' ? 2 : 1);expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.company).toBeUndefined();expect(q.tags).toContain('编码分频与存储接口');}

@@ -7,7 +7,7 @@ const correct=(id:string,raw:number)=>expect(gradeAnswer(get(id),{raw:String(raw
 describe('RTL与协议第三批：独立模型和边界',()=>{
  it('8题全部130题，公开方向改编，RTL代码与网页完全一致',()=>{
   const batch=questions.filter(q=>q.id.startsWith('ADAPTED-CORE3-'));
-  expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC|EXAMBASE|EXAMSV|DESIGNEXAM)-/.test(q.id))).toHaveLength(130);
+  expect(batch).toHaveLength(8);expect(questions.filter(q=>!/^ADAPTED-(MINI|FOCUSED|INTEGRATION|BOUNDARY|SAMPLING|CODEC|BUSTIMING|VERIFYPOWER|ARCHTOOLS|STARTER|TIMINGSTART|OPPREC|EXAMBASE|EXAMSV|DESIGNEXAM|DVBASE)-/.test(q.id))).toHaveLength(130);
   for(const q of batch)expect(q).toMatchObject({contentVersion:1,reviewStatus:'verified',source:{kind:'practice_collection',evidenceGrade:'C',questionFidelity:'topic_only_reconstruction',sourceClaimVerification:'checked'}});
   const q=get('RTL-0001');if(q.type!=='rtl_coding')throw Error('wrong type');
   const shown=q.referenceAnswerMd.match(/```systemverilog\s*\n([\s\S]*?)```/)?.[1].trim();

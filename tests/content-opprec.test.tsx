@@ -11,7 +11,7 @@ const cases=JSON.parse(readFileSync('scripts/operator-precedence-cases.json','ut
 const get=(suffix:string)=>questions.find(q=>q.id===`ADAPTED-OPPREC-${suffix}`)!;
 describe('SV运算符优先级',()=>{
  it('新增8题和明确子专题，共226题，标准支持规则而非考频',()=>{
-  expect(questions).toHaveLength(260);expect(batch).toHaveLength(8);expect(topics.find(t=>t.id==='02')?.subtopics.some(s=>s.id==='operator-precedence')).toBe(true);
+  expect(questions).toHaveLength(266);expect(batch).toHaveLength(8);expect(topics.find(t=>t.id==='02')?.subtopics.some(s=>s.id==='operator-precedence')).toBe(true);
   for(const q of batch){expect(q.type).toBe('numeric');expect(q.subtopicId).toBe('operator-precedence');expect(q.contentVersion).toBe(1);expect(q.source.company).toBeUndefined();expect(q.source.questionFidelity).toBe('topic_only_reconstruction');expect(q.source.sourceClaimVerification).toBe('checked');expect(q.tags).toContain('SV运算符优先级');}
  });
  it('8份实际网页模块和显式分组/反例都有对应的仿真夹具',()=>{

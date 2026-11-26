@@ -177,3 +177,8 @@ ADAPTED-ARCHTOOLS-10题已独立构造并核对，公开资料入口与任务差
 ## 2026-11-26：设计岗八股两批补缺
 
 按用户确认的调研方案新增18道DESIGNEXAM题，242→260。标准单元/存储器/SV类型/OCV共10题，重定时/操作数隔离/耦合故障/重命名/ECO共8题。公开目录只支持考点，全部按past_paper_compilation/C/topic_only_reconstruction记录，不继承公司原卷归属。原242题逐对象不变，原创仍44，21道完整RTL仍全部在06。来源实际可见范围、独立求解与下一步见[本批审核](CONTENT_BATCH_26_27_DESIGNEXAM.md)。不增加原132项汇编覆盖率。
+
+
+## 2026-11-26：验证基础六题
+
+新增6道DVBASE题，260→266。4题依据公开复盘目录方向（队列、monitor phase、virtual interface、参考模型）；动态数组与clocking采样2题明确为规范配套学习，按practice_collection记录，不声称出现在某公司考试。其余4题按past_paper_compilation记录，均为topic_only_reconstruction，不继承公司原卷归属。原260题逐对象不变，原创44、完整RTL21题全部在06。逐题范围、技术核对与验证见[批次28](CONTENT_BATCH_28_DVBASE.md)。
